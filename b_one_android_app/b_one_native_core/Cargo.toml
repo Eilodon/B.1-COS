@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "b_one_core_native",
+    "b_one_protocols_native",
+    "b_one_tools_native",
+    "b_one_jni",
+]
+resolver = "2"

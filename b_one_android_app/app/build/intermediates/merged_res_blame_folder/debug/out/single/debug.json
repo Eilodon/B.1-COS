@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.example.boneapp-merged_res-57:/mipmap_ic_launcher.xml.flat",
+        "source": "com.example.boneapp-main-59:/mipmap/ic_launcher.xml"
+    },
+    {
+        "merged": "com.example.boneapp-merged_res-57:/mipmap_ic_launcher_round.xml.flat",
+        "source": "com.example.boneapp-main-59:/mipmap/ic_launcher_round.xml"
+    }
+]

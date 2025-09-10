@@ -1,0 +1,2 @@
+// Material Components theme for Compose Material3 compatibility
+implementation "com.google.android.material:material:1.11.0"

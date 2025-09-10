@@ -1,0 +1,11 @@
+[package]
+name = "b_one_jni"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+jni = "0.21.1"
+b_one_core_native = { path = "../b_one_core_native" }
+
+[lib]
+crate-type = ["cdylib"]

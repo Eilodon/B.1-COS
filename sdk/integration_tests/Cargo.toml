@@ -1,6 +1,10 @@
 [package]
 name = "integration_tests"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+publish = false
 
 [dependencies]
+pandora_core = { path = "../pandora_core" }
+pandora_tools = { path = "../pandora_tools" }
+tokio = { version = "1", features = ["full"] }

@@ -25,7 +25,7 @@ jobs:
         components: rustfmt, clippy
     
     - name: Check Formatting
-      run: cargo fmt --manifest-path sdk/Cargo.toml -- --check
+      run: cargo fmt --manifest-path sdk/Cargo.toml --all -- --check
 
     - name: Run Clippy
       run: cargo clippy --manifest-path sdk/Cargo.toml -- -D warnings
@@ -42,4 +42,4 @@ jobs:
       uses: actions-rs/audit-check@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        manifest-path: sdk/Cargo.toml
+      working-directory: sdk

@@ -1,0 +1,14 @@
+[package]
+name = "protocols_native"
+version = "0.1.0"
+edition = "2021"
+description = "B.ONE Cognitive OS - Protocol Buffers Definitions"
+authors = ["B.ONE Team <team@b1os.dev>"]
+license = "MIT"
+
+[dependencies]
+prost = "0.12"
+prost-types = "0.12"
+ 
+[build-dependencies]
+prost-build = "0.12"

@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "pandora_core",
+    "pandora_protocols",
+    "pandora_tools",
+]
+resolver = "2"

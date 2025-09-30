@@ -1,7 +1,0 @@
-[workspace]
-members = [
-    "core_native",
-    "protocols_native",
-    "tools_native",
-]
-resolver = "2"

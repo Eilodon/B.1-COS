@@ -19,7 +19,7 @@ mod tests {
 		assert_eq!(output, json!({"matches": []}));
 	}
 }
-use core_native::interfaces::skills::{SkillModule, SkillDescriptor, SkillOutput};
+use pandora_core::interfaces::skills::{SkillModule, SkillDescriptor, SkillOutput};
 use serde_json::Value as SkillInput;
 use async_trait::async_trait;
 use serde_json::{json, Value};

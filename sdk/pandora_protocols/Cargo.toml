@@ -1,10 +1,10 @@
 [package]
-name = "protocols_native"
+name = "pandora_protocols"
 version = "0.1.0"
 edition = "2021"
 description = "B.ONE Cognitive OS - Protocol Buffers Definitions"
 authors = ["B.ONE Team <team@b1os.dev>"]
-license = "MIT"
+license = "Apache-2.0"
 
 [dependencies]
 prost = "0.12"

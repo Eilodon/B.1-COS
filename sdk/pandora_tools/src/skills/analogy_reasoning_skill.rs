@@ -27,7 +27,7 @@ mod tests {
 		assert!(skill.execute(input).await.is_err());
 	}
 }
-use core_native::interfaces::skills::{SkillModule, SkillDescriptor, SkillOutput};
+use pandora_core::interfaces::skills::{SkillModule, SkillDescriptor, SkillOutput};
 use serde_json::Value as SkillInput;
 use async_trait::async_trait;
 use serde_json::json;

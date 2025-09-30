@@ -57,7 +57,7 @@ impl SkillModule for AnalogyReasoningSkill {
 		let mut best_score = usize::MAX;
 		for cand in candidates.iter().filter_map(|v| v.as_str()) {
 			let cd = strsim::levenshtein(c, cand);
-			let score = (ab as isize - cd as isize).abs() as usize;
+			let score = (ab as isize - cd as isize).unsigned_abs();
 			if score < best_score {
 				best = Some(cand);
 				best_score = score;

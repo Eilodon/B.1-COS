@@ -1,6 +1,6 @@
 //! Định nghĩa FEP_Cell - Vòng lặp sống cơ bản
-use async_trait::async_trait;
 use crate::aca_layer::ACALayer;
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait FEPCell: Send + Sync {

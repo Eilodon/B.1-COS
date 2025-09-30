@@ -1,5 +1,7 @@
 # 🔱 Pandora Genesis SDK
 
+[![Rust CI/CD](https://github.com/OWNER/REPO/actions/workflows/rust.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/rust.yml)
+
 **Pandora Genesis** là một Software Development Kit (SDK) được viết bằng Rust, được thiết kế để trở thành nền tảng cho việc xây dựng các hệ thống Trí tuệ Nhân tạo có khả năng tự cải thiện đệ quy (Recursive Self-Improvement AI).
 
 Dự án này được xây dựng dựa trên luận đề trung tâm: **Trí tuệ thực sự không phải là kiến thức, mà là sự tinh thông trong việc học cách học (Meta-Learning Mastery).**
@@ -24,6 +26,17 @@ cargo build --workspace
 
 ```bash
 cargo test --workspace --all-features
+```
+
+### Lựa chọn skill bằng feature flags
+
+`pandora_tools` hỗ trợ feature flags để tuỳ chọn biên dịch skill nhằm tối ưu kích thước:
+
+- Mặc định bật tất cả: `arithmetic`, `logical_reasoning`, `information_retrieval`, `pattern_matching`, `analogy_reasoning`.
+- Ví dụ chỉ bật 2 skill:
+
+```bash
+cargo build -p pandora_tools --no-default-features --features "arithmetic,pattern_matching"
 ```
 
 ## 🤝 Đóng góp

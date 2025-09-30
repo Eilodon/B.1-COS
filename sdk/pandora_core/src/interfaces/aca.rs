@@ -1,9 +1,11 @@
+use crate::ontology::CognitiveFlow;
 use async_trait::async_trait;
-use crate::ontology::{DataEidos, CognitiveFlow};
 
 /// AcaLayer cung cấp danh tính lớp (tên lớp) để phục vụ logging/telemetry.
 /// Hợp đồng: trả về tên tĩnh, ngắn gọn, dùng để nhận diện lớp.
-pub trait AcaLayer { fn layer_name(&self) -> &'static str; }
+pub trait AcaLayer {
+    fn layer_name(&self) -> &'static str;
+}
 
 /// PerceptionLayer chịu trách nhiệm tiếp nhận và tiền xử lý kích thích đầu vào.
 /// Hợp đồng: không được block lâu; cập nhật trạng thái trong `CognitiveFlow` theo nhu cầu.
@@ -34,7 +36,9 @@ pub trait ManifestationLayer: AcaLayer {}
 
 pub struct PlaceholderPerceptionLayer;
 impl AcaLayer for PlaceholderPerceptionLayer {
-    fn layer_name(&self) -> &'static str { "PlaceholderPerception" }
+    fn layer_name(&self) -> &'static str {
+        "PlaceholderPerception"
+    }
 }
 #[async_trait]
 impl PerceptionLayer for PlaceholderPerceptionLayer {
@@ -46,7 +50,9 @@ impl PerceptionLayer for PlaceholderPerceptionLayer {
 
 pub struct PlaceholderKnowledgeLayer;
 impl AcaLayer for PlaceholderKnowledgeLayer {
-    fn layer_name(&self) -> &'static str { "PlaceholderKnowledge" }
+    fn layer_name(&self) -> &'static str {
+        "PlaceholderKnowledge"
+    }
 }
 #[async_trait]
 impl KnowledgeLayer for PlaceholderKnowledgeLayer {
@@ -60,24 +66,32 @@ impl KnowledgeLayer for PlaceholderKnowledgeLayer {
 
 pub struct PlaceholderCognitionLayer;
 impl AcaLayer for PlaceholderCognitionLayer {
-    fn layer_name(&self) -> &'static str { "PlaceholderCognition" }
+    fn layer_name(&self) -> &'static str {
+        "PlaceholderCognition"
+    }
 }
 impl CognitionLayer for PlaceholderCognitionLayer {}
 
 pub struct PlaceholderValueLayer;
 impl AcaLayer for PlaceholderValueLayer {
-    fn layer_name(&self) -> &'static str { "PlaceholderValue" }
+    fn layer_name(&self) -> &'static str {
+        "PlaceholderValue"
+    }
 }
 impl ValueLayer for PlaceholderValueLayer {}
 
 pub struct PlaceholderReflectionLayer;
 impl AcaLayer for PlaceholderReflectionLayer {
-    fn layer_name(&self) -> &'static str { "PlaceholderReflection" }
+    fn layer_name(&self) -> &'static str {
+        "PlaceholderReflection"
+    }
 }
 impl ReflectionLayer for PlaceholderReflectionLayer {}
 
 pub struct PlaceholderManifestationLayer;
 impl AcaLayer for PlaceholderManifestationLayer {
-    fn layer_name(&self) -> &'static str { "PlaceholderManifestation" }
+    fn layer_name(&self) -> &'static str {
+        "PlaceholderManifestation"
+    }
 }
 impl ManifestationLayer for PlaceholderManifestationLayer {}

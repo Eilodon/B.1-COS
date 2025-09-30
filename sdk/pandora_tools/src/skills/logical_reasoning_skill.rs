@@ -70,7 +70,7 @@ impl SkillModule for LogicalReasoningSkill {
 	async fn execute(&self, input: SkillInput) -> SkillOutput {
 		let ast = input.get("ast").ok_or(PandoraError::SkillExecution { skill_name: "logical_reasoning".into(), message: "Thiếu trường 'ast'".into() })?;
 		let context = input.get("context").and_then(|v| v.as_object()).ok_or(PandoraError::SkillExecution { skill_name: "logical_reasoning".into(), message: "Thiếu hoặc sai kiểu 'context'".into() })?;
-		match self.evaluate_node(ast, context) {
+		match Self::evaluate_node(ast, context) {
 			Ok(result) => Ok(json!({"result": result})),
 			Err(e) => Err(PandoraError::SkillExecution { skill_name: "logical_reasoning".into(), message: e }),
 		}
@@ -78,7 +78,7 @@ impl SkillModule for LogicalReasoningSkill {
 }
 
 impl LogicalReasoningSkill {
-	fn evaluate_node(&self, node: &Value, context: &serde_json::Map<String, Value>) -> Result<bool, String> {
+    fn evaluate_node(node: &Value, context: &serde_json::Map<String, Value>) -> Result<bool, String> {
 	let node_type = node.get("type").and_then(|v| v.as_str()).ok_or_else(|| "Thiếu trường 'type'".to_string())?;
 		match node_type {
 			"CONST" => node.get("value").and_then(|v| v.as_bool()).ok_or_else(|| "Thiếu hoặc sai kiểu 'value' cho CONST".to_string()),
@@ -88,12 +88,12 @@ impl LogicalReasoningSkill {
 			},
 			"NOT" => {
 				let child = node.get("child").ok_or_else(|| "Thiếu trường 'child' cho NOT".to_string())?;
-				Ok(!self.evaluate_node(child, context)?)
+                Ok(!Self::evaluate_node(child, context)?)
 			},
 			"AND" => {
 				let children = node.get("children").and_then(|v| v.as_array()).ok_or_else(|| "Thiếu hoặc sai kiểu 'children' cho AND".to_string())?;
-				for child in children {
-					if !self.evaluate_node(child, context)? {
+                for child in children {
+                    if !Self::evaluate_node(child, context)? {
 						return Ok(false);
 					}
 				}
@@ -101,8 +101,8 @@ impl LogicalReasoningSkill {
 			},
 			"OR" => {
 				let children = node.get("children").and_then(|v| v.as_array()).ok_or_else(|| "Thiếu hoặc sai kiểu 'children' cho OR".to_string())?;
-				for child in children {
-					if self.evaluate_node(child, context)? {
+                for child in children {
+                    if Self::evaluate_node(child, context)? {
 						return Ok(true);
 					}
 				}

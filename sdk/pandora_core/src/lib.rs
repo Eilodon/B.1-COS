@@ -10,7 +10,7 @@
 //! - **`interfaces`**: Các giao diện (traits) trừu tượng định hình nên một thực thể nhận thức,
 //!   bao gồm `FEPCell` và các tầng `ACALayer`.
 
-pub mod interfaces;
-pub mod ontology;
 pub mod aca_layer;
 pub mod fep_cell;
+pub mod interfaces;
+pub mod ontology;

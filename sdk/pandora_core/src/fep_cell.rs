@@ -1,24 +1,18 @@
-use crate::interfaces::skandhas::{
-    RupaSkandha, VedanaSkandha, SannaSkandha, SankharaSkandha, VinnanaSkandha,
-};
+use crate::interfaces::skandhas::*;
 use crate::ontology::EpistemologicalFlow;
-use std::collections::HashMap;
+use async_trait::async_trait;
 
-/// Một FEP Cell có cấu trúc, điều phối một tập hợp các Uẩn (Skandhas).
-/// Nó không tự chứa logic nghiệp vụ, mà đóng vai trò là "bộ não" điều phối
-/// luồng dữ liệu qua các "cơ quan" chức năng chuyên biệt theo kiến trúc Ngũ Uẩn.
-pub struct OrchestratingFEPCell {
+/// `SkandhaProcessor` là FEP Cell thế hệ V3, được thiết kế để vận hành
+/// Luồng Nhận Thức Luận theo pipeline Ngũ Uẩn.
+pub struct SkandhaProcessor {
     rupa: Box<dyn RupaSkandha>,
     vedana: Box<dyn VedanaSkandha>,
     sanna: Box<dyn SannaSkandha>,
     sankhara: Box<dyn SankharaSkandha>,
     vinnana: Box<dyn VinnanaSkandha>,
-
-    internal_model: HashMap<String, String>,
-    prediction_error: f64,
 }
 
-impl OrchestratingFEPCell {
+impl SkandhaProcessor {
     pub fn new(
         rupa: Box<dyn RupaSkandha>,
         vedana: Box<dyn VedanaSkandha>,
@@ -26,45 +20,32 @@ impl OrchestratingFEPCell {
         sankhara: Box<dyn SankharaSkandha>,
         vinnana: Box<dyn VinnanaSkandha>,
     ) -> Self {
-        Self {
-            rupa,
-            vedana,
-            sanna,
-            sankhara,
-            vinnana,
-            internal_model: HashMap::new(),
-            prediction_error: 0.0,
-        }
+        println!("✅ SkandhaProcessor V3 đã được khởi tạo.");
+        Self { rupa, vedana, sanna, sankhara, vinnana }
     }
 
-    /// Thực hiện một chu trình nhận thức-hành động hoàn chỉnh theo kiến trúc Ngũ Uẩn.
-    pub async fn run_cycle(&mut self, event: Vec<u8>) {
-        println!("--- Chu trình Ngũ Uẩn Bắt đầu ---");
+    /// Vận hành một chu trình nhận thức Ngũ Uẩn hoàn chỉnh.
+    /// Trả về một "Nhận thức" có thể được tái sinh thành sự kiện mới.
+    pub async fn run_epistemological_cycle(&self, event: Vec<u8>) -> Option<Vec<u8>> {
+        println!("\n--- LUỒNG NHẬN THỨC LUẬN BẮT ĐẦU ---");
 
-        // 1. Sắc Uẩn: Tiếp nhận sự kiện nguyên thủy
+        // 1. Sắc: Tiếp nhận sự kiện
         let mut flow = self.rupa.process_event(event).await;
-        println!("[{}] Đã tiếp nhận sự kiện.", self.rupa.name());
-
-        // 2. Thọ Uẩn: Gán cảm thọ đạo đức
+        
+        // 2. Thọ: Gán cảm giác
         self.vedana.feel(&mut flow).await;
-        println!("[{}] Đã gán cảm thọ.", self.vedana.name());
-
-        // 3. Tưởng Uẩn: Nhận diện quy luật và mẫu hình
+        
+        // 3. Tưởng: Nhận diện quy luật
         self.sanna.perceive(&mut flow).await;
-        println!("[{}] Đã nhận diện quy luật.", self.sanna.name());
-
-        // 4. Hành Uẩn: Khởi phát ý chỉ hành động
+        
+        // 4. Hành: Khởi phát ý chỉ
         self.sankhara.form_intent(&mut flow).await;
-        println!("[{}] Đã khởi phát ý chỉ.", self.sankhara.name());
-
-        // 5. Thức Uẩn: Tổng hợp và tái sinh
-        if let Some(new_event) = self.vinnana.synthesize(&flow).await {
-            println!("[{}] Đã tái sinh sự kiện mới.", self.vinnana.name());
-            // Có thể xử lý sự kiện mới ở đây
-        } else {
-            println!("[{}] Chu trình hoàn tất, không cần tái sinh.", self.vinnana.name());
-        }
-
-        println!("--- Chu trình Ngũ Uẩn Kết thúc ---");
+        
+        // 5. Thức: Tổng hợp và tái sinh
+        let reborn_event = self.vinnana.synthesize(&flow).await;
+        
+        println!("--- LUỒNG NHẬN THỨC LUẬN KẾT THÚC ---");
+        
+        reborn_event
     }
 }

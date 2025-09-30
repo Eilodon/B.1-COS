@@ -1,1 +1,0 @@
-com.b_one.rust_core

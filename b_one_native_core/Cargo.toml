@@ -1,7 +1,0 @@
-[workspace]
-members = [
-    "b_one_core_native",
-    "b_one_protocols_native",
-    "b_one_tools_native",
-]
-resolver = "2"

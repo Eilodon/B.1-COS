@@ -1,0 +1,33 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install melos
+        run: dart pub global activate melos
+
+      - name: Melos bootstrap
+        working-directory: notes_app_rebuilt
+        run: melos bootstrap
+
+      - name: Analyze
+        working-directory: notes_app_rebuilt
+        run: melos run analyze
+
+      - name: Test
+        working-directory: notes_app_rebuilt
+        run: melos run test
+

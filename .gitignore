@@ -2,10 +2,11 @@
 /target/
 **/target/
 Cargo.lock
-# VSCode
+
+# IDEs
 .vscode/
-# Android leftovers
-b_one_android_app/
-# OS
+.idea/
+
+# OS generated files
 .DS_Store
 Thumbs.db

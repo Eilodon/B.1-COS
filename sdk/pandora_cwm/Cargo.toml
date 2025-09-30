@@ -1,6 +1,19 @@
 [package]
 name = "pandora_cwm"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+license = "Apache-2.0"
+
+[features]
+default = []
+ml = ["dep:candle-core", "dep:candle-nn"]
 
 [dependencies]
+pandora_core = { path = "../pandora_core" }
+pandora_error = { path = "../pandora_error" }
+
+num-complex = "0.4"
+rustfft = "6.1"
+
+candle-core = { version = "0.3.1", optional = true }
+candle-nn = { version = "0.3.1", optional = true }

@@ -1,0 +1,11 @@
+# Rust
+/target/
+**/target/
+Cargo.lock
+# VSCode
+.vscode/
+# Android leftovers
+b_one_android_app/
+# OS
+.DS_Store
+Thumbs.db

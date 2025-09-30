@@ -1,6 +1,3 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
 #[cfg(feature = "ml")]
 use pandora_cwm::nn::uq_models::ProbabilisticOutput;
 use serde::{Deserialize, Serialize};
@@ -60,15 +57,5 @@ impl MetaCognitiveGovernor {
         let decision = self.rule_engine.evaluate(cwm_output);
         println!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");
         decision
-    }
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
     }
 }

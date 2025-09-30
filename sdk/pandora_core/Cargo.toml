@@ -13,6 +13,7 @@ async-trait = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 fnv = "1.0"
+pandora_error = { path = "../pandora_error" }
 
 [dev-dependencies]
 

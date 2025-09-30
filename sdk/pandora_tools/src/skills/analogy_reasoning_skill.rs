@@ -31,6 +31,7 @@ use pandora_core::interfaces::skills::{SkillModule, SkillDescriptor, SkillOutput
 use serde_json::Value as SkillInput;
 use async_trait::async_trait;
 use serde_json::json;
+use pandora_error::PandoraError;
 
 pub struct AnalogyReasoningSkill;
 
@@ -46,10 +47,10 @@ impl SkillModule for AnalogyReasoningSkill {
 	}
 
 	async fn execute(&self, input: SkillInput) -> SkillOutput {
-		let a = input.get("a").and_then(|v| v.as_str()).ok_or("Thiếu trường 'a'")?;
-		let b = input.get("b").and_then(|v| v.as_str()).ok_or("Thiếu trường 'b'")?;
-		let c = input.get("c").and_then(|v| v.as_str()).ok_or("Thiếu trường 'c'")?;
-		let candidates = input.get("candidates").and_then(|v| v.as_array()).ok_or("Thiếu trường 'candidates'")?;
+		let a = input.get("a").and_then(|v| v.as_str()).ok_or(PandoraError::SkillExecution { skill_name: "analogy_reasoning".into(), message: "Thiếu trường 'a'".into() })?;
+		let b = input.get("b").and_then(|v| v.as_str()).ok_or(PandoraError::SkillExecution { skill_name: "analogy_reasoning".into(), message: "Thiếu trường 'b'".into() })?;
+		let c = input.get("c").and_then(|v| v.as_str()).ok_or(PandoraError::SkillExecution { skill_name: "analogy_reasoning".into(), message: "Thiếu trường 'c'".into() })?;
+		let candidates = input.get("candidates").and_then(|v| v.as_array()).ok_or(PandoraError::SkillExecution { skill_name: "analogy_reasoning".into(), message: "Thiếu trường 'candidates'".into() })?;
 		// Đo khoảng cách ký tự đơn giản giữa (a, b) và (c, d)
 		let ab = strsim::levenshtein(a, b);
 		let mut best = None;
@@ -65,7 +66,7 @@ impl SkillModule for AnalogyReasoningSkill {
 		if let Some(ans) = best {
 			Ok(json!({"best_match": ans}))
 		} else {
-			Err("Không tìm được đáp án phù hợp".to_string())
+			Err(PandoraError::SkillExecution { skill_name: "analogy_reasoning".into(), message: "Không tìm được đáp án phù hợp".into() })
 		}
 	}
 }

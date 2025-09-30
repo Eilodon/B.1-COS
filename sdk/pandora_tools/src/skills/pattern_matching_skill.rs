@@ -23,7 +23,7 @@ use pandora_core::interfaces::skills::{SkillModule, SkillDescriptor, SkillOutput
 use serde_json::Value as SkillInput;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use pandora_error::PandoraError;
 
 pub struct PatternMatchingSkill;
 
@@ -39,10 +39,10 @@ impl SkillModule for PatternMatchingSkill {
 	}
 
 	async fn execute(&self, input: SkillInput) -> SkillOutput {
-		let pattern = input.get("pattern").and_then(|v| v.as_str()).ok_or("Thiếu trường 'pattern'")?;
-		let candidates = input.get("candidates").and_then(|v| v.as_array()).ok_or("Thiếu trường 'candidates'")?;
+		let pattern = input.get("pattern").and_then(|v| v.as_str()).ok_or(PandoraError::SkillExecution { skill_name: "pattern_matching".into(), message: "Thiếu trường 'pattern'".into() })?;
+		let candidates = input.get("candidates").and_then(|v| v.as_array()).ok_or(PandoraError::SkillExecution { skill_name: "pattern_matching".into(), message: "Thiếu trường 'candidates'".into() })?;
 		let pat = pattern.replace("*", ".*");
-		let re = regex::Regex::new(&format!("^{}$", pat)).map_err(|e| format!("Lỗi regex: {}", e))?;
+		let re = regex::Regex::new(&format!("^{}$", pat)).map_err(|e| PandoraError::SkillExecution { skill_name: "pattern_matching".into(), message: format!("Lỗi regex: {}", e) })?;
 		let matches: Vec<_> = candidates.iter()
 			.filter_map(|c| c.as_str())
 			.filter(|c| re.is_match(c))

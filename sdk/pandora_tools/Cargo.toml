@@ -8,10 +8,19 @@ description = "B.ONE Cognitive OS - Native Tools (empty for now)"
 authors = ["B.ONE Team <team@b1os.dev>"]
 license = "Apache-2.0"
 
+[features]
+default = ["arithmetic", "logical_reasoning", "information_retrieval", "pattern_matching", "analogy_reasoning"]
+arithmetic = ["dep:meval"]
+logical_reasoning = []
+information_retrieval = []
+pattern_matching = ["dep:regex"]
+analogy_reasoning = ["dep:strsim"]
+
 [dependencies]
 pandora_core = { path = "../pandora_core" }
 async-trait = "0.1"
 serde_json = "1.0"
-meval = "0.2" # Cho ArithmeticSkill
-regex = "1.11"
-strsim = "0.11"
+meval = { version = "0.2", optional = true } # Cho ArithmeticSkill
+regex = { version = "1.10", optional = true }
+strsim = { version = "0.11", optional = true }
+pandora_error = { path = "../pandora_error" }

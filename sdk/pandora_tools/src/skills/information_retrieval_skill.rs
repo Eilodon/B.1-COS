@@ -23,6 +23,7 @@ use pandora_core::interfaces::skills::{SkillModule, SkillDescriptor, SkillOutput
 use serde_json::Value as SkillInput;
 use async_trait::async_trait;
 use serde_json::json;
+use pandora_error::PandoraError;
 
 pub struct InformationRetrievalSkill;
 
@@ -38,8 +39,8 @@ impl SkillModule for InformationRetrievalSkill {
 	}
 
 	async fn execute(&self, input: SkillInput) -> SkillOutput {
-		let query = input.get("query").and_then(|v| v.as_str()).ok_or("Thiếu trường 'query'")?;
-		let docs = input.get("documents").and_then(|v| v.as_array()).ok_or("Thiếu trường 'documents'")?;
+		let query = input.get("query").and_then(|v| v.as_str()).ok_or(PandoraError::SkillExecution { skill_name: "information_retrieval".into(), message: "Thiếu trường 'query'".into() })?;
+		let docs = input.get("documents").and_then(|v| v.as_array()).ok_or(PandoraError::SkillExecution { skill_name: "information_retrieval".into(), message: "Thiếu trường 'documents'".into() })?;
 		let matches: Vec<_> = docs.iter()
 			.filter_map(|d| d.as_str())
 			.filter(|doc| doc.to_lowercase().contains(&query.to_lowercase()))

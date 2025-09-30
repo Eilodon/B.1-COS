@@ -29,6 +29,7 @@ use serde_json::Value as SkillInput;
 use async_trait::async_trait;
 use serde_json::json;
 use meval::eval_str;
+use pandora_error::PandoraError;
 
 pub struct ArithmeticSkill;
 
@@ -44,10 +45,10 @@ impl SkillModule for ArithmeticSkill {
 	}
 
 	async fn execute(&self, input: SkillInput) -> SkillOutput {
-		let expr = input.get("expression").and_then(|v| v.as_str()).ok_or("Thiếu trường 'expression'")?;
+		let expr = input.get("expression").and_then(|v| v.as_str()).ok_or(PandoraError::SkillExecution { skill_name: "arithmetic".into(), message: "Thiếu trường 'expression'".into() })?;
 		match eval_str(expr) {
 			Ok(result) => Ok(json!({"result": result})),
-			Err(e) => Err(format!("Lỗi tính toán: {}", e)),
+			Err(e) => Err(PandoraError::SkillExecution { skill_name: "arithmetic".into(), message: format!("Lỗi tính toán: {}", e) }),
 		}
 	}
 }

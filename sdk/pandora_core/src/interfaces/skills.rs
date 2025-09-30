@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use serde::{Serialize, Deserialize};
 use serde_json::Value as SkillInput; // Đổi tên để rõ ràng
+use pandora_error::PandoraError;
 
-pub type SkillOutput = Result<serde_json::Value, String>;
+pub type SkillOutput = Result<serde_json::Value, PandoraError>;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SkillDescriptor {

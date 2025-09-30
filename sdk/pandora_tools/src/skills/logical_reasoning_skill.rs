@@ -52,6 +52,7 @@ use pandora_core::interfaces::skills::{SkillModule, SkillDescriptor, SkillOutput
 use serde_json::Value as SkillInput;
 use async_trait::async_trait;
 use serde_json::{json, Value};
+use pandora_error::PandoraError;
 
 pub struct LogicalReasoningSkill;
 
@@ -67,11 +68,11 @@ impl SkillModule for LogicalReasoningSkill {
 	}
 
 	async fn execute(&self, input: SkillInput) -> SkillOutput {
-		let ast = input.get("ast").ok_or("Thiếu trường 'ast'")?;
-		let context = input.get("context").and_then(|v| v.as_object()).ok_or("Thiếu hoặc sai kiểu 'context'")?;
+		let ast = input.get("ast").ok_or(PandoraError::SkillExecution { skill_name: "logical_reasoning".into(), message: "Thiếu trường 'ast'".into() })?;
+		let context = input.get("context").and_then(|v| v.as_object()).ok_or(PandoraError::SkillExecution { skill_name: "logical_reasoning".into(), message: "Thiếu hoặc sai kiểu 'context'".into() })?;
 		match self.evaluate_node(ast, context) {
 			Ok(result) => Ok(json!({"result": result})),
-			Err(e) => Err(e),
+			Err(e) => Err(PandoraError::SkillExecution { skill_name: "logical_reasoning".into(), message: e }),
 		}
 	}
 }

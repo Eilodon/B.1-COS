@@ -2,6 +2,6 @@
 members = [
     "pandora_core",
     "pandora_protocols",
-    "pandora_tools",
+    "pandora_tools", "pandora_uniffi",
 ]
 resolver = "2"

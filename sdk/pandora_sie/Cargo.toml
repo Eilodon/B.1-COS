@@ -1,6 +1,11 @@
 [package]
 name = "pandora_sie"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+license = "Apache-2.0"
 
 [dependencies]
+pandora_core = { path = "../pandora_core" }
+pandora_mcg = { path = "../pandora_mcg" }
+pandora_error = { path = "../pandora_error" }
+async-trait = "0.1"

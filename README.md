@@ -28,6 +28,21 @@ cargo build --workspace
 cargo test --workspace --all-features
 ```
 
+### Bật các tính năng ML (tùy chọn)
+
+Các mô-đun ML được gate bằng feature flags để tránh xung đột phụ thuộc khi không cần:
+
+- `pandora_cwm/ml`: Bật các phụ thuộc candle-rs (candle-core, candle-nn)
+- `pandora_mcg/ml`: Liên kết với `pandora_cwm/ml` để dùng đầu ra xác suất (UQ)
+
+Ví dụ build với ML cho hai crate này:
+
+```bash
+cargo build -p pandora_cwm -p pandora_mcg --features pandora_cwm/ml,pandora_mcg/ml
+```
+
+Lưu ý: ML có thể yêu cầu đồng bộ phiên bản `rand`/`half` của hệ thống. Nếu gặp lỗi phụ thuộc, hãy giữ ML ở dạng optional (mặc định) hoặc bật dần từng crate để khoanh vùng và xử lý version pin.
+
 ### Lựa chọn skill bằng feature flags
 
 `pandora_tools` hỗ trợ feature flags để tuỳ chọn biên dịch skill nhằm tối ưu kích thước:

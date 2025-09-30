@@ -1,7 +1,8 @@
 [workspace]
 members = [
-    "pandora_core",
+    "pandora_core", "pandora_error",
     "pandora_protocols",
-    "pandora_tools", "pandora_uniffi",
+    "pandora_tools",
+    "pandora_uniffi",
 ]
 resolver = "2"

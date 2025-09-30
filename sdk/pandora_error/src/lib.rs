@@ -12,9 +12,3 @@ mod tests {
         assert_eq!(result, 4);
     }
 }
-
-fn hello(name: String) -> String {
-	format!("Hello from Rust, {}!", name)
-}
-
-uniffi::include_scaffolding!("pandora");

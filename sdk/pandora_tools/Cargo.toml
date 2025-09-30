@@ -12,7 +12,7 @@ license = "Apache-2.0"
 default = ["arithmetic", "logical_reasoning", "information_retrieval", "pattern_matching", "analogy_reasoning"]
 arithmetic = ["dep:meval"]
 logical_reasoning = []
-information_retrieval = []
+information_retrieval = ["dep:lance-rust", "dep:tantivy"]
 pattern_matching = ["dep:regex"]
 analogy_reasoning = ["dep:strsim"]
 
@@ -24,3 +24,5 @@ meval = { version = "0.2", optional = true } # Cho ArithmeticSkill
 regex = { version = "1.10", optional = true }
 strsim = { version = "0.11", optional = true }
 pandora_error = { path = "../pandora_error" }
+lance-rust = { version = "0.1.0", optional = true }
+tantivy = { version = "0.19", optional = true, default-features = false, features = ["quickwit"] }

@@ -5,6 +5,6 @@ members = [
     "pandora_tools",
     "pandora_uniffi",
     "pandora_error",
-    "integration_tests",
+    "integration_tests", "pandora_orchestrator",
 ]
 resolver = "2"

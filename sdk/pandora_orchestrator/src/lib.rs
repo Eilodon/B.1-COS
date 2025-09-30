@@ -1,5 +1,5 @@
 use pandora_core::interfaces::skills::SkillModule;
-use pandora_core::ontology::CognitiveFlow;
+use pandora_core::ontology::EpistemologicalFlow;
 use pandora_error::PandoraError;
 use std::collections::HashMap;
 use std::sync::Arc;

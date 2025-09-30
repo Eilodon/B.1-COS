@@ -1,22 +1,18 @@
-use crate::interfaces::aca::{
-    AcaLayer, CognitionLayer, KnowledgeLayer, ManifestationLayer, PerceptionLayer, ReflectionLayer,
-    ValueLayer,
+use crate::interfaces::skandhas::{
+    RupaSkandha, VedanaSkandha, SannaSkandha, SankharaSkandha, VinnanaSkandha,
 };
-use crate::interfaces::fep_cell::FepCell;
-use crate::ontology::CognitiveFlow;
-use async_trait::async_trait;
+use crate::ontology::EpistemologicalFlow;
 use std::collections::HashMap;
 
-/// Một FEP Cell có cấu trúc, điều phối một tập hợp các tầng nhận thức (ACALayers).
+/// Một FEP Cell có cấu trúc, điều phối một tập hợp các Uẩn (Skandhas).
 /// Nó không tự chứa logic nghiệp vụ, mà đóng vai trò là "bộ não" điều phối
-/// luồng dữ liệu qua các "cơ quan" chức năng chuyên biệt.
+/// luồng dữ liệu qua các "cơ quan" chức năng chuyên biệt theo kiến trúc Ngũ Uẩn.
 pub struct OrchestratingFEPCell {
-    perception: Box<dyn PerceptionLayer>,
-    knowledge: Box<dyn KnowledgeLayer>,
-    cognition: Box<dyn CognitionLayer>,
-    value: Box<dyn ValueLayer>,
-    reflection: Box<dyn ReflectionLayer>,
-    manifestation: Box<dyn ManifestationLayer>,
+    rupa: Box<dyn RupaSkandha>,
+    vedana: Box<dyn VedanaSkandha>,
+    sanna: Box<dyn SannaSkandha>,
+    sankhara: Box<dyn SankharaSkandha>,
+    vinnana: Box<dyn VinnanaSkandha>,
 
     internal_model: HashMap<String, String>,
     prediction_error: f64,
@@ -24,43 +20,51 @@ pub struct OrchestratingFEPCell {
 
 impl OrchestratingFEPCell {
     pub fn new(
-        perception: Box<dyn PerceptionLayer>,
-        knowledge: Box<dyn KnowledgeLayer>,
-        cognition: Box<dyn CognitionLayer>,
-        value: Box<dyn ValueLayer>,
-        reflection: Box<dyn ReflectionLayer>,
-        manifestation: Box<dyn ManifestationLayer>,
+        rupa: Box<dyn RupaSkandha>,
+        vedana: Box<dyn VedanaSkandha>,
+        sanna: Box<dyn SannaSkandha>,
+        sankhara: Box<dyn SankharaSkandha>,
+        vinnana: Box<dyn VinnanaSkandha>,
     ) -> Self {
         Self {
-            perception,
-            knowledge,
-            cognition,
-            value,
-            reflection,
-            manifestation,
+            rupa,
+            vedana,
+            sanna,
+            sankhara,
+            vinnana,
             internal_model: HashMap::new(),
             prediction_error: 0.0,
         }
     }
 
-    /// Thực hiện một chu trình nhận thức-hành động hoàn chỉnh.
-    pub async fn run_cycle(&mut self, stimulus: Vec<u8>) {
-        let mut flow = CognitiveFlow { raw_stimulus: Some(stimulus), ..Default::default() };
+    /// Thực hiện một chu trình nhận thức-hành động hoàn chỉnh theo kiến trúc Ngũ Uẩn.
+    pub async fn run_cycle(&mut self, event: Vec<u8>) {
+        println!("--- Chu trình Ngũ Uẩn Bắt đầu ---");
 
-        println!("--- Chu trình Nhận thức Bắt đầu ---");
+        // 1. Sắc Uẩn: Tiếp nhận sự kiện nguyên thủy
+        let mut flow = self.rupa.process_event(event).await;
+        println!("[{}] Đã tiếp nhận sự kiện.", self.rupa.name());
 
-        // 1. Cảm nhận
-        self.perception.process_stimulus(&mut flow).await;
-        println!("[{}] Đã xử lý kích thích.", self.perception.layer_name());
+        // 2. Thọ Uẩn: Gán cảm thọ đạo đức
+        self.vedana.feel(&mut flow).await;
+        println!("[{}] Đã gán cảm thọ.", self.vedana.name());
 
-        // 2. Tri thức
-        self.knowledge.represent(&mut flow).await;
-        println!("[{}] Đã biểu diễn tri thức.", self.knowledge.layer_name());
-        self.knowledge.retrieve(&mut flow).await;
-        println!("[{}] Đã truy hồi tri thức.", self.knowledge.layer_name());
+        // 3. Tưởng Uẩn: Nhận diện quy luật và mẫu hình
+        self.sanna.perceive(&mut flow).await;
+        println!("[{}] Đã nhận diện quy luật.", self.sanna.name());
 
-        // ... Các tầng khác sẽ được gọi ở đây trong các sprint sau ...
+        // 4. Hành Uẩn: Khởi phát ý chỉ hành động
+        self.sankhara.form_intent(&mut flow).await;
+        println!("[{}] Đã khởi phát ý chỉ.", self.sankhara.name());
 
-        println!("--- Chu trình Nhận thức Kết thúc ---");
+        // 5. Thức Uẩn: Tổng hợp và tái sinh
+        if let Some(new_event) = self.vinnana.synthesize(&flow).await {
+            println!("[{}] Đã tái sinh sự kiện mới.", self.vinnana.name());
+            // Có thể xử lý sự kiện mới ở đây
+        } else {
+            println!("[{}] Chu trình hoàn tất, không cần tái sinh.", self.vinnana.name());
+        }
+
+        println!("--- Chu trình Ngũ Uẩn Kết thúc ---");
     }
 }

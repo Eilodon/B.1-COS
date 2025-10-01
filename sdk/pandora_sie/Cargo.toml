@@ -8,5 +8,5 @@ license = "Apache-2.0"
 pandora_core = { path = "../pandora_core" }
 pandora_mcg = { path = "../pandora_mcg" }
 pandora_error = { path = "../pandora_error" }
-tracing = "0.1"
-async-trait = "0.1"
+tracing = { workspace = true }
+async-trait = { workspace = true }

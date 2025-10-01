@@ -20,11 +20,11 @@ mod tests {
     async fn test_advanced_vedana_skandha() {
         let skandha = AdvancedVedanaSkandha::new(0.5, true);
         let mut flow = EpistemologicalFlow {
-            rupa: Some(b"success operation completed".to_vec().into()),
+            rupa: Some(bytes::Bytes::from_static(b"success operation completed")),
             ..Default::default()
         };
         
-        skandha.feel(&mut flow).await;
+        skandha.feel(&mut flow);
         
         assert!(flow.vedana.is_some());
         match flow.vedana.as_ref().unwrap() {
@@ -39,11 +39,11 @@ mod tests {
     async fn test_advanced_sanna_skandha() {
         let skandha = AdvancedSannaSkandha::new(0.3, true);
         let mut flow = EpistemologicalFlow {
-            rupa: Some(b"complex pattern analysis".to_vec().into()),
+            rupa: Some(bytes::Bytes::from_static(b"complex pattern analysis")),
             ..Default::default()
         };
         
-        skandha.perceive(&mut flow).await;
+        skandha.perceive(&mut flow);
         
         assert!(flow.sanna.is_some());
         assert!(flow.related_eidos.is_some());
@@ -54,7 +54,7 @@ mod tests {
     async fn test_advanced_sankhara_skandha() {
         let skandha = AdvancedSankharaSkandha::new(0.4, true);
         let mut flow = EpistemologicalFlow {
-            rupa: Some(b"critical error detected".to_vec().into()),
+            rupa: Some(bytes::Bytes::from_static(b"critical error detected")),
             vedana: Some(crate::ontology::Vedana::Unpleasant { karma_weight: -2.0 }),
             sanna: Some(crate::ontology::DataEidos {
                 active_indices: [1u32, 2u32, 3u32].iter().cloned().collect(),
@@ -63,7 +63,7 @@ mod tests {
             ..Default::default()
         };
         
-        skandha.form_intent(&mut flow).await;
+        skandha.form_intent(&mut flow);
         
         assert!(flow.sankhara.is_some());
         let intent = flow.sankhara.as_ref().unwrap();
@@ -74,7 +74,7 @@ mod tests {
     async fn test_advanced_vinnana_skandha() {
         let skandha = AdvancedVinnanaSkandha::new(0.5, true);
         let flow = EpistemologicalFlow {
-            rupa: Some(b"important event".to_vec().into()),
+            rupa: Some(bytes::Bytes::from_static(b"important event")),
             vedana: Some(crate::ontology::Vedana::Pleasant { karma_weight: 1.5 }),
             sanna: Some(crate::ontology::DataEidos {
                 active_indices: [1u32, 2u32, 3u32, 4u32, 5u32].iter().cloned().collect(),
@@ -86,10 +86,10 @@ mod tests {
                     dimensionality: 2048,
                 }
             ].into()),
-            sankhara: Some("TEST_INTENT".to_string().into()),
+            sankhara: Some(std::sync::Arc::<str>::from("TEST_INTENT")),
         };
         
-        let result = skandha.synthesize(&flow).await;
+        let result = skandha.synthesize(&flow);
         
         assert!(result.is_some());
         let result_bytes = result.unwrap();
@@ -174,20 +174,20 @@ mod tests {
         let mut flow = rupa.process_event(event).await;
         
         // 2. Vedana: Feel
-        vedana.feel(&mut flow).await;
+        vedana.feel(&mut flow);
         assert!(flow.vedana.is_some());
         
         // 3. Sanna: Perceive
-        sanna.perceive(&mut flow).await;
+        sanna.perceive(&mut flow);
         assert!(flow.sanna.is_some());
         assert!(flow.related_eidos.is_some());
         
         // 4. Sankhara: Form intent
-        sankhara.form_intent(&mut flow).await;
+        sankhara.form_intent(&mut flow);
         assert!(flow.sankhara.is_some());
         
         // 5. Vinnana: Synthesize
-        let result = vinnana.synthesize(&flow).await;
+        let result = vinnana.synthesize(&flow);
         assert!(result.is_some());
         
         let result_bytes = result.unwrap();

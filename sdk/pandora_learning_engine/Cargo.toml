@@ -10,4 +10,4 @@ pandora_cwm = { path = "../pandora_cwm" }
 pandora_mcg = { path = "../pandora_mcg" }
 pandora_sie = { path = "../pandora_sie" }
 pandora_error = { path = "../pandora_error" }
-tracing = "0.1"
+tracing = { workspace = true }

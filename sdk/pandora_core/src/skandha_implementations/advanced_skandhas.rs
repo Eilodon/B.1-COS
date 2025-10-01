@@ -29,10 +29,7 @@ impl RupaSkandha for AdvancedRupaSkandha {
         // Clone event để sử dụng trong metadata
         let event_clone = event.clone();
         
-        let flow = EpistemologicalFlow {
-            rupa: Some(std::borrow::Cow::Owned(event)),
-            ..Default::default()
-        };
+        let flow = EpistemologicalFlow::from_bytes(bytes::Bytes::from(event));
         
         // Thêm metadata nếu được bật
         if self.enable_metadata {
@@ -71,9 +68,8 @@ impl Skandha for AdvancedVedanaSkandha {
     fn name(&self) -> &'static str { "Advanced Vedana (Feeling)" }
 }
 
-#[async_trait]
 impl VedanaSkandha for AdvancedVedanaSkandha {
-    async fn feel(&self, flow: &mut EpistemologicalFlow) {
+    fn feel(&self, flow: &mut EpistemologicalFlow) {
         info!("[{}] Phân tích cảm thọ với hệ thống scoring nâng cao.", self.name());
         
         let feeling = if let Some(rupa) = &flow.rupa {
@@ -159,9 +155,8 @@ impl Skandha for AdvancedSannaSkandha {
     fn name(&self) -> &'static str { "Advanced Sanna (Perception)" }
 }
 
-#[async_trait]
 impl SannaSkandha for AdvancedSannaSkandha {
-    async fn perceive(&self, flow: &mut EpistemologicalFlow) {
+    fn perceive(&self, flow: &mut EpistemologicalFlow) {
         info!("[{}] Nhận diện patterns với thuật toán nâng cao.", self.name());
         
         let eidos = if let Some(rupa) = &flow.rupa {
@@ -265,16 +260,15 @@ impl Skandha for AdvancedSankharaSkandha {
     fn name(&self) -> &'static str { "Advanced Sankhara (Formations)" }
 }
 
-#[async_trait]
 impl SankharaSkandha for AdvancedSankharaSkandha {
-    async fn form_intent(&self, flow: &mut EpistemologicalFlow) {
+    fn form_intent(&self, flow: &mut EpistemologicalFlow) {
         info!("[{}] Khởi phát ý chỉ với hệ thống quyết định nâng cao.", self.name());
         
         let intent = self.analyze_and_decide(flow);
         
         if let Some(intent) = intent {
             info!("[{}] Khởi phát ý chỉ: '{}'", self.name(), intent);
-            flow.sankhara = Some(std::borrow::Cow::Owned(intent));
+            flow.sankhara = Some(std::sync::Arc::<str>::from(intent));
         } else {
             info!("[{}] Không có ý chỉ nào được khởi phát.", self.name());
         }
@@ -370,9 +364,8 @@ impl Skandha for AdvancedVinnanaSkandha {
     fn name(&self) -> &'static str { "Advanced Vinnana (Consciousness)" }
 }
 
-#[async_trait]
 impl VinnanaSkandha for AdvancedVinnanaSkandha {
-    async fn synthesize(&self, flow: &EpistemologicalFlow) -> Option<Vec<u8>> {
+    fn synthesize(&self, flow: &EpistemologicalFlow) -> Option<Vec<u8>> {
         info!("[{}] Tổng hợp nhận thức với thuật toán nâng cao.", self.name());
         
         let synthesis_score = self.calculate_synthesis_score(flow);

@@ -9,16 +9,23 @@ license = "Apache-2.0"
 [dependencies]
 
 pandora_protocols = { path = "../pandora_protocols" }
-async-trait = "0.1"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-fnv = "1.0"
 pandora_error = { path = "../pandora_error" }
-tracing = "0.1"
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+fnv = { workspace = true }
+tracing = { workspace = true }
 smallvec = "1.13"
+bytes = "1.10"
+parking_lot = "0.12"
 
 [dev-dependencies]
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { workspace = true }
+criterion = "0.5"
+
+[[bench]]
+name = "flow_bench"
+harness = false
 
 [lib]
 name = "pandora_core"

@@ -2,6 +2,8 @@ use crate::interfaces::skandhas::*;
 use crate::ontology::{EpistemologicalFlow, Vedana};
 use async_trait::async_trait;
 use tracing::{info, debug, warn};
+use bytes::Bytes;
+use crate::intents;
 
 // --- 1. Sắc Uẩn ---
 pub struct BasicRupaSkandha;
@@ -12,10 +14,7 @@ impl Skandha for BasicRupaSkandha {
 impl RupaSkandha for BasicRupaSkandha {
     async fn process_event(&self, event: Vec<u8>) -> EpistemologicalFlow {
         info!("[{}] Tiếp nhận sự kiện nguyên thủy.", self.name());
-        EpistemologicalFlow {
-            rupa: Some(std::borrow::Cow::Owned(event)),
-            ..Default::default()
-        }
+        EpistemologicalFlow::from_bytes(Bytes::from(event))
     }
 }
 
@@ -24,9 +23,8 @@ pub struct BasicVedanaSkandha;
 impl Skandha for BasicVedanaSkandha {
     fn name(&self) -> &'static str { "Basic Vedana (Feeling)" }
 }
-#[async_trait]
 impl VedanaSkandha for BasicVedanaSkandha {
-    async fn feel(&self, flow: &mut EpistemologicalFlow) {
+    fn feel(&self, flow: &mut EpistemologicalFlow) {
         // Logic đạo đức đơn giản: Nếu event chứa từ "error", gán "Khổ Thọ".
         let feeling = if let Some(rupa) = &flow.rupa {
             if String::from_utf8_lossy(rupa.as_ref()).contains("error") {
@@ -48,9 +46,8 @@ pub struct BasicSannaSkandha;
 impl Skandha for BasicSannaSkandha {
     fn name(&self) -> &'static str { "Basic Sanna (Perception)" }
 }
-#[async_trait]
 impl SannaSkandha for BasicSannaSkandha {
-    async fn perceive(&self, flow: &mut EpistemologicalFlow) {
+    fn perceive(&self, flow: &mut EpistemologicalFlow) {
         info!("[{}] Đối chiếu sự kiện, nhận diện quy luật.", self.name());
         
         // Tạo DataEidos dựa trên nội dung sự kiện
@@ -120,13 +117,12 @@ pub struct BasicSankharaSkandha;
 impl Skandha for BasicSankharaSkandha {
     fn name(&self) -> &'static str { "Basic Sankhara (Formations)" }
 }
-#[async_trait]
 impl SankharaSkandha for BasicSankharaSkandha {
-    async fn form_intent(&self, flow: &mut EpistemologicalFlow) {
+    fn form_intent(&self, flow: &mut EpistemologicalFlow) {
         // Logic đơn giản: Nếu cảm thấy "Khổ", khởi ý niệm "báo cáo lỗi".
         if let Some(Vedana::Unpleasant {..}) = flow.vedana {
             info!("[{}] Khởi phát ý chỉ: 'Báo cáo lỗi'.", self.name());
-            flow.sankhara = Some(std::borrow::Cow::Borrowed("REPORT_ERROR"));
+            flow.set_static_intent(intents::intents::REPORT_ERROR);
         } else {
              info!("[{}] Không có ý chỉ nào được khởi phát.", self.name());
         }
@@ -138,12 +134,11 @@ pub struct BasicVinnanaSkandha;
 impl Skandha for BasicVinnanaSkandha {
     fn name(&self) -> &'static str { "Basic Vinnana (Consciousness)" }
 }
-#[async_trait]
 impl VinnanaSkandha for BasicVinnanaSkandha {
-    async fn synthesize(&self, flow: &EpistemologicalFlow) -> Option<Vec<u8>> {
+    fn synthesize(&self, flow: &EpistemologicalFlow) -> Option<Vec<u8>> {
         // Logic đơn giản: Nếu có "Ý Chỉ", tổng hợp nó thành một sự kiện mới để tái sinh.
         if let Some(intent) = &flow.sankhara {
-            let conscious_event = format!("Synthesized consciousness: Intent is '{}'", intent.as_ref());
+            let conscious_event = format!("Synthesized consciousness: Intent is '{}'", intent);
             info!("[{}] Tổng hợp nhận thức. Tái sinh sự kiện mới.", self.name());
             Some(conscious_event.into_bytes())
         } else {

@@ -8,11 +8,11 @@ license = "Apache-2.0"
 pandora_core = { path = "../pandora_core" }
 pandora_tools = { path = "../pandora_tools" }
 pandora_error = { path = "../pandora_error" }
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-serde_json = "1.0"
-tracing = "0.1"
-tracing-subscriber = "0.3"
-async-trait = "0.1"
+tokio = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+async-trait = { workspace = true }
 parking_lot = "0.12"
 fastrand = "2"
 

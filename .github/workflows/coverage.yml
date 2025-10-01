@@ -27,15 +27,13 @@ jobs:
     - name: Install cargo-llvm-cov
       run: cargo install cargo-llvm-cov
     
-    - name: Generate coverage report
-      run: |
-        cd sdk
-        cargo llvm-cov --workspace --all-features --html --output-dir ../coverage
+    - name: Generate coverage report (HTML + LCOV)
+      run: bash scripts/coverage.sh
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        file: ./coverage/lcov.info
+        files: ./coverage/lcov.info
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false

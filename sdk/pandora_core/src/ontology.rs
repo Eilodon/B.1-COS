@@ -1,4 +1,5 @@
 use fnv::FnvHashSet;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataEidos {
@@ -21,23 +22,40 @@ pub enum Vedana {
 /// Tối ưu hóa cho performance với minimal allocations.
 #[derive(Debug, Clone, Default)]
 pub struct EpistemologicalFlow {
-    /// Sắc (Form): Sự kiện nguyên thủy, hình hài của thông tin.
-    /// Sử dụng Cow để tránh cloning không cần thiết
-    pub rupa: Option<std::borrow::Cow<'static, [u8]>>,
+    /// Sắc: Use Bytes for zero-copy slicing
+    pub rupa: Option<bytes::Bytes>,
     
-    /// Thọ (Feeling): Cảm giác đạo đức được gán cho sự kiện.
+    /// Thọ: Inlined for cache efficiency
     pub vedana: Option<Vedana>,
     
-    /// Tưởng (Perception): Các quy luật, mẫu hình được nhận diện.
+    /// Tưởng: Compact representation
     pub sanna: Option<DataEidos>,
     
-    /// Các Chân Ảnh liên quan được truy hồi từ Tưởng.
-    /// Sử dụng SmallVec để tránh heap allocation cho small collections
+    /// Related eidos: SmallVec avoids heap for small counts
     pub related_eidos: Option<smallvec::SmallVec<[DataEidos; 4]>>,
     
-    /// Hành (Mental Formations): "Ý Chỉ" hành động được khởi phát.
-    /// Sử dụng Cow để tránh String cloning
-    pub sankhara: Option<std::borrow::Cow<'static, str>>,
+    /// Hành: Use Arc<str> for cheap cloning of interned strings
+    pub sankhara: Option<Arc<str>>,
     
     // Thức (Consciousness) sẽ là kết quả cuối cùng của dòng chảy.
+}
+
+impl EpistemologicalFlow {
+    /// Create flow from owned bytes (zero-copy)
+    pub fn from_bytes(bytes: bytes::Bytes) -> Self {
+        Self {
+            rupa: Some(bytes),
+            ..Default::default()
+        }
+    }
+
+    /// Set intent using static string (zero-copy)
+    pub fn set_static_intent(&mut self, intent: &'static str) {
+        self.sankhara = Some(Arc::from(intent));
+    }
+
+    /// Set intent using interned string (cheap clone)
+    pub fn set_interned_intent(&mut self, intent: Arc<str>) {
+        self.sankhara = Some(intent);
+    }
 }

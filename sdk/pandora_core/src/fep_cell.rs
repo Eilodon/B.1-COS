@@ -31,17 +31,17 @@ impl SkandhaProcessor {
         // 1. Sắc: Tiếp nhận sự kiện
         let mut flow = self.rupa.process_event(event).await;
         
-        // 2. Thọ: Gán cảm giác
-        self.vedana.feel(&mut flow).await;
+        // 2. Thọ: Gán cảm giác (sync)
+        self.vedana.feel(&mut flow);
         
-        // 3. Tưởng: Nhận diện quy luật
-        self.sanna.perceive(&mut flow).await;
+        // 3. Tưởng: Nhận diện quy luật (sync)
+        self.sanna.perceive(&mut flow);
         
-        // 4. Hành: Khởi phát ý chỉ
-        self.sankhara.form_intent(&mut flow).await;
+        // 4. Hành: Khởi phát ý chỉ (sync)
+        self.sankhara.form_intent(&mut flow);
         
-        // 5. Thức: Tổng hợp và tái sinh
-        let reborn_event = self.vinnana.synthesize(&flow).await;
+        // 5. Thức: Tổng hợp và tái sinh (sync)
+        let reborn_event = self.vinnana.synthesize(&flow);
         
         info!("--- LUỒNG NHẬN THỨC LUẬN KẾT THÚC ---");
         

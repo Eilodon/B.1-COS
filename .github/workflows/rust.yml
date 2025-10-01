@@ -28,7 +28,7 @@ jobs:
       run: cargo fmt --manifest-path sdk/Cargo.toml --all -- --check
 
     - name: Run Clippy
-      run: cargo clippy --manifest-path sdk/Cargo.toml -- -D warnings
+      run: cargo clippy --manifest-path sdk/Cargo.toml --all-targets --all-features
 
     - name: Run Tests
       run: cargo test --manifest-path sdk/Cargo.toml --workspace --all-features

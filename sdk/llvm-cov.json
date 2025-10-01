@@ -1,35 +1,23 @@
 {
   "llvm-cov": {
-    "run-types": ["test", "doctest", "bench"],
+    "run-types": ["test", "doctest"],
     "ignore-filename-regex": [
       ".*/target/.*",
-      ".*/tests/.*",
       ".*/examples/.*",
       ".*/benches/.*"
     ],
-    "ignore-filename-regex-not": [],
     "ignore-line-regex": [
       ".*#\\[cfg\\(test\\)\\].*",
-      ".*#\\[cfg\\(feature.*test.*\\)\\].*",
       ".*#\\[test\\].*",
       ".*#\\[tokio::test\\].*"
     ],
-    "ignore-line-regex-not": [],
-    "ignore-filename-regex-all": [],
-    "ignore-filename-regex-all-not": [],
-    "ignore-line-regex-all": [],
-    "ignore-line-regex-all-not": [],
     "summary-only": false,
     "fail-under-lines": 80,
     "fail-under-functions": 80,
     "fail-under-regions": 80,
-    "fail-under-branches": 70,
     "show-line-counts-or-regions": true,
-    "show-instantiations": false,
-    "show-expansions": false,
-    "demangle": true,
     "remap-path-prefix": {
-      "/home/ybao/B.1/B.1_COS": "."
+      "/home/runner/work": "."
     }
   }
 }

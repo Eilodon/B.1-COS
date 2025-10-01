@@ -249,7 +249,7 @@ impl Orchestrator {
                         if !descriptor.output_schema.is_empty() {
                             if let Ok(schema_json) = serde_json::from_str::<serde_json::Value>(&descriptor.output_schema) {
                                 if let Err(err) = compile_and_validate(&schema_json, output_val) {
-                                    return Err(PandoraError::InvalidSkillOutput {
+                                    return Err(PandoraError::InvalidSkillInput {
                                         skill_name: skill_name.to_string(),
                                         message: format!("Output schema validation failed: {}", err),
                                     });
@@ -399,6 +399,7 @@ impl Default for CircuitBreakerPolicy {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 enum CircuitState {
     Closed { failures: u32 },
     Open { opened_at: Instant },

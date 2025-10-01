@@ -25,6 +25,7 @@ config = { version = "0.14", default-features = false, features = ["toml"] }
 
 [dev-dependencies]
 proptest = { workspace = true }
+criterion = { version = "0.5", features = ["html_reports", "async_tokio"] }
 
 [features]
 default = []
@@ -34,3 +35,7 @@ schema_validation = ["jsonschema"]
 [[example]]
 name = "simple_cli"
 path = "examples/simple_cli.rs"
+
+[[bench]]
+name = "load_test"
+harness = false

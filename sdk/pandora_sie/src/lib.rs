@@ -45,8 +45,8 @@ impl ImprovementStrategy for RefinementStrategy {
                 );
                 Ok(ImprovementAction { description })
             }
-            _ => Err(PandoraError::Config(
-                "Chiến lược không phù hợp với trigger này.".to_string(),
+            _ => Err(PandoraError::config(
+                "Chiến lược không phù hợp với trigger này.",
             )),
         }
     }
@@ -82,7 +82,7 @@ impl SelfImprovementEngine {
             info!("--- Động cơ Tự Cải thiện Kết thúc ---");
             Ok(action)
         } else {
-            Err(PandoraError::Config(format!(
+            Err(PandoraError::config(format!(
                 "Không tìm thấy chiến lược phù hợp cho trigger: {:?}",
                 trigger
             )))

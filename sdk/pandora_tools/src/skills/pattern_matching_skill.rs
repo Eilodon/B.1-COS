@@ -39,26 +39,16 @@ impl SkillModule for PatternMatchingSkill {
     }
 
     async fn execute(&self, input: SkillInput) -> SkillOutput {
-        let pattern =
-            input
-                .get("pattern")
-                .and_then(|v| v.as_str())
-                .ok_or(PandoraError::SkillExecution {
-                    skill_name: "pattern_matching".into(),
-                    message: "Thiếu trường 'pattern'".into(),
-                })?;
+        let pattern = input
+            .get("pattern")
+            .and_then(|v| v.as_str())
+            .ok_or(PandoraError::InvalidSkillInput { skill_name: "pattern_matching".into(), message: "Missing field 'pattern'".into() })?;
         let candidates = input.get("candidates").and_then(|v| v.as_array()).ok_or(
-            PandoraError::SkillExecution {
-                skill_name: "pattern_matching".into(),
-                message: "Thiếu trường 'candidates'".into(),
-            },
+            PandoraError::InvalidSkillInput { skill_name: "pattern_matching".into(), message: "Missing field 'candidates'".into() },
         )?;
         let pat = pattern.replace("*", ".*");
-        let re =
-            regex::Regex::new(&format!("^{}$", pat)).map_err(|e| PandoraError::SkillExecution {
-                skill_name: "pattern_matching".into(),
-                message: format!("Lỗi regex: {}", e),
-            })?;
+        let re = regex::Regex::new(&format!("^{}$", pat))
+            .map_err(|e| PandoraError::skill_exec("pattern_matching", format!("Lỗi regex: {}", e)))?;
         let matches: Vec<_> = candidates
             .iter()
             .filter_map(|c| c.as_str())

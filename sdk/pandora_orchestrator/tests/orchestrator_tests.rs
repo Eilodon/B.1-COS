@@ -37,10 +37,7 @@ impl pandora_core::interfaces::skills::SkillModule for MockSkill {
         _input: serde_json::Value,
     ) -> pandora_core::interfaces::skills::SkillOutput {
         if self.should_fail {
-            Err(pandora_error::PandoraError::SkillExecution {
-                skill_name: self.name.clone(),
-                message: "Mock failure".to_string(),
-            })
+            Err(pandora_error::PandoraError::skill_exec(self.name.clone(), "Mock failure"))
         } else {
             Ok(json!({"result": "success", "skill": self.name}))
         }
@@ -89,10 +86,10 @@ async fn test_orchestrator_trait_process_request_skill_not_found() {
 
     assert!(result.is_err());
     match result.unwrap_err() {
-        pandora_error::PandoraError::Config(msg) => {
-            assert!(msg.contains("Không tìm thấy skill"));
+        pandora_error::PandoraError::SkillNotFound { skill_name } => {
+            assert_eq!(skill_name, "non_existent");
         }
-        _ => panic!("Expected Config error"),
+        _ => panic!("Expected SkillNotFound error"),
     }
 }
 
@@ -108,10 +105,7 @@ async fn test_orchestrator_trait_process_request_skill_execution_error() {
 
     assert!(result.is_err());
     match result.unwrap_err() {
-        pandora_error::PandoraError::SkillExecution {
-            skill_name,
-            message,
-        } => {
+        pandora_error::PandoraError::SkillExecution { skill_name, message, .. } => {
             assert_eq!(skill_name, "mock_fail");
             assert_eq!(message, "Mock failure");
         }

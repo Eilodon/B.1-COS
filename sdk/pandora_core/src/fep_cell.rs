@@ -1,5 +1,6 @@
 use crate::interfaces::skandhas::*;
 use crate::ontology::EpistemologicalFlow;
+use crate::world_model::WorldModel;
 use async_trait::async_trait;
 
 /// `SkandhaProcessor` là FEP Cell thế hệ V3, được thiết kế để vận hành

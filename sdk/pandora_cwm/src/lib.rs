@@ -6,4 +6,5 @@
 
 pub mod nn;
 pub mod vsa;
+pub mod interdependent_repr;
 

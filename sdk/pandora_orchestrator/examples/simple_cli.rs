@@ -8,12 +8,21 @@ use pandora_tools::skills::{
     pattern_matching_skill::PatternMatchingSkill,
 };
 use std::io::{self, Write};
+use tracing_subscriber::{fmt, EnvFilter};
 use std::sync::Arc;
+
+fn init_logging() {
+    let filter = EnvFilter::from_default_env()
+        .add_directive("pandora_core=info".parse().unwrap())
+        .add_directive("pandora_simulation=info".parse().unwrap())
+        .add_directive("pandora_orchestrator=info".parse().unwrap());
+
+    fmt().with_env_filter(filter).init();
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Initialize tracing subscriber
-    tracing_subscriber::fmt::init();
+    init_logging();
 
     println!("🔱 Pandora Genesis SDK - CLI Demo");
     println!("=====================================\n");

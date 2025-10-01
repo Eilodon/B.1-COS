@@ -3,10 +3,20 @@ use pandora_orchestrator::OrchestratorTrait;
 use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};
+use tracing_subscriber::{fmt, EnvFilter};
+
+fn init_logging() {
+    let filter = EnvFilter::from_default_env()
+        .add_directive("pandora_core=info".parse().unwrap())
+        .add_directive("pandora_simulation=info".parse().unwrap())
+        .add_directive("pandora_orchestrator=info".parse().unwrap());
+
+    fmt().with_env_filter(filter).init();
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
+    init_logging();
 
     // Setup orchestrator
     let mut registry = SkillRegistry::new();

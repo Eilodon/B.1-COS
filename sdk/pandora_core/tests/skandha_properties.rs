@@ -16,7 +16,7 @@ fn pipeline_never_panics() {
             Box::new(BasicSankharaSkandha),
             Box::new(BasicVinnanaSkandha),
         );
-        let _result = futures::executor::block_on(processor.run_epistemological_cycle(event));
+        let _result = processor.run_epistemological_cycle(event);
     });
 }
 
@@ -29,7 +29,7 @@ fn empty_input_no_intent() {
         Box::new(BasicSankharaSkandha),
         Box::new(BasicVinnanaSkandha),
     );
-    let result = futures::executor::block_on(processor.run_epistemological_cycle(vec![]));
+    let result = processor.run_epistemological_cycle(vec![]);
     assert!(result.is_none());
 }
 
@@ -46,7 +46,7 @@ fn error_events_trigger_intent() {
         let mut event = prefix;
         event.extend_from_slice(b"error");
         event.extend(suffix);
-        let result = futures::executor::block_on(processor.run_epistemological_cycle(event));
+        let result = processor.run_epistemological_cycle(event);
         prop_assert!(result.is_some());
         let bytes = result.unwrap();
         let output = String::from_utf8_lossy(&bytes);
@@ -64,8 +64,8 @@ fn processing_is_deterministic() {
             Box::new(BasicSankharaSkandha),
             Box::new(BasicVinnanaSkandha),
         );
-        let result1 = futures::executor::block_on(processor.run_epistemological_cycle(event.clone()));
-        let result2 = futures::executor::block_on(processor.run_epistemological_cycle(event));
+        let result1 = processor.run_epistemological_cycle(event.clone());
+        let result2 = processor.run_epistemological_cycle(event);
         prop_assert_eq!(result1, result2);
     });
 }

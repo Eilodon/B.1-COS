@@ -38,6 +38,10 @@ harness = false
 name = "comprehensive_bench"
 harness = false
 
+[[bench]]
+name = "sync_vs_async"
+harness = false
+
 [profile.bench]
 debug = true
 

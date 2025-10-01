@@ -1,5 +1,4 @@
 use crate::ontology::EpistemologicalFlow;
-use async_trait::async_trait;
 
 /// Trait cơ sở cho tất cả các "Uẩn" (Skandha) trong kiến trúc nhận thức.
 pub trait Skandha: Send + Sync {
@@ -8,10 +7,9 @@ pub trait Skandha: Send + Sync {
 }
 
 /// 1. Sắc Uẩn (Rūpa-skandha): Tầng tiếp nhận sự kiện nguyên thủy.
-#[async_trait]
 pub trait RupaSkandha: Skandha {
-    /// Xử lý một sự kiện thô và khởi tạo Dòng Chảy Nhận Thức.
-    async fn process_event(&self, event: Vec<u8>) -> EpistemologicalFlow;
+    /// Xử lý một sự kiện thô và khởi tạo Dòng Chảy Nhận Thức. (đồng bộ)
+    fn process_event(&self, event: Vec<u8>) -> EpistemologicalFlow;
 }
 
 /// 2. Thọ Uẩn (Vedanā-skandha): Tầng gán "cảm giác" đạo đức.

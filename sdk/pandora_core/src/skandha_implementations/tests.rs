@@ -1,10 +1,5 @@
 #[cfg(test)]
-#[allow(
-    clippy::module_inception,
-    clippy::panic,
-    clippy::unwrap_used,
-    clippy::expect_used
-)]
+#[allow(clippy::module_inception, clippy::panic, clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use crate::interfaces::skandhas::*;
     use crate::ontology::EpistemologicalFlow;
@@ -16,14 +11,11 @@ mod tests {
         let skandha = AdvancedRupaSkandha::new(true, true);
         let event = b"test event with metadata".to_vec();
 
-        let flow = skandha.process_event(event).await;
+        let flow = skandha.process_event(event);
 
         assert!(flow.rupa.is_some());
         assert_eq!(
-            flow.rupa
-                .as_ref()
-                .expect("expected rupa bytes in test")
-                .as_ref(),
+            flow.rupa.as_ref().expect("expected rupa bytes in test").as_ref(),
             b"test event with metadata"
         );
     }
@@ -59,11 +51,7 @@ mod tests {
 
         assert!(flow.sanna.is_some());
         assert!(flow.related_eidos.is_some());
-        assert!(!flow
-            .related_eidos
-            .as_ref()
-            .expect("expected related in test")
-            .is_empty());
+        assert!(!flow.related_eidos.as_ref().expect("expected related in test").is_empty());
     }
 
     #[tokio::test]
@@ -192,7 +180,7 @@ mod tests {
         let event = b"critical system error: database connection failed".to_vec();
 
         // 1. Rupa: Process event
-        let mut flow = rupa.process_event(event).await;
+        let mut flow = rupa.process_event(event);
 
         // 2. Vedana: Feel
         vedana.feel(&mut flow);

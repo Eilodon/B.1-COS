@@ -20,8 +20,8 @@ async fn test_skandha_cycle_v3() {
     println!("\n--- KỊCH BẢN 1: SỰ KIỆN TRUNG TÍNH ---");
     let normal_event = "hello world".to_string().into_bytes();
 
-    // Vận hành luồng nhận thức
-    let reborn_event_1 = processor.run_epistemological_cycle(normal_event).await;
+    // Vận hành luồng nhận thức (biến thể async)
+    let reborn_event_1 = processor.run_epistemological_cycle_async(normal_event).await;
 
     // Kiểm tra: Vì sự kiện là trung tính, không có "Ý Chỉ" nào được khởi phát
     // và do đó, không có sự kiện nào được "tái sinh".
@@ -34,8 +34,8 @@ async fn test_skandha_cycle_v3() {
     println!("\n--- KỊCH BẢN 2: SỰ KIỆN CÓ LỖI ---");
     let error_event = "system critical error detected".to_string().into_bytes();
 
-    // Vận hành luồng nhận thức
-    let reborn_event_2 = processor.run_epistemological_cycle(error_event).await;
+    // Vận hành luồng nhận thức (biến thể async)
+    let reborn_event_2 = processor.run_epistemological_cycle_async(error_event).await;
 
     // Kiểm tra:
     // 1. Phải có một sự kiện được tái sinh.

@@ -42,7 +42,7 @@ impl TranscendentalProcessor {
         info!("\n--- VÒNG LẶP SIÊU VIỆT BẮT ĐẦU ---");
 
         // 1. Vận hành Luồng Nhận thức Luận
-        let _reborn_event = self.processor.run_epistemological_cycle(event).await;
+        let _reborn_event = self.processor.run_epistemological_cycle_async(event).await;
 
         // 2. Tự Đánh giá (Self-Evaluation) - Tạo flow giả lập
         let flow = EpistemologicalFlow::default();

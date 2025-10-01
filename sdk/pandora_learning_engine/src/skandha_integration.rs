@@ -31,7 +31,7 @@ impl SkandhaProcessorWithLearning {
         info!("\n--- LUỒNG NHẬN THỨC LUẬN VÀ TỰ ĐÁNH GIÁ BẮT ĐẦU ---");
 
         // 1. Chạy chu trình nhận thức Ngũ Uẩn
-        let reborn_event = self.processor.run_epistemological_cycle(event).await;
+        let reborn_event = self.processor.run_epistemological_cycle_async(event).await;
 
         // 2. Tạo một EpistemologicalFlow giả lập để tính toán phần thưởng
         let flow = EpistemologicalFlow::default();

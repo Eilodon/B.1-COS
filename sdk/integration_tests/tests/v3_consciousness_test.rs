@@ -19,7 +19,7 @@ async fn test_v3_consciousness_cycle() {
     // --- 2. Test Case 1: Sự kiện bình thường ---
     println!("\n--- TEST CASE 1: Sự kiện bình thường ---");
     let normal_event = b"Hello, world!".to_vec();
-    let result1 = processor.run_epistemological_cycle(normal_event).await;
+    let result1 = processor.run_epistemological_cycle_async(normal_event).await;
 
     // Sự kiện bình thường không tạo ra ý chỉ, nên không có tái sinh
     assert!(result1.is_none());
@@ -28,7 +28,7 @@ async fn test_v3_consciousness_cycle() {
     // --- 3. Test Case 2: Sự kiện có lỗi ---
     println!("\n--- TEST CASE 2: Sự kiện có lỗi ---");
     let error_event = b"System error: connection failed".to_vec();
-    let result2 = processor.run_epistemological_cycle(error_event).await;
+    let result2 = processor.run_epistemological_cycle_async(error_event).await;
 
     // Sự kiện có lỗi sẽ tạo ra ý chỉ "REPORT_ERROR", nên có tái sinh
     assert!(result2.is_some());
@@ -42,7 +42,7 @@ async fn test_v3_consciousness_cycle() {
 
     // --- 4. Test Case 3: Vòng lặp tái sinh ---
     println!("\n--- TEST CASE 3: Vòng lặp tái sinh ---");
-    let reborn_result = processor.run_epistemological_cycle(reborn_event).await;
+    let reborn_result = processor.run_epistemological_cycle_async(reborn_event).await;
 
     // Sự kiện tái sinh không chứa "error" nên không tạo ra ý chỉ mới
     assert!(reborn_result.is_none());

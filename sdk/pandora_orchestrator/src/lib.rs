@@ -8,6 +8,8 @@ use std::time::Instant;
 pub mod circuit_breaker;
 pub use circuit_breaker::{CircuitBreakerConfig, CircuitBreakerManager, CircuitStats};
 pub mod simple_api;
+pub mod static_skills;
+pub use static_skills::{HybridSkillRegistry, StaticSkill};
 use once_cell::sync::Lazy;
 use prometheus::{register_counter_vec, register_histogram_vec, CounterVec, HistogramVec};
 use tokio::time::sleep;
@@ -84,6 +86,8 @@ pub struct Orchestrator {
     retry_policy: RetryPolicy,
     timeout_policy: TimeoutPolicy,
     circuit_breaker: Arc<CircuitBreakerManager>,
+    // Optional hybrid registry for static-dispatch skills
+    hybrid_registry: Option<Arc<HybridSkillRegistry>>,
 }
 
 impl Orchestrator {
@@ -122,7 +126,24 @@ impl Orchestrator {
             retry_policy: RetryPolicy::default(),
             timeout_policy: TimeoutPolicy::default(),
             circuit_breaker: Arc::new(CircuitBreakerManager::new(circuit_config)),
+            hybrid_registry: None,
         }
+    }
+
+    /// Create orchestrator with static dispatch for built-in skills.
+    /// Faster for built-in skills; dynamic plugins still supported.
+    pub fn new_with_static_dispatch() -> Self {
+        let mut hybrid = HybridSkillRegistry::new();
+        // Register built-in skills
+        let _ = hybrid.register_static("arithmetic");
+        let _ = hybrid.register_static("logical_reasoning");
+        let _ = hybrid.register_static("pattern_matching");
+        let _ = hybrid.register_static("analogy_reasoning");
+
+        let registry = Arc::new(SkillRegistry::new());
+        let mut this = Self::with_config(registry, CircuitBreakerConfig::default());
+        this.hybrid_registry = Some(Arc::new(hybrid));
+        this
     }
 
     /// Cấu hình các policy v2 theo builder-style.
@@ -238,12 +259,30 @@ impl Orchestrator {
         skill_name: &str,
         input: serde_json::Value,
     ) -> Result<serde_json::Value, PandoraError> {
-        let skill =
-            self.registry
-                .get_skill(skill_name)
-                .ok_or_else(|| PandoraError::SkillNotFound {
-                    skill_name: skill_name.to_string(),
-                })?;
+        // Prefer hybrid registry when available
+        if let Some(hybrid) = &self.hybrid_registry {
+            if let Some(skill_ref) = hybrid.get(skill_name) {
+                let timeout_ms = self.timeout_policy.timeout_ms;
+                let exec_fut = skill_ref.execute(input);
+                return match tokio_timeout(Duration::from_millis(timeout_ms), exec_fut).await {
+                    Ok(res) => {
+                        METRICS.request_total.with_label_values(&[skill_name]).inc();
+                        res
+                    }
+                    Err(_) => Err(PandoraError::Timeout {
+                        operation: format!("skill:{}", skill_name),
+                        timeout_ms,
+                    }),
+                };
+            }
+        }
+
+        let skill = self
+            .registry
+            .get_skill(skill_name)
+            .ok_or_else(|| PandoraError::SkillNotFound {
+                skill_name: skill_name.to_string(),
+            })?;
 
         // Optional: validate input against skill's declared JSON schema
         #[cfg(feature = "schema_validation")]
@@ -642,6 +681,7 @@ impl OrchestratorConfig {
             retry_policy: retry,
             timeout_policy: timeout,
             circuit_breaker: Arc::new(CircuitBreakerManager::new(circuit_cfg)),
+            hybrid_registry: orchestrator.hybrid_registry,
         }
     }
 }

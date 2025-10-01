@@ -40,3 +40,7 @@ path = "examples/simple_cli.rs"
 [[bench]]
 name = "load_test"
 harness = false
+
+[[bench]]
+name = "circuit_breaker_bench"
+harness = false

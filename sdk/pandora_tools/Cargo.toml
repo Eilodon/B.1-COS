@@ -26,6 +26,7 @@ serde_json = { workspace = true }
 regex = { workspace = true, optional = true }
 strsim = { workspace = true, optional = true }
 tracing = { workspace = true }
+fnv = { workspace = true }
 # Temporarily disabled due to dependency conflicts
 # lance = { version = "0.13", optional = true }
 # tantivy = { version = "0.19", optional = true, default-features = false, features = ["quickwit"] }

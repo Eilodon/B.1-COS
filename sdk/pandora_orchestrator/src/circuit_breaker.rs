@@ -79,23 +79,23 @@ impl CircuitBreakerManager {
     /// Check if circuit is open for a skill
     pub fn is_open(&self, skill_name: &str) -> bool {
         let mut states = self.states.lock();
-        
-        // Get or create state
-        let state = states.get_or_insert(skill_name.to_string(), || {
-            CircuitState::Closed {
-                failures: 0,
-                last_updated: Instant::now(),
-            }
-        });
+        // Ensure exists
+        if states.get(skill_name).is_none() {
+            states.put(
+                skill_name.to_string(),
+                CircuitState::Closed { failures: 0, last_updated: Instant::now() },
+            );
+        }
+        // Get mutable reference for in-place transitions
+        let state = states.get_mut(skill_name).expect("state just inserted exists");
 
         // Check if expired and reset if needed
         let ttl = Duration::from_secs(self.config.state_ttl_secs);
         if state.is_expired(ttl) {
             debug!("Circuit state expired for '{}'", skill_name);
-            *state = CircuitState::Closed {
-                failures: 0,
-                last_updated: Instant::now(),
-            };
+            // Remove expired entry entirely; caller sees circuit as closed
+            drop(state);
+            states.pop(skill_name);
             return false;
         }
 
@@ -109,8 +109,9 @@ impl CircuitBreakerManager {
                 if elapsed >= cooldown {
                     // Transition to half-open
                     debug!("Circuit cooldown elapsed for '{}', entering half-open", skill_name);
+                    let consumed = self.config.half_open_trial.saturating_sub(1);
                     *state = CircuitState::HalfOpen {
-                        trial_permits: self.config.half_open_trial,
+                        trial_permits: consumed,
                         last_updated: Instant::now(),
                     };
                     false
@@ -170,10 +171,16 @@ impl CircuitBreakerManager {
                     opened_at: Instant::now(),
                 }
             }
-            _ => CircuitState::Closed {
-                failures: 1,
-                last_updated: Instant::now(),
-            },
+            _ => {
+                if self.config.failure_threshold <= 1 {
+                    CircuitState::Open { opened_at: Instant::now() }
+                } else {
+                    CircuitState::Closed {
+                        failures: 1,
+                        last_updated: Instant::now(),
+                    }
+                }
+            }
         };
 
         states.put(skill_name.to_string(), new_state);

@@ -4,6 +4,7 @@
 /// của vạn vật. Nó học cách biểu diễn các thực thể không phải như những đối tượng
 /// độc lập, mà như những phần tử trong một mạng lưới quan hệ phức tạp.
 use std::collections::HashMap;
+use fnv::FnvHashMap;
 use tracing::info;
 
 /// Biểu diễn một thực thể trong mạng lưới duyên khởi.
@@ -28,16 +29,16 @@ pub enum EntityState {
 
 /// Mạng lưới duyên khởi chứa tất cả các thực thể và quan hệ giữa chúng.
 pub struct InterdependentNetwork {
-    entities: HashMap<String, InterdependentEntity>,
-    relationships: HashMap<(String, String), f64>, // Quan hệ với trọng số
+    entities: FnvHashMap<String, InterdependentEntity>,
+    relationships: FnvHashMap<(String, String), f64>, // Quan hệ với trọng số
 }
 
 impl InterdependentNetwork {
     pub fn new() -> Self {
         info!("IRL: Khởi tạo Mạng lưới Duyên khởi");
         Self {
-            entities: HashMap::new(),
-            relationships: HashMap::new(),
+            entities: FnvHashMap::default(),
+            relationships: FnvHashMap::default(),
         }
     }
 
@@ -133,7 +134,7 @@ impl InterdependentNetwork {
                 let influence = self.calculate_influence(other_id, entity_id);
                 if influence > 0.1 {
                     // Ngưỡng ảnh hưởng tối thiểu
-                    influencers.push((other_id.clone(), influence));
+                    influencers.push((other_id.clone().to_string(), influence));
                 }
             }
         }

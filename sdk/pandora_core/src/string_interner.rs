@@ -1,18 +1,18 @@
-use parking_lot::RwLock;
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 use std::sync::Arc;
+use parking_lot::RwLock;
 
 /// Thread-safe string interner for reducing allocations
 /// of frequently-used strings
 #[derive(Clone)]
 pub struct StringInterner {
-    strings: Arc<RwLock<HashMap<String, Arc<str>>>>,
+    strings: Arc<RwLock<FnvHashMap<String, Arc<str>>>>,
 }
 
 impl StringInterner {
     pub fn new() -> Self {
         Self {
-            strings: Arc::new(RwLock::new(HashMap::new())),
+            strings: Arc::new(RwLock::new(FnvHashMap::default())),
         }
     }
 
@@ -87,3 +87,5 @@ mod tests {
         assert_eq!(stats.total_bytes, 10);
     }
 }
+
+

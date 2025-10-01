@@ -45,21 +45,21 @@ impl ImprovementStrategy for RefinementStrategy {
                 );
                 Ok(ImprovementAction { description })
             }
-            _ => Err(PandoraError::Config(
-                "Chiến lược không phù hợp với trigger này.".to_string(),
+            _ => Err(PandoraError::config(
+                "Chiến lược không phù hợp với trigger này.",
             )),
         }
     }
 }
 
 pub struct SelfImprovementEngine {
-    strategies: std::collections::HashMap<u8, Box<dyn ImprovementStrategy>>,
+    strategies: fnv::FnvHashMap<u8, Box<dyn ImprovementStrategy>>,
 }
 
 impl SelfImprovementEngine {
     pub fn new() -> Self {
-        let mut strategies: std::collections::HashMap<u8, Box<dyn ImprovementStrategy>> =
-            std::collections::HashMap::new();
+        let mut strategies: fnv::FnvHashMap<u8, Box<dyn ImprovementStrategy>> =
+            fnv::FnvHashMap::default();
         strategies.insert(1, Box::new(RefinementStrategy));
         info!("SIE: Đã khởi tạo và đăng ký các chiến lược tự cải thiện.");
         Self { strategies }
@@ -82,7 +82,7 @@ impl SelfImprovementEngine {
             info!("--- Động cơ Tự Cải thiện Kết thúc ---");
             Ok(action)
         } else {
-            Err(PandoraError::Config(format!(
+            Err(PandoraError::config(format!(
                 "Không tìm thấy chiến lược phù hợp cho trigger: {:?}",
                 trigger
             )))

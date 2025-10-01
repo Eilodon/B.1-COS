@@ -1,9 +1,11 @@
 use async_trait::async_trait;
 use pandora_core::interfaces::skills::SkillModule;
-use pandora_error::PandoraError;
+use pandora_error::{PandoraError, ErrorContext};
 use std::collections::HashMap;
+use fnv::FnvHashMap;
 use std::sync::Arc;
 use std::time::Duration;
+use std::time::Instant;
 mod circuit_breaker;
 use circuit_breaker::{CircuitBreakerManager, CircuitBreakerConfig, CircuitStats};
 use tokio::time::sleep;
@@ -30,14 +32,12 @@ pub trait OrchestratorTrait: Send + Sync {
 /// `SkillRegistry` chịu trách nhiệm lưu trữ và quản lý tất cả các skill có sẵn.
 /// Trong tương lai, nó sẽ có khả năng tự động khám phá các skill.
 pub struct SkillRegistry {
-    skills: HashMap<String, Arc<dyn SkillModule>>,
+    skills: FnvHashMap<String, Arc<dyn SkillModule>>,
 }
 
 impl SkillRegistry {
     pub fn new() -> Self {
-        Self {
-            skills: HashMap::new(),
-        }
+        Self { skills: FnvHashMap::default() }
     }
 
     /// Đăng ký một skill mới vào registry.
@@ -137,7 +137,7 @@ impl Orchestrator {
                 }
             }
         }
-        Err(last_err.unwrap_or(PandoraError::Unknown))
+        Err(last_err.unwrap_or(PandoraError::Unknown("Routing exhausted".into())))
     }
 
     async fn try_execute_with_policies(
@@ -148,9 +148,7 @@ impl Orchestrator {
         // Circuit breaker gate
         if self.is_circuit_open(skill_name) {
             warn!("Circuit open for skill '{}'", skill_name);
-            return Err(PandoraError::CircuitOpen {
-                skill_name: skill_name.to_string(),
-            });
+            return Err(PandoraError::CircuitOpen { resource: skill_name.to_string() });
         }
 
         // Retry with exponential backoff and timeout per attempt
@@ -172,6 +170,10 @@ impl Orchestrator {
                 }
                 Err(err) => {
                     self.record_failure(skill_name);
+                    // Không retry nếu lỗi không retryable
+                    if !err.is_retryable() {
+                        return Err(err);
+                    }
                     last_err = Some(err);
                     attempt += 1;
                     continue;
@@ -179,7 +181,7 @@ impl Orchestrator {
             }
         }
 
-        Err(last_err.unwrap_or(PandoraError::Unknown))
+        Err(last_err.unwrap_or(PandoraError::Unknown("Retry loop exited without error".into())))
     }
 
     async fn execute_with_timeout(
@@ -187,18 +189,16 @@ impl Orchestrator {
         skill_name: &str,
         input: serde_json::Value,
     ) -> Result<serde_json::Value, PandoraError> {
-        let skill = self.registry.get_skill(skill_name).ok_or_else(|| {
-            PandoraError::Config(format!("Không tìm thấy skill với tên '{}'", skill_name))
-        })?;
+        let skill = self
+            .registry
+            .get_skill(skill_name)
+            .ok_or_else(|| PandoraError::SkillNotFound { skill_name: skill_name.to_string() })?;
 
         let timeout_ms = self.timeout_policy.timeout_ms;
         let exec_fut = skill.execute(input);
         match tokio_timeout(Duration::from_millis(timeout_ms), exec_fut).await {
             Ok(res) => res,
-            Err(_) => Err(PandoraError::Timeout {
-                skill_name: skill_name.to_string(),
-                timeout_ms,
-            }),
+            Err(_) => Err(PandoraError::Timeout { operation: format!("skill:{}", skill_name), timeout_ms }),
         }
     }
 

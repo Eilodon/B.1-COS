@@ -18,6 +18,7 @@ fastrand = "2"
 
 # NEW: LRU cache
 lru = "0.12"
+fnv = { workspace = true }
 
 [[example]]
 name = "simple_cli"

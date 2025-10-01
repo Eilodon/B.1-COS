@@ -1,6 +1,6 @@
 use num_complex::Complex;
-use rustfft::FftPlanner;
 use pandora_error::PandoraError;
+use rustfft::FftPlanner;
 
 /// Thực hiện phép toán "ràng buộc" (binding) hai vector bằng phép chập tròn (circular convolution).
 /// Tương đương với phép nhân element-wise trong miền tần số.
@@ -58,19 +58,29 @@ pub fn bundle(vectors: &[Vec<f64>]) -> Result<Vec<f64>, PandoraError> {
     }
     let len = vectors[0].len();
     if len == 0 {
-        return Err(PandoraError::InvalidSkillInput { skill_name: "vsa_hrr".into(), message: "Cannot bundle zero-length vectors".into() });
+        return Err(PandoraError::InvalidSkillInput {
+            skill_name: "vsa_hrr".into(),
+            message: "Cannot bundle zero-length vectors".into(),
+        });
     }
     for (i, v) in vectors.iter().enumerate() {
         if v.len() != len {
             return Err(PandoraError::InvalidSkillInput {
                 skill_name: "vsa_hrr".into(),
-                message: format!("Vector dimension mismatch at index {}: expected {}, got {}", i, len, v.len()),
+                message: format!(
+                    "Vector dimension mismatch at index {}: expected {}, got {}",
+                    i,
+                    len,
+                    v.len()
+                ),
             });
         }
     }
     let mut sum = vec![0.0; len];
     for v in vectors {
-        for (i, &val) in v.iter().enumerate() { sum[i] += val; }
+        for (i, &val) in v.iter().enumerate() {
+            sum[i] += val;
+        }
     }
     Ok(sum)
 }

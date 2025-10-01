@@ -51,7 +51,7 @@ fn bundle_is_associative() {
 #[test]
 fn bundle_single_is_identity() {
     proptest!(|(v in vec_f64(16))| {
-        let result = bundle(&[v.clone()]).unwrap();
+        let result = bundle(std::slice::from_ref(&v)).unwrap();
         prop_assert_eq!(result, v);
     });
 }

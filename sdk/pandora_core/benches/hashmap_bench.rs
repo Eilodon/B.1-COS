@@ -71,5 +71,3 @@ fn bench_u64_keys(c: &mut Criterion) {
 
 criterion_group!(benches, bench_string_keys, bench_u64_keys);
 criterion_main!(benches);
-
-

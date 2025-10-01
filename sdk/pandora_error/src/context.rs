@@ -40,8 +40,10 @@ mod tests {
 
     #[test]
     fn test_error_context() {
-        let result: Result<(), std::io::Error> =
-            Err(std::io::Error::new(std::io::ErrorKind::NotFound, "file not found"));
+        let result: Result<(), std::io::Error> = Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "file not found",
+        ));
 
         let with_context = result.context("Failed to read config file");
         assert!(with_context.is_err());
@@ -56,12 +58,12 @@ mod tests {
     #[test]
     fn test_lazy_context() {
         let filename = "config.json";
-        let result: Result<(), std::io::Error> =
-            Err(std::io::Error::new(std::io::ErrorKind::NotFound, "not found"));
+        let result: Result<(), std::io::Error> = Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "not found",
+        ));
 
         let with_context = result.with_context(|| format!("Failed to read {}", filename));
         assert!(with_context.is_err());
     }
 }
-
-

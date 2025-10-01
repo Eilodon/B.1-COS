@@ -1,13 +1,13 @@
+#![allow(clippy::field_reassign_with_default)]
 use criterion::{
-    criterion_group, criterion_main, BenchmarkId, Criterion, Throughput,
-    black_box, BatchSize,
+    black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput,
 };
 use pandora_core::fep_cell::SkandhaProcessor;
-use pandora_core::skandha_implementations::basic_skandhas::*;
-use pandora_core::ontology::EpistemologicalFlow;
 use pandora_core::interfaces::skandhas::{
-    RupaSkandha, VedanaSkandha, SannaSkandha, SankharaSkandha, VinnanaSkandha,
+    RupaSkandha, SankharaSkandha, SannaSkandha, VedanaSkandha, VinnanaSkandha,
 };
+use pandora_core::ontology::EpistemologicalFlow;
+use pandora_core::skandha_implementations::basic_skandhas::*;
 use std::time::Duration;
 
 fn benchmark_skandha_pipeline(c: &mut Criterion) {
@@ -24,20 +24,14 @@ fn benchmark_skandha_pipeline(c: &mut Criterion) {
 
     for size in [10, 100, 1000, 10_000].iter() {
         group.throughput(Throughput::Bytes(*size as u64));
-        group.bench_with_input(
-            BenchmarkId::new("full_cycle", size),
-            size,
-            |b, &size| {
-                b.to_async(tokio::runtime::Runtime::new().unwrap())
-                    .iter_batched(
-                        || vec![0u8; size],
-                        |event| async {
-                            processor.run_epistemological_cycle(black_box(event)).await
-                        },
-                        BatchSize::SmallInput,
-                    );
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("full_cycle", size), size, |b, &size| {
+            b.to_async(tokio::runtime::Runtime::new().unwrap())
+                .iter_batched(
+                    || vec![0u8; size],
+                    |event| async { processor.run_epistemological_cycle(black_box(event)).await },
+                    BatchSize::SmallInput,
+                );
+        });
     }
 
     group.finish();
@@ -56,9 +50,7 @@ fn benchmark_individual_skandhas(c: &mut Criterion) {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter_batched(
                 || vec![0u8; 100],
-                |event| async {
-                    rupa.process_event(black_box(event)).await
-                },
+                |event| async { rupa.process_event(black_box(event)).await },
                 BatchSize::SmallInput,
             );
     });
@@ -97,9 +89,7 @@ fn benchmark_individual_skandhas(c: &mut Criterion) {
         let mut flow = EpistemologicalFlow::default();
         flow.sankhara = Some(std::sync::Arc::from("TEST_INTENT"));
 
-        b.iter(|| {
-            vinnana.synthesize(black_box(&flow))
-        });
+        b.iter(|| vinnana.synthesize(black_box(&flow)));
     });
 
     group.finish();
@@ -126,25 +116,21 @@ fn benchmark_memory_allocations(c: &mut Criterion) {
         let s = "common_string";
         interner.intern(s);
 
-        b.iter(|| {
-            interner.intern(black_box(s))
-        });
+        b.iter(|| interner.intern(black_box(s)));
     });
 
     group.bench_function("flow_from_bytes", |b| {
         let data = vec![0u8; 1024];
 
-        b.iter(|| {
-            EpistemologicalFlow::from_bytes(black_box(data.clone().into()))
-        });
+        b.iter(|| EpistemologicalFlow::from_bytes(black_box(data.clone().into())));
     });
 
     group.finish();
 }
 
 fn benchmark_hashmaps(c: &mut Criterion) {
-    use std::collections::HashMap;
     use fnv::FnvHashMap;
+    use std::collections::HashMap;
 
     let mut group = c.benchmark_group("hashmap_comparison");
 
@@ -212,5 +198,3 @@ criterion_group!(
     benchmark_hashmaps,
 );
 criterion_main!(benches);
-
-

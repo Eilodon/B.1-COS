@@ -1,5 +1,5 @@
 use crate::interfaces::skandhas::*;
-use crate::skandha_implementations::{basic_skandhas::*, advanced_skandhas::*};
+use crate::skandha_implementations::{advanced_skandhas::*, basic_skandhas::*};
 
 /// Factory để tạo các Skandha variants khác nhau
 pub struct SkandhaFactory;

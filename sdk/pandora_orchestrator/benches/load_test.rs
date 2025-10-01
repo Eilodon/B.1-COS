@@ -1,8 +1,8 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use pandora_orchestrator::{Orchestrator, SkillRegistry, CircuitBreakerConfig, OrchestratorTrait};
+use pandora_orchestrator::{CircuitBreakerConfig, Orchestrator, OrchestratorTrait, SkillRegistry};
 use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
-use std::sync::Arc;
 use serde_json::json;
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 fn benchmark_single_skill_execution(c: &mut Criterion) {
@@ -82,7 +82,7 @@ fn benchmark_concurrent_requests(c: &mut Criterion) {
 
 fn benchmark_circuit_breaker_overhead(c: &mut Criterion) {
     let mut group = c.benchmark_group("circuit_breaker");
-    
+
     let rt = Runtime::new().unwrap();
 
     // Without circuit breaker (baseline)
@@ -102,10 +102,8 @@ fn benchmark_circuit_breaker_overhead(c: &mut Criterion) {
     // With circuit breaker
     let mut registry_with_cb = SkillRegistry::new();
     registry_with_cb.register(Arc::new(ArithmeticSkill));
-    let orch_with_cb = Orchestrator::with_config(
-        Arc::new(registry_with_cb),
-        CircuitBreakerConfig::default(),
-    );
+    let orch_with_cb =
+        Orchestrator::with_config(Arc::new(registry_with_cb), CircuitBreakerConfig::default());
 
     group.bench_function("with_circuit_breaker", |b| {
         b.to_async(&rt).iter(|| async {
@@ -126,5 +124,3 @@ criterion_group!(
     benchmark_circuit_breaker_overhead,
 );
 criterion_main!(benches);
-
-

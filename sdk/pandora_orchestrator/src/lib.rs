@@ -1,17 +1,18 @@
 use async_trait::async_trait;
+use fnv::FnvHashMap;
 use pandora_core::interfaces::skills::SkillModule;
 use pandora_error::PandoraError;
-use fnv::FnvHashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 pub mod circuit_breaker;
-pub use circuit_breaker::{CircuitBreakerManager, CircuitBreakerConfig, CircuitStats};
+pub use circuit_breaker::{CircuitBreakerConfig, CircuitBreakerManager, CircuitStats};
+pub mod simple_api;
+use once_cell::sync::Lazy;
+use prometheus::{register_counter_vec, register_histogram_vec, CounterVec, HistogramVec};
 use tokio::time::sleep;
 use tokio::time::timeout as tokio_timeout;
-use tracing::{info, warn, instrument};
-use once_cell::sync::Lazy;
-use prometheus::{register_counter_vec, register_histogram_vec, HistogramVec, CounterVec};
+use tracing::{info, instrument, warn};
 
 #[cfg(feature = "schema_validation")]
 use jsonschema::{Draft, JSONSchema};
@@ -49,7 +50,9 @@ pub struct SkillRegistry {
 
 impl SkillRegistry {
     pub fn new() -> Self {
-        Self { skills: FnvHashMap::default() }
+        Self {
+            skills: FnvHashMap::default(),
+        }
     }
 
     /// Đăng ký một skill mới vào registry.
@@ -70,7 +73,9 @@ impl SkillRegistry {
 }
 
 impl Default for SkillRegistry {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// `Orchestrator` là bộ não trung tâm, điều phối luồng nhận thức và thực thi các skill.
@@ -107,11 +112,11 @@ impl Orchestrator {
         self.circuit_breaker.stats()
     }
 
-    pub fn with_config(
-        registry: Arc<SkillRegistry>,
-        circuit_config: CircuitBreakerConfig,
-    ) -> Self {
-        info!("Orchestrator initialized with {} skills", registry.skills.len());
+    pub fn with_config(registry: Arc<SkillRegistry>, circuit_config: CircuitBreakerConfig) -> Self {
+        info!(
+            "Orchestrator initialized with {} skills",
+            registry.skills.len()
+        );
         Self {
             registry,
             retry_policy: RetryPolicy::default(),
@@ -144,12 +149,18 @@ impl Orchestrator {
 
         let mut last_err: Option<PandoraError> = None;
         for skill_name in candidates {
-            let _timer = METRICS.request_duration.with_label_values(&[&skill_name]).start_timer();
+            let _timer = METRICS
+                .request_duration
+                .with_label_values(&[&skill_name])
+                .start_timer();
             match self.try_execute_with_policies(&skill_name, &input).await {
                 Ok(val) => return Ok(val),
                 Err(e) => {
                     warn!("Policy attempt failed for skill '{}': {}", skill_name, e);
-                    METRICS.request_errors.with_label_values(&[&skill_name]).inc();
+                    METRICS
+                        .request_errors
+                        .with_label_values(&[&skill_name])
+                        .inc();
                     last_err = Some(e);
                     // Nếu lỗi do circuit open hoặc timeout, thử fallback tiếp theo
                     continue;
@@ -157,7 +168,11 @@ impl Orchestrator {
             }
             // timer dropped here
         }
-        Err(last_err.unwrap_or(PandoraError::Unknown("Routing exhausted".into())))
+        if let Some(e) = last_err {
+            Err(e)
+        } else {
+            Err(PandoraError::Unknown("Routing exhausted".into()))
+        }
     }
 
     #[instrument(name = "orchestrator.try_execute_with_policies", skip_all, fields(skill = skill_name))]
@@ -169,7 +184,9 @@ impl Orchestrator {
         // Circuit breaker gate
         if self.is_circuit_open(skill_name) {
             warn!("Circuit open for skill '{}'", skill_name);
-            return Err(PandoraError::CircuitOpen { resource: skill_name.to_string() });
+            return Err(PandoraError::CircuitOpen {
+                resource: skill_name.to_string(),
+            });
         }
 
         // Retry with exponential backoff and timeout per attempt
@@ -191,7 +208,10 @@ impl Orchestrator {
                 }
                 Err(err) => {
                     self.record_failure(skill_name);
-                    METRICS.request_errors.with_label_values(&[skill_name]).inc();
+                    METRICS
+                        .request_errors
+                        .with_label_values(&[skill_name])
+                        .inc();
                     // Không retry nếu lỗi không retryable
                     if !err.is_retryable() {
                         return Err(err);
@@ -203,7 +223,13 @@ impl Orchestrator {
             }
         }
 
-        Err(last_err.unwrap_or(PandoraError::Unknown("Retry loop exited without error".into())))
+        if let Some(e) = last_err {
+            Err(e)
+        } else {
+            Err(PandoraError::Unknown(
+                "Retry loop exited without error".into(),
+            ))
+        }
     }
 
     #[instrument(name = "orchestrator.execute_with_timeout", skip_all, fields(skill = skill_name))]
@@ -212,11 +238,13 @@ impl Orchestrator {
         skill_name: &str,
         input: serde_json::Value,
     ) -> Result<serde_json::Value, PandoraError> {
-        let skill = self
-            .registry
-            .get_skill(skill_name)
-            .ok_or_else(|| PandoraError::SkillNotFound { skill_name: skill_name.to_string() })?;
-        
+        let skill =
+            self.registry
+                .get_skill(skill_name)
+                .ok_or_else(|| PandoraError::SkillNotFound {
+                    skill_name: skill_name.to_string(),
+                })?;
+
         // Optional: validate input against skill's declared JSON schema
         #[cfg(feature = "schema_validation")]
         {
@@ -232,7 +260,10 @@ impl Orchestrator {
                         }
                     }
                     Err(e) => {
-                        warn!("Invalid input_schema JSON for skill '{}': {}", skill_name, e);
+                        warn!(
+                            "Invalid input_schema JSON for skill '{}': {}",
+                            skill_name, e
+                        );
                     }
                 }
             }
@@ -247,11 +278,16 @@ impl Orchestrator {
                     if let Ok(ref output_val) = res {
                         let descriptor = skill.descriptor();
                         if !descriptor.output_schema.is_empty() {
-                            if let Ok(schema_json) = serde_json::from_str::<serde_json::Value>(&descriptor.output_schema) {
+                            if let Ok(schema_json) =
+                                serde_json::from_str::<serde_json::Value>(&descriptor.output_schema)
+                            {
                                 if let Err(err) = compile_and_validate(&schema_json, output_val) {
                                     return Err(PandoraError::InvalidSkillInput {
                                         skill_name: skill_name.to_string(),
-                                        message: format!("Output schema validation failed: {}", err),
+                                        message: format!(
+                                            "Output schema validation failed: {}",
+                                            err
+                                        ),
                                     });
                                 }
                             }
@@ -260,8 +296,11 @@ impl Orchestrator {
                 }
                 METRICS.request_total.with_label_values(&[skill_name]).inc();
                 res
-            },
-            Err(_) => Err(PandoraError::Timeout { operation: format!("skill:{}", skill_name), timeout_ms }),
+            }
+            Err(_) => Err(PandoraError::Timeout {
+                operation: format!("skill:{}", skill_name),
+                timeout_ms,
+            }),
         }
     }
 
@@ -410,7 +449,7 @@ enum CircuitState {
 // Config loading
 // =========================
 
-#[derive(Clone, Debug, serde::Deserialize)]
+#[derive(Clone, Debug, Default, serde::Deserialize)]
 pub struct OrchestratorConfig {
     #[serde(default)]
     pub retry: RetryConfig,
@@ -420,31 +459,38 @@ pub struct OrchestratorConfig {
     pub circuit: CircuitConfig,
 }
 
-impl Default for OrchestratorConfig {
-    fn default() -> Self {
-        Self {
-            retry: RetryConfig::default(),
-            timeout: TimeoutConfig::default(),
-            circuit: CircuitConfig::default(),
-        }
-    }
-}
+// Default derived above
 
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct RetryConfig {
-    #[serde(default = "RetryConfig::default_max_retries")] pub max_retries: u32,
-    #[serde(default = "RetryConfig::default_initial_backoff_ms")] pub initial_backoff_ms: u64,
-    #[serde(default = "RetryConfig::default_backoff_multiplier")] pub backoff_multiplier: f64,
-    #[serde(default = "RetryConfig::default_max_backoff_ms")] pub max_backoff_ms: u64,
-    #[serde(default = "RetryConfig::default_jitter_ms")] pub jitter_ms: u64,
+    #[serde(default = "RetryConfig::default_max_retries")]
+    pub max_retries: u32,
+    #[serde(default = "RetryConfig::default_initial_backoff_ms")]
+    pub initial_backoff_ms: u64,
+    #[serde(default = "RetryConfig::default_backoff_multiplier")]
+    pub backoff_multiplier: f64,
+    #[serde(default = "RetryConfig::default_max_backoff_ms")]
+    pub max_backoff_ms: u64,
+    #[serde(default = "RetryConfig::default_jitter_ms")]
+    pub jitter_ms: u64,
 }
 
 impl RetryConfig {
-    fn default_max_retries() -> u32 { 2 }
-    fn default_initial_backoff_ms() -> u64 { 50 }
-    fn default_backoff_multiplier() -> f64 { 2.0 }
-    fn default_max_backoff_ms() -> u64 { 1_000 }
-    fn default_jitter_ms() -> u64 { 25 }
+    fn default_max_retries() -> u32 {
+        2
+    }
+    fn default_initial_backoff_ms() -> u64 {
+        50
+    }
+    fn default_backoff_multiplier() -> f64 {
+        2.0
+    }
+    fn default_max_backoff_ms() -> u64 {
+        1_000
+    }
+    fn default_jitter_ms() -> u64 {
+        25
+    }
 }
 
 impl Default for RetryConfig {
@@ -461,26 +507,44 @@ impl Default for RetryConfig {
 
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct TimeoutConfig {
-    #[serde(default = "TimeoutConfig::default_timeout_ms")] pub timeout_ms: u64,
+    #[serde(default = "TimeoutConfig::default_timeout_ms")]
+    pub timeout_ms: u64,
 }
 
-impl TimeoutConfig { fn default_timeout_ms() -> u64 { 2_000 } }
+impl TimeoutConfig {
+    fn default_timeout_ms() -> u64 {
+        2_000
+    }
+}
 
 impl Default for TimeoutConfig {
-    fn default() -> Self { Self { timeout_ms: Self::default_timeout_ms() } }
+    fn default() -> Self {
+        Self {
+            timeout_ms: Self::default_timeout_ms(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct CircuitConfig {
-    #[serde(default = "CircuitConfig::default_failure_threshold")] pub failure_threshold: u32,
-    #[serde(default = "CircuitConfig::default_open_cooldown_ms")] pub open_cooldown_ms: u64,
-    #[serde(default = "CircuitConfig::default_half_open_trial")] pub half_open_trial: u32,
+    #[serde(default = "CircuitConfig::default_failure_threshold")]
+    pub failure_threshold: u32,
+    #[serde(default = "CircuitConfig::default_open_cooldown_ms")]
+    pub open_cooldown_ms: u64,
+    #[serde(default = "CircuitConfig::default_half_open_trial")]
+    pub half_open_trial: u32,
 }
 
 impl CircuitConfig {
-    fn default_failure_threshold() -> u32 { 3 }
-    fn default_open_cooldown_ms() -> u64 { 5_000 }
-    fn default_half_open_trial() -> u32 { 1 }
+    fn default_failure_threshold() -> u32 {
+        3
+    }
+    fn default_open_cooldown_ms() -> u64 {
+        5_000
+    }
+    fn default_half_open_trial() -> u32 {
+        1
+    }
 }
 
 impl Default for CircuitConfig {
@@ -496,23 +560,50 @@ impl Default for CircuitConfig {
 impl OrchestratorConfig {
     pub fn from_sources() -> Result<Self, PandoraError> {
         let mut builder = config::Config::builder();
-        builder = builder.set_default("retry.max_retries", RetryConfig::default_max_retries())
+        builder = builder
+            .set_default("retry.max_retries", RetryConfig::default_max_retries())
             .map_err(|e| PandoraError::Unknown(format!("config default error: {}", e)))?;
-        builder = builder.set_default("retry.initial_backoff_ms", RetryConfig::default_initial_backoff_ms())
+        builder = builder
+            .set_default(
+                "retry.initial_backoff_ms",
+                RetryConfig::default_initial_backoff_ms(),
+            )
             .map_err(|e| PandoraError::Unknown(format!("config default error: {}", e)))?;
-        builder = builder.set_default("retry.backoff_multiplier", RetryConfig::default_backoff_multiplier())
+        builder = builder
+            .set_default(
+                "retry.backoff_multiplier",
+                RetryConfig::default_backoff_multiplier(),
+            )
             .map_err(|e| PandoraError::Unknown(format!("config default error: {}", e)))?;
-        builder = builder.set_default("retry.max_backoff_ms", RetryConfig::default_max_backoff_ms())
+        builder = builder
+            .set_default(
+                "retry.max_backoff_ms",
+                RetryConfig::default_max_backoff_ms(),
+            )
             .map_err(|e| PandoraError::Unknown(format!("config default error: {}", e)))?;
-        builder = builder.set_default("retry.jitter_ms", RetryConfig::default_jitter_ms())
+        builder = builder
+            .set_default("retry.jitter_ms", RetryConfig::default_jitter_ms())
             .map_err(|e| PandoraError::Unknown(format!("config default error: {}", e)))?;
-        builder = builder.set_default("timeout.timeout_ms", TimeoutConfig::default_timeout_ms())
+        builder = builder
+            .set_default("timeout.timeout_ms", TimeoutConfig::default_timeout_ms())
             .map_err(|e| PandoraError::Unknown(format!("config default error: {}", e)))?;
-        builder = builder.set_default("circuit.failure_threshold", CircuitConfig::default_failure_threshold())
+        builder = builder
+            .set_default(
+                "circuit.failure_threshold",
+                CircuitConfig::default_failure_threshold(),
+            )
             .map_err(|e| PandoraError::Unknown(format!("config default error: {}", e)))?;
-        builder = builder.set_default("circuit.open_cooldown_ms", CircuitConfig::default_open_cooldown_ms())
+        builder = builder
+            .set_default(
+                "circuit.open_cooldown_ms",
+                CircuitConfig::default_open_cooldown_ms(),
+            )
             .map_err(|e| PandoraError::Unknown(format!("config default error: {}", e)))?;
-        builder = builder.set_default("circuit.half_open_trial", CircuitConfig::default_half_open_trial())
+        builder = builder
+            .set_default(
+                "circuit.half_open_trial",
+                CircuitConfig::default_half_open_trial(),
+            )
             .map_err(|e| PandoraError::Unknown(format!("config default error: {}", e)))?;
 
         // Optional: load from file orchestrator.toml if present
@@ -520,8 +611,11 @@ impl OrchestratorConfig {
         // Env overrides with prefix ORCH_, flatten with __ separator, e.g., ORCH_RETRY__MAX_RETRIES
         builder = builder.add_source(config::Environment::with_prefix("ORCH").separator("__"));
 
-        let cfg = builder.build().map_err(|e| PandoraError::Unknown(format!("config load error: {}", e)))?;
-        cfg.try_deserialize::<Self>().map_err(|e| PandoraError::Unknown(format!("config deserialize error: {}", e)))
+        let cfg = builder
+            .build()
+            .map_err(|e| PandoraError::Unknown(format!("config load error: {}", e)))?;
+        cfg.try_deserialize::<Self>()
+            .map_err(|e| PandoraError::Unknown(format!("config deserialize error: {}", e)))
     }
 
     pub fn apply(self, orchestrator: Orchestrator) -> Orchestrator {
@@ -532,7 +626,9 @@ impl OrchestratorConfig {
             max_backoff_ms: self.retry.max_backoff_ms,
             jitter_ms: self.retry.jitter_ms,
         };
-        let timeout = TimeoutPolicy { timeout_ms: self.timeout.timeout_ms };
+        let timeout = TimeoutPolicy {
+            timeout_ms: self.timeout.timeout_ms,
+        };
         let circuit_cfg = CircuitBreakerConfig {
             failure_threshold: self.circuit.failure_threshold,
             open_cooldown_ms: self.circuit.open_cooldown_ms,
@@ -551,7 +647,10 @@ impl OrchestratorConfig {
 }
 
 #[cfg(feature = "schema_validation")]
-fn compile_and_validate(schema_json: &serde_json::Value, instance: &serde_json::Value) -> Result<(), String> {
+fn compile_and_validate(
+    schema_json: &serde_json::Value,
+    instance: &serde_json::Value,
+) -> Result<(), String> {
     let compiled = JSONSchema::options()
         .with_draft(Draft::Draft7)
         .compile(schema_json)
@@ -560,7 +659,9 @@ fn compile_and_validate(schema_json: &serde_json::Value, instance: &serde_json::
         let mut msgs: Vec<String> = Vec::new();
         for err in errors {
             msgs.push(format!("{} at {}", err, err.instance_path));
-            if msgs.len() >= 5 { break; }
+            if msgs.len() >= 5 {
+                break;
+            }
         }
         return Err(msgs.join(" | "));
     }
@@ -578,20 +679,27 @@ static METRICS: Lazy<Metrics> = Lazy::new(|| {
         "cognitive_requests_total",
         "Total number of skill execution requests",
         &["skill"]
-    ).expect("register counter");
+    )
+    .unwrap_or_else(|e| panic!("register counter: {}", e));
 
     let request_errors = register_counter_vec!(
         "cognitive_requests_failed_total",
         "Total number of failed skill execution requests",
         &["skill"]
-    ).expect("register counter");
+    )
+    .unwrap_or_else(|e| panic!("register counter: {}", e));
 
     let request_duration = register_histogram_vec!(
         "cognitive_request_duration_seconds",
         "Skill execution duration in seconds",
         &["skill"],
         vec![0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
-    ).expect("register histogram");
+    )
+    .unwrap_or_else(|e| panic!("register histogram: {}", e));
 
-    Metrics { request_total, request_errors, request_duration }
+    Metrics {
+        request_total,
+        request_errors,
+        request_duration,
+    }
 });

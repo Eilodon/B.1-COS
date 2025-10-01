@@ -91,5 +91,7 @@ impl SelfImprovementEngine {
 }
 
 impl Default for SelfImprovementEngine {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

@@ -1,20 +1,20 @@
-use std::num::NonZeroUsize;
-use std::time::{Duration, Instant};
 use lru::LruCache;
 use parking_lot::Mutex;
+use std::num::NonZeroUsize;
+use std::time::{Duration, Instant};
 use tracing::{debug, warn};
 
 /// Circuit breaker state with timestamp for TTL
 #[derive(Debug, Clone)]
 pub enum CircuitState {
-    Closed { 
+    Closed {
         failures: u32,
         last_updated: Instant,
     },
-    Open { 
+    Open {
         opened_at: Instant,
     },
-    HalfOpen { 
+    HalfOpen {
         trial_permits: u32,
         last_updated: Instant,
     },
@@ -68,8 +68,8 @@ pub struct CircuitBreakerManager {
 impl CircuitBreakerManager {
     pub fn new(config: CircuitBreakerConfig) -> Self {
         let capacity = NonZeroUsize::new(config.max_circuits)
-            .expect("max_circuits must be > 0");
-        
+            .unwrap_or_else(|| NonZeroUsize::new(1).expect("1 is non-zero"));
+
         Self {
             states: Mutex::new(LruCache::new(capacity)),
             config,
@@ -83,11 +83,29 @@ impl CircuitBreakerManager {
         if states.get(skill_name).is_none() {
             states.put(
                 skill_name.to_string(),
-                CircuitState::Closed { failures: 0, last_updated: Instant::now() },
+                CircuitState::Closed {
+                    failures: 0,
+                    last_updated: Instant::now(),
+                },
             );
         }
         // Get mutable reference for in-place transitions
-        let state = states.get_mut(skill_name).expect("state just inserted exists");
+        let state = match states.get_mut(skill_name) {
+            Some(s) => s,
+            None => {
+                // Shouldn't happen due to insert above; reset to Closed
+                states.put(
+                    skill_name.to_string(),
+                    CircuitState::Closed {
+                        failures: 0,
+                        last_updated: Instant::now(),
+                    },
+                );
+                states
+                    .get_mut(skill_name)
+                    .expect("state exists after insert")
+            }
+        };
 
         // Check if expired and reset if needed
         let ttl = Duration::from_secs(self.config.state_ttl_secs);
@@ -105,10 +123,13 @@ impl CircuitBreakerManager {
             CircuitState::Open { opened_at } => {
                 let elapsed = opened_at.elapsed();
                 let cooldown = Duration::from_millis(self.config.open_cooldown_ms);
-                
+
                 if elapsed >= cooldown {
                     // Transition to half-open
-                    debug!("Circuit cooldown elapsed for '{}', entering half-open", skill_name);
+                    debug!(
+                        "Circuit cooldown elapsed for '{}', entering half-open",
+                        skill_name
+                    );
                     let consumed = self.config.half_open_trial.saturating_sub(1);
                     *state = CircuitState::HalfOpen {
                         trial_permits: consumed,
@@ -122,7 +143,10 @@ impl CircuitBreakerManager {
             CircuitState::HalfOpen { trial_permits, .. } => {
                 if *trial_permits > 0 {
                     let remaining = trial_permits.saturating_sub(1);
-                    *state = CircuitState::HalfOpen { trial_permits: remaining, last_updated: Instant::now() };
+                    *state = CircuitState::HalfOpen {
+                        trial_permits: remaining,
+                        last_updated: Instant::now(),
+                    };
                     false
                 } else {
                     true
@@ -147,19 +171,23 @@ impl CircuitBreakerManager {
     /// Record failed execution
     pub fn record_failure(&self, skill_name: &str) {
         let mut states = self.states.lock();
-        
+
         let new_state = match states.get(skill_name) {
             Some(CircuitState::Closed { failures, .. }) => {
                 let new_failures = failures + 1;
                 if new_failures >= self.config.failure_threshold {
-                    warn!("Circuit opened for '{}' after {} failures", 
-                          skill_name, new_failures);
+                    warn!(
+                        "Circuit opened for '{}' after {} failures",
+                        skill_name, new_failures
+                    );
                     CircuitState::Open {
                         opened_at: Instant::now(),
                     }
                 } else {
-                    debug!("Circuit failure {}/{} for '{}'", 
-                           new_failures, self.config.failure_threshold, skill_name);
+                    debug!(
+                        "Circuit failure {}/{} for '{}'",
+                        new_failures, self.config.failure_threshold, skill_name
+                    );
                     CircuitState::Closed {
                         failures: new_failures,
                         last_updated: Instant::now(),
@@ -167,14 +195,19 @@ impl CircuitBreakerManager {
                 }
             }
             Some(CircuitState::HalfOpen { .. }) => {
-                warn!("Circuit re-opened for '{}' after half-open failure", skill_name);
+                warn!(
+                    "Circuit re-opened for '{}' after half-open failure",
+                    skill_name
+                );
                 CircuitState::Open {
                     opened_at: Instant::now(),
                 }
             }
             _ => {
                 if self.config.failure_threshold <= 1 {
-                    CircuitState::Open { opened_at: Instant::now() }
+                    CircuitState::Open {
+                        opened_at: Instant::now(),
+                    }
                 } else {
                     CircuitState::Closed {
                         failures: 1,
@@ -215,7 +248,7 @@ impl CircuitBreakerManager {
     pub fn cleanup_expired(&self) {
         let mut states = self.states.lock();
         let ttl = Duration::from_secs(self.config.state_ttl_secs);
-        
+
         let to_remove: Vec<String> = states
             .iter()
             .filter_map(|(name, state)| {
@@ -263,7 +296,7 @@ mod tests {
         manager.record_failure("test_skill");
         assert!(!manager.is_open("test_skill"));
         manager.record_failure("test_skill");
-        
+
         // Should be open now
         assert!(manager.is_open("test_skill"));
     }
@@ -286,7 +319,7 @@ mod tests {
 
         // Should transition to half-open
         assert!(!manager.is_open("test_skill")); // First trial
-        assert!(manager.is_open("test_skill"));  // No more trials
+        assert!(manager.is_open("test_skill")); // No more trials
     }
 
     #[test]
@@ -346,11 +379,9 @@ mod tests {
 
         // Accessing should reset expired state
         assert!(!manager.is_open("test_skill"));
-        
+
         // Cleanup removes it
         manager.cleanup_expired();
         assert_eq!(manager.stats().total_circuits, 0);
     }
 }
-
-

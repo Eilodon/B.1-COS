@@ -17,7 +17,9 @@ impl GraphNeuralNetwork {
 }
 
 impl Default for GraphNeuralNetwork {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// ITR_NN kết hợp GNN với Phân tích Dữ liệu Topo (TDA) để tạo ra
@@ -159,5 +161,7 @@ impl InterdependentTopoRelationalNN {
 
 #[cfg(not(feature = "tda"))]
 impl Default for InterdependentTopoRelationalNN {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

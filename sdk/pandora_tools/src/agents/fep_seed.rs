@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use fnv::FnvHashMap;
 use pandora_core::interfaces::fep_cell::FepCell;
 use std::collections::HashMap;
-use fnv::FnvHashMap;
 use tracing::info;
 
 // --- Định nghĩa các kiểu dữ liệu cụ thể cho FEP_Seed ---
@@ -30,7 +30,9 @@ impl FepSeedRust {
 }
 
 impl Default for FepSeedRust {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[async_trait]

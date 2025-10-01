@@ -22,23 +22,54 @@ impl SkillModule for ArithmeticSkill {
         let expr = input
             .get("expression")
             .and_then(|v| v.as_str())
-            .ok_or_else(|| PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Missing 'expression' field".into() })?;
+            .ok_or_else(|| PandoraError::InvalidSkillInput {
+                skill_name: "arithmetic".into(),
+                message: "Missing 'expression' field".into(),
+            })?;
 
         // Guardrails: length, charset whitelist, parenthesis depth
         if expr.len() > 1024 {
-            return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Expression too long".into() });
+            return Err(PandoraError::InvalidSkillInput {
+                skill_name: "arithmetic".into(),
+                message: "Expression too long".into(),
+            });
         }
-        if !expr.chars().all(|c| c.is_ascii_whitespace() || c.is_ascii_digit() || matches!(c, '+' | '-' | '*' | '/' | '(' | ')' | '.')) {
-            return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Expression contains invalid characters".into() });
+        if !expr.chars().all(|c| {
+            c.is_ascii_whitespace()
+                || c.is_ascii_digit()
+                || matches!(c, '+' | '-' | '*' | '/' | '(' | ')' | '.')
+        }) {
+            return Err(PandoraError::InvalidSkillInput {
+                skill_name: "arithmetic".into(),
+                message: "Expression contains invalid characters".into(),
+            });
         }
         let mut depth: i32 = 0;
         for c in expr.chars() {
-            if c == '(' { depth += 1; }
-            if c == ')' { depth -= 1; if depth < 0 { return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Unbalanced parentheses".into() }); } }
-            if depth > 64 { return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Parentheses too deep".into() }); }
+            if c == '(' {
+                depth += 1;
+            }
+            if c == ')' {
+                depth -= 1;
+                if depth < 0 {
+                    return Err(PandoraError::InvalidSkillInput {
+                        skill_name: "arithmetic".into(),
+                        message: "Unbalanced parentheses".into(),
+                    });
+                }
+            }
+            if depth > 64 {
+                return Err(PandoraError::InvalidSkillInput {
+                    skill_name: "arithmetic".into(),
+                    message: "Parentheses too deep".into(),
+                });
+            }
         }
         if depth != 0 {
-            return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Unbalanced parentheses".into() });
+            return Err(PandoraError::InvalidSkillInput {
+                skill_name: "arithmetic".into(),
+                message: "Unbalanced parentheses".into(),
+            });
         }
 
         // Execute parse in blocking thread with a strict timeout
@@ -48,10 +79,18 @@ impl SkillModule for ArithmeticSkill {
             Ok(join_res) => match join_res {
                 Ok(parse_res) => parse_res
                     .map(|result| json!({"result": result}))
-                    .map_err(|e| PandoraError::skill_exec("arithmetic", format!("Parse error: {}", e))),
-                Err(e) => Err(PandoraError::skill_exec("arithmetic", format!("Join error: {}", e))),
+                    .map_err(|e| {
+                        PandoraError::skill_exec("arithmetic", format!("Parse error: {}", e))
+                    }),
+                Err(e) => Err(PandoraError::skill_exec(
+                    "arithmetic",
+                    format!("Join error: {}", e),
+                )),
             },
-            Err(_) => Err(PandoraError::Timeout { operation: "skill:arithmetic".into(), timeout_ms: 200 }),
+            Err(_) => Err(PandoraError::Timeout {
+                operation: "skill:arithmetic".into(),
+                timeout_ms: 200,
+            }),
         }
     }
 }
@@ -73,11 +112,11 @@ impl ArithmeticParser {
             pos: 0,
         };
         let result = parser.expr()?;
-        
+
         if parser.pos < parser.input.len() {
             return Err(format!("Unexpected character at position {}", parser.pos));
         }
-        
+
         Ok(result)
     }
 
@@ -93,7 +132,7 @@ impl ArithmeticParser {
 
     fn expr(&mut self) -> Result<f64, String> {
         let mut result = self.term()?;
-        
+
         while let Some(op) = self.current() {
             match op {
                 '+' => {
@@ -107,13 +146,13 @@ impl ArithmeticParser {
                 _ => break,
             }
         }
-        
+
         Ok(result)
     }
 
     fn term(&mut self) -> Result<f64, String> {
         let mut result = self.factor()?;
-        
+
         while let Some(op) = self.current() {
             match op {
                 '*' => {
@@ -131,7 +170,7 @@ impl ArithmeticParser {
                 _ => break,
             }
         }
-        
+
         Ok(result)
     }
 
@@ -158,7 +197,7 @@ impl ArithmeticParser {
     fn number(&mut self) -> Result<f64, String> {
         let start = self.pos;
         let mut has_dot = false;
-        
+
         while let Some(c) = self.current() {
             if c.is_ascii_digit() {
                 self.consume();
@@ -169,12 +208,13 @@ impl ArithmeticParser {
                 break;
             }
         }
-        
+
         let num_str: String = self.input[start..self.pos].iter().copied().collect();
         if num_str.is_empty() {
             return Err("Expected number".to_string());
         }
-        num_str.parse::<f64>()
+        num_str
+            .parse::<f64>()
             .map_err(|_| format!("Invalid number: {}", num_str))
     }
 }

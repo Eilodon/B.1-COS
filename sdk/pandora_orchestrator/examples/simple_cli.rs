@@ -8,14 +8,21 @@ use pandora_tools::skills::{
     pattern_matching_skill::PatternMatchingSkill,
 };
 use std::io::{self, Write};
-use tracing_subscriber::{fmt, EnvFilter};
 use std::sync::Arc;
+use tracing::{error, info, warn};
+use tracing_subscriber::{fmt, EnvFilter};
 
 fn init_logging() {
-    let filter = EnvFilter::from_default_env()
-        .add_directive("pandora_core=info".parse().unwrap())
-        .add_directive("pandora_simulation=info".parse().unwrap())
-        .add_directive("pandora_orchestrator=info".parse().unwrap());
+    let mut filter = EnvFilter::from_default_env();
+    if let Ok(d) = "pandora_core=info".parse() {
+        filter = filter.add_directive(d);
+    }
+    if let Ok(d) = "pandora_simulation=info".parse() {
+        filter = filter.add_directive(d);
+    }
+    if let Ok(d) = "pandora_orchestrator=info".parse() {
+        filter = filter.add_directive(d);
+    }
 
     fmt().with_env_filter(filter).init();
 }
@@ -24,8 +31,8 @@ fn init_logging() {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
 
-    println!("🔱 Pandora Genesis SDK - CLI Demo");
-    println!("=====================================\n");
+    info!("🔱 Pandora Genesis SDK - CLI Demo");
+    info!("=====================================\n");
 
     // Khởi tạo Skill Registry
     let mut registry = SkillRegistry::new();
@@ -40,14 +47,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let orchestrator = Orchestrator::new(Arc::new(registry));
 
-    println!("Available skills:");
-    println!("- arithmetic: Perform arithmetic calculations");
-    println!("- logical_reasoning: Evaluate logical expressions");
-    println!("- pattern_matching: Match patterns in strings");
-    println!("- analogy_reasoning: Solve analogy problems");
+    info!("Available skills:");
+    info!("- arithmetic: Perform arithmetic calculations");
+    info!("- logical_reasoning: Evaluate logical expressions");
+    info!("- pattern_matching: Match patterns in strings");
+    info!("- analogy_reasoning: Solve analogy problems");
     // Temporarily disabled due to dependency conflicts
-    // println!("- information_retrieval: Search in text documents");
-    println!("\nType 'help' for examples, 'quit' to exit.\n");
+    // info!("- information_retrieval: Search in text documents");
+    info!("\nType 'help' for examples, 'quit' to exit.\n");
 
     loop {
         print!("pandora> ");
@@ -58,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let input = input.trim();
 
         if input == "quit" {
-            println!("Goodbye! 👋");
+            info!("Goodbye! 👋");
             break;
         }
 
@@ -74,8 +81,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Parse command: skill_name input_json
         let parts: Vec<&str> = input.splitn(2, ' ').collect();
         if parts.len() != 2 {
-            println!("❌ Usage: <skill_name> <json_input>");
-            println!("   Example: arithmetic '{{\"expression\": \"2 + 2\"}}'");
+            warn!("❌ Usage: <skill_name> <json_input>");
+            info!("   Example: arithmetic '{{\"expression\": \"2 + 2\"}}'");
             continue;
         }
 
@@ -86,7 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let input_value: serde_json::Value = match serde_json::from_str(json_input) {
             Ok(value) => value,
             Err(e) => {
-                println!("❌ Invalid JSON: {}", e);
+                error!(error = %e, "❌ Invalid JSON");
                 continue;
             }
         };
@@ -94,25 +101,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Execute skill
         match orchestrator.process_request(skill_name, input_value).await {
             Ok(result) => {
-                println!("✅ Result: {}", serde_json::to_string_pretty(&result)?);
+                info!("✅ Result: {}", serde_json::to_string_pretty(&result)?);
             }
             Err(e) => {
-                println!("❌ Error: {}", e);
+                error!(error = %e, "❌ Error");
             }
         }
-        println!();
+        info!("");
     }
 
     Ok(())
 }
 
 fn show_help() {
-    println!("\n📖 Examples:");
-    println!("arithmetic '{{\"expression\": \"2 + 3 * 4\"}}'");
-    println!("logical_reasoning '{{\"ast\": {{\"type\": \"AND\", \"children\": [{{\"type\": \"CONST\", \"value\": true}}, {{\"type\": \"CONST\", \"value\": false}}]}}, \"context\": {{}}}}'");
-    println!("pattern_matching '{{\"pattern\": \"a*b\", \"candidates\": [\"ab\", \"aab\", \"b\", \"acb\"]}}'");
-    println!("analogy_reasoning '{{\"a\": \"man\", \"b\": \"king\", \"c\": \"woman\", \"candidates\": [\"queen\", \"prince\", \"duke\"]}}'");
+    info!("\n📖 Examples:");
+    info!("arithmetic '{{\"expression\": \"2 + 3 * 4\"}}'");
+    info!("logical_reasoning '{{\"ast\": {{\"type\": \"AND\", \"children\": [{{\"type\": \"CONST\", \"value\": true}}, {{\"type\": \"CONST\", \"value\": false}}]}}, \"context\": {{}}}}'");
+    info!("pattern_matching '{{\"pattern\": \"a*b\", \"candidates\": [\"ab\", \"aab\", \"b\", \"acb\"]}}'");
+    info!("analogy_reasoning '{{\"a\": \"man\", \"b\": \"king\", \"c\": \"woman\", \"candidates\": [\"queen\", \"prince\", \"duke\"]}}'");
     // Temporarily disabled due to dependency conflicts
-    // println!("information_retrieval '{{\"query\": \"test\", \"documents\": [\"test document\", \"another doc\", \"test again\"]}}'");
-    println!();
+    // info!("information_retrieval '{{\"query\": \"test\", \"documents\": [\"test document\", \"another doc\", \"test again\"]}}'");
+    info!("");
 }

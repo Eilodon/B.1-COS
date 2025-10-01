@@ -177,5 +177,7 @@ impl InterdependentNetwork {
 }
 
 impl Default for InterdependentNetwork {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

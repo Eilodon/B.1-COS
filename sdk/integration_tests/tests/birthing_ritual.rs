@@ -42,7 +42,9 @@ impl PrimordialWorld {
 }
 
 impl Default for PrimordialWorld {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[tokio::test]

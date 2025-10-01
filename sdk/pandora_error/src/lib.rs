@@ -13,5 +13,11 @@ pub enum PandoraError {
 
     #[error("Unknown error")]
     Unknown,
+
+    #[error("Timeout while executing skill {skill_name} after {timeout_ms}ms")]
+    Timeout { skill_name: String, timeout_ms: u64 },
+
+    #[error("Circuit breaker open for skill {skill_name}")]
+    CircuitOpen { skill_name: String },
 }
 

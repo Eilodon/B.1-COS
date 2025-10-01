@@ -1,5 +1,4 @@
 use fnv::FnvHashSet;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataEidos {
@@ -19,10 +18,12 @@ pub enum Vedana {
 }
 
 /// Dòng Chảy Nhận Thức Luận (Epistemological Flow), mang một "sự kiện" đi qua pipeline Ngũ Uẩn.
+/// Tối ưu hóa cho performance với minimal allocations.
 #[derive(Debug, Clone, Default)]
 pub struct EpistemologicalFlow {
     /// Sắc (Form): Sự kiện nguyên thủy, hình hài của thông tin.
-    pub rupa: Option<Vec<u8>>,
+    /// Sử dụng Cow để tránh cloning không cần thiết
+    pub rupa: Option<std::borrow::Cow<'static, [u8]>>,
     
     /// Thọ (Feeling): Cảm giác đạo đức được gán cho sự kiện.
     pub vedana: Option<Vedana>,
@@ -31,10 +32,12 @@ pub struct EpistemologicalFlow {
     pub sanna: Option<DataEidos>,
     
     /// Các Chân Ảnh liên quan được truy hồi từ Tưởng.
-    pub related_eidos: Option<Vec<DataEidos>>,
+    /// Sử dụng SmallVec để tránh heap allocation cho small collections
+    pub related_eidos: Option<smallvec::SmallVec<[DataEidos; 4]>>,
     
     /// Hành (Mental Formations): "Ý Chỉ" hành động được khởi phát.
-    pub sankhara: Option<String>, // Placeholder for Intent
+    /// Sử dụng Cow để tránh String cloning
+    pub sankhara: Option<std::borrow::Cow<'static, str>>,
     
     // Thức (Consciousness) sẽ là kết quả cuối cùng của dòng chảy.
 }

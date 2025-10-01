@@ -3,6 +3,7 @@ use pandora_core::fep_cell::SkandhaProcessor;
 use pandora_core::ontology::EpistemologicalFlow;
 use pandora_core::world_model::WorldModel;
 use std::sync::Arc;
+use tracing::info;
 
 /// `SkandhaProcessorWithLearning` là wrapper tích hợp SkandhaProcessor với LearningEngine.
 /// Đây là cách để tránh vòng lặp dependency giữa pandora_core và pandora_learning_engine.
@@ -16,7 +17,7 @@ impl SkandhaProcessorWithLearning {
         processor: SkandhaProcessor,
         learning_engine: Arc<LearningEngine>,
     ) -> Self {
-        println!("✅ SkandhaProcessorWithLearning đã được khởi tạo với La Bàn Tuệ Giác.");
+        info!("✅ SkandhaProcessorWithLearning đã được khởi tạo với La Bàn Tuệ Giác.");
         Self { processor, learning_engine }
     }
 
@@ -27,7 +28,7 @@ impl SkandhaProcessorWithLearning {
         current_model: &dyn WorldModel,
         new_model: &dyn WorldModel,
     ) -> (Option<Vec<u8>>, DualIntrinsicReward) {
-        println!("\n--- LUỒNG NHẬN THỨC LUẬN VÀ TỰ ĐÁNH GIÁ BẮT ĐẦU ---");
+        info!("\n--- LUỒNG NHẬN THỨC LUẬN VÀ TỰ ĐÁNH GIÁ BẮT ĐẦU ---");
 
         // 1. Chạy chu trình nhận thức Ngũ Uẩn
         let reborn_event = self.processor.run_epistemological_cycle(event).await;
@@ -38,7 +39,7 @@ impl SkandhaProcessorWithLearning {
         // 3. Tự Đánh giá (Self-Evaluation): Sử dụng LearningEngine để tính toán phần thưởng
         let reward = self.learning_engine.calculate_reward(current_model, new_model, &flow);
         
-        println!("--- LUỒNG NHẬN THỨC LUẬN VÀ TỰ ĐÁNH GIÁ KẾT THÚC ---");
+        info!("--- LUỒNG NHẬN THỨC LUẬN VÀ TỰ ĐÁNH GIÁ KẾT THÚC ---");
         
         (reborn_event, reward)
     }

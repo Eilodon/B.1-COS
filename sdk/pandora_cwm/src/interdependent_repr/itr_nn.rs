@@ -1,6 +1,8 @@
 // TDA (Topological Data Analysis) implementation
 // Sử dụng các thuật toán đơn giản thay vì thư viện bên ngoài
 
+use tracing::info;
+
 /// Một `struct` placeholder cho một Mạng Nơ-ron Đồ thị (GNN).
 /// Việc hiện thực hóa chi tiết sẽ cần một thư viện GNN cho Rust.
 pub struct GraphNeuralNetwork {
@@ -24,7 +26,7 @@ pub struct InterdependentTopoRelationalNN {
 #[cfg(feature = "tda")]
 impl InterdependentTopoRelationalNN {
     pub fn new() -> Self {
-        println!("ITR-NN: Khởi tạo Mạng Nơ-ron Đồ thị với Phân tích Dữ liệu Topo");
+        info!("ITR-NN: Khởi tạo Mạng Nơ-ron Đồ thị với Phân tích Dữ liệu Topo");
         Self { 
             gnn_processor: GraphNeuralNetwork::new() 
         }
@@ -33,7 +35,7 @@ impl InterdependentTopoRelationalNN {
     /// Tính toán các "chữ ký topo" từ một đồ thị tri thức.
     /// Đây là bước "thấu suốt" cấu trúc toàn cục trước khi xử lý cục bộ.
     pub fn extract_topological_signatures(&self, graph_data: &[f64]) {
-        println!("ITR-NN: Trích xuất các đặc trưng topo (TDA)...");
+        info!("ITR-NN: Trích xuất các đặc trưng topo (TDA)...");
         
         // Implementation đơn giản của TDA:
         // 1. Tính toán độ trung tâm (centrality) của các nút
@@ -45,10 +47,10 @@ impl InterdependentTopoRelationalNN {
         // 3. Tính toán các đặc trưng topo cơ bản
         let topological_features = self.compute_basic_topological_features(graph_data);
         
-        println!("ITR-NN: Đã trích xuất {} đặc trưng topo từ đồ thị", graph_data.len());
-        println!("ITR-NN: - Độ trung tâm: {:?}", centrality_scores);
-        println!("ITR-NN: - Cấu trúc cộng đồng: {:?}", community_structure);
-        println!("ITR-NN: - Đặc trưng topo: {:?}", topological_features);
+        info!("ITR-NN: Đã trích xuất {} đặc trưng topo từ đồ thị", graph_data.len());
+        info!("ITR-NN: - Độ trung tâm: {:?}", centrality_scores);
+        info!("ITR-NN: - Cấu trúc cộng đồng: {:?}", community_structure);
+        info!("ITR-NN: - Đặc trưng topo: {:?}", topological_features);
     }
 
     /// Tính toán độ trung tâm của các nút trong đồ thị.
@@ -109,31 +111,31 @@ impl InterdependentTopoRelationalNN {
     /// Xử lý đồ thị bằng cách đưa các đặc trưng topo vào GNN.
     pub fn process_graph(&self, graph_data: &[f64]) {
         self.extract_topological_signatures(graph_data);
-        println!("ITR-NN: Điều biến quá trình truyền tin của GNN bằng đặc trưng topo...");
+        info!("ITR-NN: Điều biến quá trình truyền tin của GNN bằng đặc trưng topo...");
         
         // Logic GNN sẽ sử dụng các đặc trưng topo để xử lý đồ thị.
         // Điều này cho phép mạng hiểu được cả:
         // 1. Quan hệ cục bộ giữa các nút (từ GNN)
         // 2. Cấu trúc toàn cục và vai trò của từng nút (từ TDA)
         
-        println!("ITR-NN: Đã xử lý đồ thị với {} nút", graph_data.len());
+        info!("ITR-NN: Đã xử lý đồ thị với {} nút", graph_data.len());
     }
 }
 
 #[cfg(not(feature = "tda"))]
 impl InterdependentTopoRelationalNN {
     pub fn new() -> Self {
-        println!("ITR-NN: Khởi tạo (TDA features disabled)");
+        info!("ITR-NN: Khởi tạo (TDA features disabled)");
         Self { 
             gnn_processor: GraphNeuralNetwork::new() 
         }
     }
 
     pub fn extract_topological_signatures(&self, _graph_data: &[f64]) {
-        println!("ITR-NN: TDA features disabled - skipping topological analysis");
+        info!("ITR-NN: TDA features disabled - skipping topological analysis");
     }
 
     pub fn process_graph(&self, graph_data: &[f64]) {
-        println!("ITR-NN: Xử lý đồ thị cơ bản (không có TDA) với {} nút", graph_data.len());
+        info!("ITR-NN: Xử lý đồ thị cơ bản (không có TDA) với {} nút", graph_data.len());
     }
 }

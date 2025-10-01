@@ -1,6 +1,7 @@
 # 🔱 Pandora Genesis SDK
 
 [![Rust CI/CD](https://github.com/OWNER/REPO/actions/workflows/rust.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/rust.yml)
+[![Coverage](https://github.com/OWNER/REPO/actions/workflows/coverage.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/coverage.yml)
 
 **Pandora Genesis** là một Software Development Kit (SDK) được viết bằng Rust, được thiết kế để trở thành nền tảng cho việc xây dựng các hệ thống Trí tuệ Nhân tạo có khả năng tự cải thiện đệ quy (Recursive Self-Improvement AI).
 
@@ -26,6 +27,21 @@ cargo build --workspace
 
 ```bash
 cargo test --workspace --all-features
+```
+
+### Chạy Coverage Report
+
+Để tạo báo cáo coverage:
+
+```bash
+./scripts/coverage.sh
+```
+
+Hoặc chạy trực tiếp:
+
+```bash
+cd sdk
+cargo llvm-cov --workspace --all-features --html --output-dir ../coverage
 ```
 
 ### Bật các tính năng ML (tùy chọn)

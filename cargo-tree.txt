@@ -1,0 +1,280 @@
+integration_tests v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/integration_tests)
+├── pandora_core v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_core)
+│   ├── async-trait v0.1.89 (proc-macro)
+│   │   ├── proc-macro2 v1.0.101
+│   │   │   └── unicode-ident v1.0.19
+│   │   ├── quote v1.0.41
+│   │   │   └── proc-macro2 v1.0.101 (*)
+│   │   └── syn v2.0.106
+│   │       ├── proc-macro2 v1.0.101 (*)
+│   │       ├── quote v1.0.41 (*)
+│   │       └── unicode-ident v1.0.19
+│   ├── fnv v1.0.7
+│   ├── pandora_error v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_error)
+│   │   └── thiserror v1.0.69
+│   │       └── thiserror-impl v1.0.69 (proc-macro)
+│   │           ├── proc-macro2 v1.0.101 (*)
+│   │           ├── quote v1.0.41 (*)
+│   │           └── syn v2.0.106 (*)
+│   ├── pandora_protocols v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_protocols)
+│   │   ├── prost v0.12.6
+│   │   │   ├── bytes v1.10.1
+│   │   │   └── prost-derive v0.12.6 (proc-macro)
+│   │   │       ├── anyhow v1.0.100
+│   │   │       ├── itertools v0.12.1
+│   │   │       │   └── either v1.15.0
+│   │   │       ├── proc-macro2 v1.0.101 (*)
+│   │   │       ├── quote v1.0.41 (*)
+│   │   │       └── syn v2.0.106 (*)
+│   │   └── prost-types v0.12.6
+│   │       └── prost v0.12.6 (*)
+│   │   [build-dependencies]
+│   │   └── prost-build v0.12.6
+│   │       ├── bytes v1.10.1
+│   │       ├── heck v0.5.0
+│   │       ├── itertools v0.12.1 (*)
+│   │       ├── log v0.4.28
+│   │       ├── multimap v0.10.1
+│   │       ├── once_cell v1.21.3
+│   │       ├── petgraph v0.6.5
+│   │       │   ├── fixedbitset v0.4.2
+│   │       │   └── indexmap v2.11.4
+│   │       │       ├── equivalent v1.0.2
+│   │       │       └── hashbrown v0.16.0
+│   │       ├── prettyplease v0.2.37
+│   │       │   ├── proc-macro2 v1.0.101 (*)
+│   │       │   └── syn v2.0.106 (*)
+│   │       ├── prost v0.12.6
+│   │       │   ├── bytes v1.10.1
+│   │       │   └── prost-derive v0.12.6 (proc-macro) (*)
+│   │       ├── prost-types v0.12.6
+│   │       │   └── prost v0.12.6 (*)
+│   │       ├── regex v1.11.3
+│   │       │   ├── regex-automata v0.4.11
+│   │       │   │   └── regex-syntax v0.8.6
+│   │       │   └── regex-syntax v0.8.6
+│   │       ├── syn v2.0.106 (*)
+│   │       └── tempfile v3.23.0
+│   │           ├── fastrand v2.3.0
+│   │           ├── getrandom v0.3.3
+│   │           │   ├── cfg-if v1.0.3
+│   │           │   └── libc v0.2.176
+│   │           ├── once_cell v1.21.3
+│   │           └── rustix v1.1.2
+│   │               ├── bitflags v2.9.4
+│   │               └── linux-raw-sys v0.11.0
+│   ├── serde v1.0.228
+│   │   ├── serde_core v1.0.228
+│   │   └── serde_derive v1.0.228 (proc-macro)
+│   │       ├── proc-macro2 v1.0.101 (*)
+│   │       ├── quote v1.0.41 (*)
+│   │       └── syn v2.0.106 (*)
+│   └── serde_json v1.0.145
+│       ├── itoa v1.0.15
+│       ├── memchr v2.7.6
+│       ├── ryu v1.0.20
+│       └── serde_core v1.0.228
+│   [dev-dependencies]
+│   └── tokio v1.47.1
+│       ├── bytes v1.10.1
+│       ├── libc v0.2.176
+│       ├── mio v1.0.4
+│       │   └── libc v0.2.176
+│       ├── parking_lot v0.12.4
+│       │   ├── lock_api v0.4.13
+│       │   │   └── scopeguard v1.2.0
+│       │   │   [build-dependencies]
+│       │   │   └── autocfg v1.5.0
+│       │   └── parking_lot_core v0.9.11
+│       │       ├── cfg-if v1.0.3
+│       │       ├── libc v0.2.176
+│       │       └── smallvec v1.15.1
+│       ├── pin-project-lite v0.2.16
+│       ├── signal-hook-registry v1.4.6
+│       │   └── libc v0.2.176
+│       ├── socket2 v0.6.0
+│       │   └── libc v0.2.176
+│       └── tokio-macros v2.5.0 (proc-macro)
+│           ├── proc-macro2 v1.0.101 (*)
+│           ├── quote v1.0.41 (*)
+│           └── syn v2.0.106 (*)
+├── pandora_cwm v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_cwm)
+│   ├── num-complex v0.4.6
+│   │   └── num-traits v0.2.19
+│   │       [build-dependencies]
+│   │       └── autocfg v1.5.0
+│   ├── pandora_core v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_core) (*)
+│   ├── pandora_error v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_error) (*)
+│   └── rustfft v6.4.1
+│       ├── num-complex v0.4.6 (*)
+│       ├── num-integer v0.1.46
+│       │   └── num-traits v0.2.19 (*)
+│       ├── num-traits v0.2.19 (*)
+│       ├── primal-check v0.3.4
+│       │   └── num-integer v0.1.46 (*)
+│       ├── strength_reduce v0.2.4
+│       └── transpose v0.2.3
+│           ├── num-integer v0.1.46 (*)
+│           └── strength_reduce v0.2.4
+├── pandora_learning_engine v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_learning_engine)
+│   ├── pandora_core v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_core) (*)
+│   ├── pandora_cwm v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_cwm) (*)
+│   ├── pandora_error v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_error) (*)
+│   ├── pandora_mcg v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_mcg)
+│   │   ├── pandora_core v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_core) (*)
+│   │   ├── pandora_cwm v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_cwm) (*)
+│   │   ├── pandora_error v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_error) (*)
+│   │   ├── serde v1.0.228 (*)
+│   │   └── serde_json v1.0.145 (*)
+│   └── pandora_sie v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_sie)
+│       ├── async-trait v0.1.89 (proc-macro) (*)
+│       ├── pandora_core v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_core) (*)
+│       ├── pandora_error v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_error) (*)
+│       └── pandora_mcg v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_mcg) (*)
+├── pandora_mcg v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_mcg) (*)
+├── pandora_sie v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_sie) (*)
+├── pandora_tools v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_tools)
+│   ├── async-trait v0.1.89 (proc-macro) (*)
+│   ├── meval v0.2.0
+│   │   ├── fnv v1.0.7
+│   │   └── nom v1.2.4
+│   ├── pandora_core v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_core) (*)
+│   ├── pandora_error v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_error) (*)
+│   ├── regex v1.11.3
+│   │   ├── aho-corasick v1.1.3
+│   │   │   └── memchr v2.7.6
+│   │   ├── memchr v2.7.6
+│   │   ├── regex-automata v0.4.11
+│   │   │   ├── aho-corasick v1.1.3 (*)
+│   │   │   ├── memchr v2.7.6
+│   │   │   └── regex-syntax v0.8.6
+│   │   └── regex-syntax v0.8.6
+│   ├── serde_json v1.0.145 (*)
+│   └── strsim v0.11.1
+│   [dev-dependencies]
+│   └── tokio v1.47.1 (*)
+└── tokio v1.47.1 (*)
+
+pandora_core v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_core) (*)
+
+pandora_cwm v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_cwm) (*)
+
+pandora_error v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_error) (*)
+
+pandora_learning_engine v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_learning_engine) (*)
+
+pandora_mcg v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_mcg) (*)
+
+pandora_orchestrator v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_orchestrator)
+├── pandora_core v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_core) (*)
+├── pandora_error v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_error) (*)
+├── pandora_tools v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_tools) (*)
+├── serde_json v1.0.145 (*)
+└── tokio v1.47.1 (*)
+
+pandora_protocols v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_protocols) (*)
+
+pandora_sie v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_sie) (*)
+
+pandora_tools v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_tools) (*)
+
+pandora_uniffi v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_uniffi)
+├── pandora_core v0.1.0 (/home/ybao/B.1/B.1_COS/sdk/pandora_core) (*)
+└── uniffi v0.25.3
+    ├── anyhow v1.0.100
+    ├── uniffi_build v0.25.3
+    │   ├── anyhow v1.0.100
+    │   ├── camino v1.2.1
+    │   │   └── serde_core v1.0.228
+    │   └── uniffi_bindgen v0.25.3
+    │       ├── anyhow v1.0.100
+    │       ├── askama v0.12.1
+    │       │   ├── askama_derive v0.12.5 (proc-macro)
+    │       │   │   ├── askama_parser v0.2.1
+    │       │   │   │   └── nom v7.1.3
+    │       │   │   │       ├── memchr v2.7.6
+    │       │   │   │       └── minimal-lexical v0.2.1
+    │       │   │   ├── basic-toml v0.1.10
+    │       │   │   │   └── serde v1.0.228 (*)
+    │       │   │   ├── mime v0.3.17
+    │       │   │   ├── mime_guess v2.0.5
+    │       │   │   │   ├── mime v0.3.17
+    │       │   │   │   └── unicase v2.8.1
+    │       │   │   │   [build-dependencies]
+    │       │   │   │   └── unicase v2.8.1
+    │       │   │   ├── proc-macro2 v1.0.101 (*)
+    │       │   │   ├── quote v1.0.41 (*)
+    │       │   │   ├── serde v1.0.228 (*)
+    │       │   │   └── syn v2.0.106 (*)
+    │       │   └── askama_escape v0.10.3
+    │       ├── camino v1.2.1 (*)
+    │       ├── cargo_metadata v0.15.4
+    │       │   ├── camino v1.2.1 (*)
+    │       │   ├── cargo-platform v0.1.9
+    │       │   │   └── serde v1.0.228 (*)
+    │       │   ├── semver v1.0.27
+    │       │   │   └── serde_core v1.0.228
+    │       │   ├── serde v1.0.228 (*)
+    │       │   ├── serde_json v1.0.145 (*)
+    │       │   └── thiserror v1.0.69 (*)
+    │       ├── fs-err v2.11.0
+    │       │   [build-dependencies]
+    │       │   └── autocfg v1.5.0
+    │       ├── glob v0.3.3
+    │       ├── goblin v0.6.1
+    │       │   ├── log v0.4.28
+    │       │   ├── plain v0.2.3
+    │       │   └── scroll v0.11.0
+    │       │       └── scroll_derive v0.11.1 (proc-macro)
+    │       │           ├── proc-macro2 v1.0.101 (*)
+    │       │           ├── quote v1.0.41 (*)
+    │       │           └── syn v2.0.106 (*)
+    │       ├── heck v0.4.1
+    │       ├── once_cell v1.21.3
+    │       ├── paste v1.0.15 (proc-macro)
+    │       ├── serde v1.0.228 (*)
+    │       ├── toml v0.5.11
+    │       │   └── serde v1.0.228 (*)
+    │       ├── uniffi_meta v0.25.3
+    │       │   ├── anyhow v1.0.100
+    │       │   ├── bytes v1.10.1
+    │       │   ├── siphasher v0.3.11
+    │       │   └── uniffi_checksum_derive v0.25.3 (proc-macro)
+    │       │       ├── quote v1.0.41 (*)
+    │       │       └── syn v2.0.106 (*)
+    │       ├── uniffi_testing v0.25.3
+    │       │   ├── anyhow v1.0.100
+    │       │   ├── camino v1.2.1 (*)
+    │       │   ├── cargo_metadata v0.15.4 (*)
+    │       │   ├── fs-err v2.11.0 (*)
+    │       │   └── once_cell v1.21.3
+    │       └── uniffi_udl v0.25.3
+    │           ├── anyhow v1.0.100
+    │           ├── uniffi_meta v0.25.3 (*)
+    │           ├── uniffi_testing v0.25.3 (*)
+    │           └── weedle2 v4.0.0
+    │               └── nom v7.1.3 (*)
+    ├── uniffi_core v0.25.3
+    │   ├── anyhow v1.0.100
+    │   ├── bytes v1.10.1
+    │   ├── camino v1.2.1 (*)
+    │   ├── log v0.4.28
+    │   ├── once_cell v1.21.3
+    │   ├── oneshot-uniffi v0.1.6
+    │   ├── paste v1.0.15 (proc-macro)
+    │   └── static_assertions v1.1.0
+    └── uniffi_macros v0.25.3 (proc-macro)
+        ├── bincode v1.3.3
+        │   └── serde v1.0.228 (*)
+        ├── camino v1.2.1 (*)
+        ├── fs-err v2.11.0 (*)
+        ├── once_cell v1.21.3
+        ├── proc-macro2 v1.0.101 (*)
+        ├── quote v1.0.41 (*)
+        ├── serde v1.0.228 (*)
+        ├── syn v2.0.106 (*)
+        ├── toml v0.5.11 (*)
+        ├── uniffi_build v0.25.3 (*)
+        └── uniffi_meta v0.25.3 (*)
+[build-dependencies]
+└── uniffi v0.25.3 (*)

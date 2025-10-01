@@ -25,7 +25,6 @@ mod tests {
     }
 }
 use async_trait::async_trait;
-use meval::eval_str;
 use pandora_core::interfaces::skills::{SkillDescriptor, SkillModule, SkillOutput};
 use pandora_error::PandoraError;
 use serde_json::json;
@@ -51,7 +50,7 @@ impl SkillModule for ArithmeticSkill {
                 message: "Thiếu trường 'expression'".into(),
             },
         )?;
-        match eval_str(expr) {
+        match simple_eval(expr) {
             Ok(result) => Ok(json!({"result": result})),
             Err(e) => Err(PandoraError::SkillExecution {
                 skill_name: "arithmetic".into(),
@@ -59,4 +58,51 @@ impl SkillModule for ArithmeticSkill {
             }),
         }
     }
+}
+
+// Simple arithmetic evaluator without external dependencies
+fn simple_eval(expr: &str) -> Result<f64, String> {
+    let expr = expr.trim();
+    
+    // Handle simple addition
+    if let Some(pos) = expr.find('+') {
+        let left = expr[..pos].trim();
+        let right = expr[pos + 1..].trim();
+        let left_val = simple_eval(left)?;
+        let right_val = simple_eval(right)?;
+        return Ok(left_val + right_val);
+    }
+    
+    // Handle simple multiplication
+    if let Some(pos) = expr.find('*') {
+        let left = expr[..pos].trim();
+        let right = expr[pos + 1..].trim();
+        let left_val = simple_eval(left)?;
+        let right_val = simple_eval(right)?;
+        return Ok(left_val * right_val);
+    }
+    
+    // Handle simple subtraction
+    if let Some(pos) = expr.find('-') {
+        let left = expr[..pos].trim();
+        let right = expr[pos + 1..].trim();
+        let left_val = simple_eval(left)?;
+        let right_val = simple_eval(right)?;
+        return Ok(left_val - right_val);
+    }
+    
+    // Handle simple division
+    if let Some(pos) = expr.find('/') {
+        let left = expr[..pos].trim();
+        let right = expr[pos + 1..].trim();
+        let left_val = simple_eval(left)?;
+        let right_val = simple_eval(right)?;
+        if right_val == 0.0 {
+            return Err("Division by zero".to_string());
+        }
+        return Ok(left_val / right_val);
+    }
+    
+    // Parse number
+    expr.parse::<f64>().map_err(|_| format!("Invalid number: {}", expr))
 }

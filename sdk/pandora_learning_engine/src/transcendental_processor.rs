@@ -1,10 +1,11 @@
 use super::LearningEngine;
 use pandora_core::fep_cell::SkandhaProcessor;
 use pandora_core::ontology::EpistemologicalFlow;
-use pandora_core::world_model::{WorldModel, DualIntrinsicReward};
-use pandora_mcg::{MetaCognitiveGovernor, ActionTrigger};
+use pandora_core::world_model::WorldModel;
+use pandora_mcg::MetaCognitiveGovernor;
 use pandora_sie::SelfImprovementEngine;
 use std::sync::Arc;
+use tracing::info;
 
 /// `TranscendentalProcessor` là wrapper tích hợp hoàn chỉnh tất cả các thành phần
 /// để tạo ra vòng lặp siêu việt: Nhận thức -> Tự Đánh giá -> Tự Cải thiện.
@@ -22,7 +23,7 @@ impl TranscendentalProcessor {
         mcg: MetaCognitiveGovernor,
         sie: SelfImprovementEngine,
     ) -> Self {
-        println!("✅ TranscendentalProcessor đã được khởi tạo với vòng lặp siêu việt hoàn chỉnh.");
+        info!("✅ TranscendentalProcessor đã được khởi tạo với vòng lặp siêu việt hoàn chỉnh.");
         Self { processor, learning_engine, mcg, sie }
     }
 
@@ -33,7 +34,7 @@ impl TranscendentalProcessor {
         current_model: &dyn WorldModel,
         new_model: &dyn WorldModel,
     ) {
-        println!("\n--- VÒNG LẶP SIÊU VIỆT BẮT ĐẦU ---");
+        info!("\n--- VÒNG LẶP SIÊU VIỆT BẮT ĐẦU ---");
 
         // 1. Vận hành Luồng Nhận thức Luận
         let _reborn_event = self.processor.run_epistemological_cycle(event).await;
@@ -48,17 +49,17 @@ impl TranscendentalProcessor {
         // 4. Tự Cải thiện (Self-Improvement)
         match self.sie.execute(&decision).await {
             Ok(action) => {
-                println!("SIE đã thực thi thành công: {}", action.description);
+                info!("SIE đã thực thi thành công: {}", action.description);
             }
             Err(_) => {
-                println!("SIE: Không có hành động cải thiện nào được thực hiện.");
+                info!("SIE: Không có hành động cải thiện nào được thực hiện.");
             }
         }
 
         // 5. Thức (có thể được bỏ qua trong vòng lặp này vì trọng tâm là tự cải thiện)
         // self.processor.vinnana.synthesize(&flow).await;
         
-        println!("--- VÒNG LẶP SIÊU VIỆT KẾT THÚC ---");
+        info!("--- VÒNG LẶP SIÊU VIỆT KẾT THÚC ---");
     }
 
     /// Truy cập trực tiếp vào SkandhaProcessor gốc.

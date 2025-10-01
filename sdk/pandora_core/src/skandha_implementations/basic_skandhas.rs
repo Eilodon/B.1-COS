@@ -1,6 +1,7 @@
 use crate::interfaces::skandhas::*;
 use crate::ontology::{EpistemologicalFlow, Vedana};
 use async_trait::async_trait;
+use tracing::{info, debug, warn};
 
 // --- 1. Sắc Uẩn ---
 pub struct BasicRupaSkandha;
@@ -10,9 +11,9 @@ impl Skandha for BasicRupaSkandha {
 #[async_trait]
 impl RupaSkandha for BasicRupaSkandha {
     async fn process_event(&self, event: Vec<u8>) -> EpistemologicalFlow {
-        println!("[{}] Tiếp nhận sự kiện nguyên thủy.", self.name());
+        info!("[{}] Tiếp nhận sự kiện nguyên thủy.", self.name());
         EpistemologicalFlow {
-            rupa: Some(event),
+            rupa: Some(std::borrow::Cow::Owned(event)),
             ..Default::default()
         }
     }
@@ -28,11 +29,11 @@ impl VedanaSkandha for BasicVedanaSkandha {
     async fn feel(&self, flow: &mut EpistemologicalFlow) {
         // Logic đạo đức đơn giản: Nếu event chứa từ "error", gán "Khổ Thọ".
         let feeling = if let Some(rupa) = &flow.rupa {
-            if String::from_utf8_lossy(rupa).contains("error") {
-                println!("[{}] Cảm nhận 'Khổ Thọ' từ sự kiện.", self.name());
+            if String::from_utf8_lossy(rupa.as_ref()).contains("error") {
+                info!("[{}] Cảm nhận 'Khổ Thọ' từ sự kiện.", self.name());
                 Vedana::Unpleasant { karma_weight: -1.0 }
             } else {
-                println!("[{}] Cảm nhận 'Xả Thọ' từ sự kiện.", self.name());
+                info!("[{}] Cảm nhận 'Xả Thọ' từ sự kiện.", self.name());
                 Vedana::Neutral
             }
         } else {
@@ -50,12 +51,67 @@ impl Skandha for BasicSannaSkandha {
 #[async_trait]
 impl SannaSkandha for BasicSannaSkandha {
     async fn perceive(&self, flow: &mut EpistemologicalFlow) {
-        println!("[{}] Đối chiếu sự kiện, nhận diện quy luật (placeholder).", self.name());
-        // Placeholder: chưa tương tác CWM, chỉ gán 1 eidos giả
-        flow.sanna = Some(crate::ontology::DataEidos {
-            active_indices: Default::default(),
-            dimensionality: 2048,
-        });
+        info!("[{}] Đối chiếu sự kiện, nhận diện quy luật.", self.name());
+        
+        // Tạo DataEidos dựa trên nội dung sự kiện
+        let eidos = if let Some(rupa) = &flow.rupa {
+            // Chuyển đổi sự kiện thành vector biểu diễn đơn giản
+            let content = String::from_utf8_lossy(rupa.as_ref());
+            let mut active_indices = std::collections::HashSet::new();
+            
+            // Tạo hash-based indices từ nội dung
+            for (i, byte) in rupa.as_ref().iter().enumerate() {
+                if *byte > 0 {
+                    active_indices.insert(((i * 7) as u32 + (*byte as u32)) % 2048);
+                }
+            }
+            
+            // Thêm indices dựa trên keywords
+            for keyword in ["error", "warning", "success", "info", "critical"] {
+                if content.to_lowercase().contains(keyword) {
+                    let hash = (keyword.len() as u32) * 13;
+                    active_indices.insert(hash % 2048);
+                }
+            }
+            
+            crate::ontology::DataEidos {
+                active_indices: active_indices.into_iter().collect(),
+                dimensionality: 2048,
+            }
+        } else {
+            crate::ontology::DataEidos {
+                active_indices: Default::default(),
+                dimensionality: 2048,
+            }
+        };
+        
+        flow.sanna = Some(eidos);
+        
+        // Tìm related eidos (simplified pattern matching)
+        let related_eidos = self.find_related_patterns(&flow.sanna.as_ref().unwrap());
+        flow.related_eidos = Some(smallvec::SmallVec::from_vec(related_eidos));
+        
+        info!("[{}] Đã nhận diện {} patterns liên quan.", self.name(), flow.related_eidos.as_ref().unwrap().len());
+    }
+}
+
+impl BasicSannaSkandha {
+    /// Tìm các patterns liên quan dựa trên DataEidos
+    fn find_related_patterns(&self, eidos: &crate::ontology::DataEidos) -> Vec<crate::ontology::DataEidos> {
+        let mut related = Vec::new();
+        
+        // Tạo một số patterns mẫu dựa trên active_indices
+        for i in 0..3 {
+            let mut related_eidos = eidos.clone();
+            // Thêm một số indices gần kề
+            for idx in eidos.active_indices.iter() {
+                let new_idx = (idx + i as u32 + 1) % 2048;
+                related_eidos.active_indices.insert(new_idx);
+            }
+            related.push(related_eidos);
+        }
+        
+        related
     }
 }
 
@@ -69,10 +125,10 @@ impl SankharaSkandha for BasicSankharaSkandha {
     async fn form_intent(&self, flow: &mut EpistemologicalFlow) {
         // Logic đơn giản: Nếu cảm thấy "Khổ", khởi ý niệm "báo cáo lỗi".
         if let Some(Vedana::Unpleasant {..}) = flow.vedana {
-            println!("[{}] Khởi phát ý chỉ: 'Báo cáo lỗi'.", self.name());
-            flow.sankhara = Some("REPORT_ERROR".to_string());
+            info!("[{}] Khởi phát ý chỉ: 'Báo cáo lỗi'.", self.name());
+            flow.sankhara = Some(std::borrow::Cow::Borrowed("REPORT_ERROR"));
         } else {
-             println!("[{}] Không có ý chỉ nào được khởi phát.", self.name());
+             info!("[{}] Không có ý chỉ nào được khởi phát.", self.name());
         }
     }
 }
@@ -87,11 +143,11 @@ impl VinnanaSkandha for BasicVinnanaSkandha {
     async fn synthesize(&self, flow: &EpistemologicalFlow) -> Option<Vec<u8>> {
         // Logic đơn giản: Nếu có "Ý Chỉ", tổng hợp nó thành một sự kiện mới để tái sinh.
         if let Some(intent) = &flow.sankhara {
-            let conscious_event = format!("Synthesized consciousness: Intent is '{}'", intent);
-            println!("[{}] Tổng hợp nhận thức. Tái sinh sự kiện mới.", self.name());
+            let conscious_event = format!("Synthesized consciousness: Intent is '{}'", intent.as_ref());
+            info!("[{}] Tổng hợp nhận thức. Tái sinh sự kiện mới.", self.name());
             Some(conscious_event.into_bytes())
         } else {
-            println!("[{}] Tổng hợp nhận thức. Vòng lặp kết thúc.", self.name());
+            info!("[{}] Tổng hợp nhận thức. Vòng lặp kết thúc.", self.name());
             None
         }
     }

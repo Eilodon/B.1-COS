@@ -14,7 +14,7 @@ pub struct SkillDescriptor {
 }
 
 #[async_trait]
-pub trait SkillModule {
+pub trait SkillModule: Send + Sync {
     fn descriptor(&self) -> SkillDescriptor;
     async fn execute(&self, input: SkillInput) -> SkillOutput;
 }

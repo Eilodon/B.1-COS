@@ -1,6 +1,7 @@
 use pandora_core::interfaces::fep_cell::FepCell;
 use async_trait::async_trait;
 use std::collections::HashMap;
+use tracing::info;
 
 // --- Định nghĩa các kiểu dữ liệu cụ thể cho FEP_Seed ---
 pub type Belief = HashMap<String, bool>;
@@ -19,7 +20,7 @@ impl FepSeedRust {
 		let mut belief = HashMap::new();
 		// Niềm tin cốt lõi: 'THẾ GIỚI PHẢI SÁNG'
 		belief.insert("is_lit".to_string(), true);
-		println!("Hạt Giống Rust đã được sinh ra. Niềm tin đã được khắc tạc.");
+		info!("Hạt Giống Rust đã được sinh ra. Niềm tin đã được khắc tạc.");
 		Self { preferred_state: belief, prediction_error: 0.0 }
 	}
 }
@@ -35,17 +36,17 @@ impl FepCell for FepSeedRust {
 	}
 
 	async fn perceive(&mut self, observation: Self::Observation) -> f64 {
-		println!(
+		info!(
 			"Quan sát: Thế giới đang {}",
 			if observation.get("is_lit").cloned().unwrap_or(false) { "SÁNG" } else { "TỐI" }
 		);
 
 		if observation != self.preferred_state {
 			self.prediction_error = 1.0;
-			println!("Phát hiện 'Khổ' (Sai số dự đoán: {}).", self.prediction_error);
+			info!("Phát hiện 'Khổ' (Sai số dự đoán: {}).", self.prediction_error);
 		} else {
 			self.prediction_error = 0.0;
-			println!("Thực tại và Niềm tin đã hợp nhất. An trú trong hài hòa.");
+			info!("Thực tại và Niềm tin đã hợp nhất. An trú trong hài hòa.");
 		}
 		self.prediction_error
 	}
@@ -53,7 +54,7 @@ impl FepCell for FepSeedRust {
 	async fn act(&mut self) -> Option<Self::Action> {
 		if self.prediction_error > 0.0 {
 			let action = "TURN_ON".to_string();
-			println!("Khởi ý niệm hành động: '{}'", action);
+			info!("Khởi ý niệm hành động: '{}'", action);
 			Some(action)
 		} else {
 			None // Không cần hành động

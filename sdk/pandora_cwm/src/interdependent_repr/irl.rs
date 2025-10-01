@@ -5,6 +5,7 @@
 /// độc lập, mà như những phần tử trong một mạng lưới quan hệ phức tạp.
 
 use std::collections::HashMap;
+use tracing::info;
 
 /// Biểu diễn một thực thể trong mạng lưới duyên khởi.
 /// Mỗi thực thể được định nghĩa bởi:
@@ -34,7 +35,7 @@ pub struct InterdependentNetwork {
 
 impl InterdependentNetwork {
     pub fn new() -> Self {
-        println!("IRL: Khởi tạo Mạng lưới Duyên khởi");
+        info!("IRL: Khởi tạo Mạng lưới Duyên khởi");
         Self {
             entities: HashMap::new(),
             relationships: HashMap::new(),
@@ -43,14 +44,14 @@ impl InterdependentNetwork {
 
     /// Thêm một thực thể vào mạng lưới.
     pub fn add_entity(&mut self, entity: InterdependentEntity) {
-        println!("IRL: Thêm thực thể '{}' vào mạng lưới", entity.id);
+        info!("IRL: Thêm thực thể '{}' vào mạng lưới", entity.id);
         self.entities.insert(entity.id.clone(), entity);
     }
 
     /// Thiết lập quan hệ giữa hai thực thể.
     /// Trọng số thể hiện mức độ phụ thuộc lẫn nhau.
     pub fn add_relationship(&mut self, from: &str, to: &str, weight: f64) {
-        println!("IRL: Thiết lập quan hệ '{}' -> '{}' (trọng số: {:.3})", from, to, weight);
+        info!("IRL: Thiết lập quan hệ '{}' -> '{}' (trọng số: {:.3})", from, to, weight);
         self.relationships.insert((from.to_string(), to.to_string()), weight);
     }
 
@@ -61,7 +62,7 @@ impl InterdependentNetwork {
     /// 3. Các quan hệ có trọng số cao
     pub fn learn_interdependent_representation(&mut self, entity_id: &str) {
         if let Some(entity) = self.entities.get(entity_id) {
-            println!("IRL: Học biểu diễn duyên khởi cho '{}'", entity_id);
+            info!("IRL: Học biểu diễn duyên khởi cho '{}'", entity_id);
             
             // Cập nhật context dựa trên các thực thể phụ thuộc
             let mut new_context = entity.context.clone();
@@ -83,7 +84,7 @@ impl InterdependentNetwork {
             // Cập nhật context sau khi tính toán xong
             if let Some(entity) = self.entities.get_mut(entity_id) {
                 entity.context = new_context;
-                println!("IRL: Đã cập nhật context cho '{}' dựa trên {} thực thể phụ thuộc", 
+                info!("IRL: Đã cập nhật context cho '{}' dựa trên {} thực thể phụ thuộc", 
                         entity_id, entity.dependencies.len());
             }
         }
@@ -130,7 +131,7 @@ impl InterdependentNetwork {
     /// Cập nhật trạng thái của một thực thể và lan truyền ảnh hưởng.
     pub fn update_entity_state(&mut self, entity_id: &str, new_state: EntityState) {
         if let Some(entity) = self.entities.get_mut(entity_id) {
-            println!("IRL: Cập nhật trạng thái '{}' -> {:?}", entity_id, new_state);
+            info!("IRL: Cập nhật trạng thái '{}' -> {:?}", entity_id, new_state);
             entity.state = new_state;
             
             // Lan truyền ảnh hưởng đến các thực thể liên quan
@@ -144,7 +145,7 @@ impl InterdependentNetwork {
         
         for (influenced_id, influence_strength) in influencers {
             if influence_strength > 0.5 { // Chỉ lan truyền đến các thực thể có ảnh hưởng mạnh
-                println!("IRL: Lan truyền ảnh hưởng từ '{}' đến '{}' (cường độ: {:.3})", 
+                info!("IRL: Lan truyền ảnh hưởng từ '{}' đến '{}' (cường độ: {:.3})", 
                         source_id, influenced_id, influence_strength);
                 
                 // Cập nhật biểu diễn của thực thể bị ảnh hưởng

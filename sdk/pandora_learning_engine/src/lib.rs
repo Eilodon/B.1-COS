@@ -1,6 +1,6 @@
 use pandora_core::ontology::EpistemologicalFlow;
 use pandora_core::world_model::{WorldModel, DualIntrinsicReward};
-use pandora_error::PandoraError;
+use tracing::info;
 
 pub mod world_models;
 pub mod skandha_integration;
@@ -28,17 +28,17 @@ impl LearningEngine {
         new_model: &dyn WorldModel,
         flow: &EpistemologicalFlow,
     ) -> DualIntrinsicReward {
-        println!("\n--- Động Cơ Học Tập: Tính toán Phần thưởng Kép ---");
+        info!("\n--- Động Cơ Học Tập: Tính toán Phần thưởng Kép ---");
 
         // R_predict(t): Phần thưởng cho việc giảm sai số dự đoán.
         // Ở đây ta đơn giản hóa là lấy sai số của mô hình mới.
         let prediction_reward = -current_model.get_prediction_error(flow);
-        println!("Phần thưởng Dự đoán (R_predict): {:.4}", prediction_reward);
+        info!("Phần thưởng Dự đoán (R_predict): {:.4}", prediction_reward);
 
         // R_compress(t): Phần thưởng cho việc "giác ngộ" về một quy luật đơn giản hơn.
         let compression_reward = current_model.get_mdl() - new_model.get_mdl();
         if compression_reward > 0.0 {
-            println!(
+            info!(
                 "Phần thưởng Nén (R_compress): {:.4} -> Đã tìm thấy mô hình đơn giản hơn!",
                 compression_reward
             );
@@ -54,7 +54,7 @@ impl LearningEngine {
     pub fn get_total_weighted_reward(&self, reward: &DualIntrinsicReward) -> f64 {
         let total = self.exploit_weight * reward.prediction_reward
                   + self.transcend_weight * reward.compression_reward;
-        println!("=> Tổng Phần thưởng Nội tại: {:.4}", total);
+        info!("=> Tổng Phần thưởng Nội tại: {:.4}", total);
         total
     }
 }

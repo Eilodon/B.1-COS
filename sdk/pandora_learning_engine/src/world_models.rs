@@ -1,6 +1,7 @@
-use super::{DualIntrinsicReward, LearningEngine};
+use super::LearningEngine;
 use pandora_core::ontology::EpistemologicalFlow;
 use pandora_core::world_model::WorldModel;
+use tracing::info;
 
 /// Mô hình thế giới đơn giản để test động cơ học tập.
 /// Mô hình này có độ phức tạp có thể điều chỉnh và khả năng dự đoán cơ bản.
@@ -108,9 +109,9 @@ impl WorldModel for AdaptiveWorldModel {
 
 /// Test động cơ học tập với các mô hình khác nhau.
 pub fn test_learning_engine() {
-    println!("\n=============================================");
-    println!("BÀI TEST ĐỘNG CƠ HỌC TẬP VÔ CHẤP");
-    println!("=============================================\n");
+    info!("\n=============================================");
+    info!("BÀI TEST ĐỘNG CƠ HỌC TẬP VÔ CHẤP");
+    info!("=============================================\n");
 
     // Tạo động cơ học tập với trọng số cân bằng
     let learning_engine = LearningEngine::new(0.6, 0.4); // 60% khai thác, 40% siêu việt
@@ -135,21 +136,21 @@ pub fn test_learning_engine() {
     let reward = learning_engine.calculate_reward(&initial_model, &improved_model, &flow);
     let total_reward = learning_engine.get_total_weighted_reward(&reward);
 
-    println!("\n--- Kết quả Học tập Vô Chấp ---");
-    println!("Mô hình ban đầu: MDL = {:.4}, Accuracy = {:.4}", 
+    info!("\n--- Kết quả Học tập Vô Chấp ---");
+    info!("Mô hình ban đầu: MDL = {:.4}, Accuracy = {:.4}", 
              initial_model.get_mdl(), 1.0 - initial_model.get_prediction_error(&flow));
-    println!("Mô hình cải tiến: MDL = {:.4}, Accuracy = {:.4}", 
+    info!("Mô hình cải tiến: MDL = {:.4}, Accuracy = {:.4}", 
              improved_model.get_mdl(), 1.0 - improved_model.get_prediction_error(&flow));
-    println!("Tổng phần thưởng: {:.4}", total_reward);
+    info!("Tổng phần thưởng: {:.4}", total_reward);
 
     if total_reward > 0.0 {
-        println!("✅ THÀNH CÔNG: Hệ thống đã học được cách 'vô chấp' - từ bỏ mô hình phức tạp để chọn mô hình đơn giản hơn!");
+        info!("✅ THÀNH CÔNG: Hệ thống đã học được cách 'vô chấp' - từ bỏ mô hình phức tạp để chọn mô hình đơn giản hơn!");
     } else {
-        println!("⚠️  CẢNH BÁO: Hệ thống chưa học được cách 'vô chấp' - vẫn bám víu vào mô hình phức tạp.");
+        info!("⚠️  CẢNH BÁO: Hệ thống chưa học được cách 'vô chấp' - vẫn bám víu vào mô hình phức tạp.");
     }
 
     // Test với mô hình thích ứng
-    println!("\n--- Test Mô hình Thích ứng ---");
+    info!("\n--- Test Mô hình Thích ứng ---");
     let mut adaptive_model = AdaptiveWorldModel::new(
         "Adaptive Model".to_string(),
         4.0,  // Độ phức tạp ban đầu
@@ -165,10 +166,10 @@ pub fn test_learning_engine() {
         let reward = learning_engine.calculate_reward(&adaptive_model, &child_model, &flow);
         let total_reward = learning_engine.get_total_weighted_reward(&reward);
         
-        println!("Lần {}: Feedback = {:.1}, Total Reward = {:.4}", i + 1, feedback, total_reward);
+        info!("Lần {}: Feedback = {:.1}, Total Reward = {:.4}", i + 1, feedback, total_reward);
     }
 
-    println!("\n=============================================");
-    println!("✅ HOÀN THÀNH: Động cơ Học tập Vô Chấp đã hoạt động!");
-    println!("=============================================");
+    info!("\n=============================================");
+    info!("✅ HOÀN THÀNH: Động cơ Học tập Vô Chấp đã hoạt động!");
+    info!("=============================================");
 }

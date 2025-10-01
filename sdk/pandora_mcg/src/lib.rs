@@ -1,6 +1,7 @@
 #[cfg(feature = "ml")]
 use pandora_cwm::nn::uq_models::ProbabilisticOutput;
 use serde::{Deserialize, Serialize};
+use tracing::info;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionTrigger {
@@ -33,7 +34,7 @@ impl RuleEngine {
                 match rule {
                     MetaRule::IfUncertaintyExceeds { threshold, action } => {
                         if variance_val > *threshold {
-                            println!(
+                            info!(
                                 "MCG: Phát hiện độ bất định ({:.4}) > ngưỡng ({:.4}). Kích hoạt hành động.",
                                 variance_val, threshold
                             );
@@ -44,7 +45,7 @@ impl RuleEngine {
                 }
             }
         }
-        println!("MCG: Trạng thái ổn định. Không cần hành động.");
+        info!("MCG: Trạng thái ổn định. Không cần hành động.");
         ActionTrigger::NoAction
     }
 
@@ -53,7 +54,7 @@ impl RuleEngine {
             match rule {
                 MetaRule::IfCompressionRewardExceeds { threshold, action } => {
                     if reward.compression_reward > *threshold {
-                        println!(
+                        info!(
                             "MCG: Phát hiện Phần thưởng Nén ({:.4}) > ngưỡng ({:.4}). Kích hoạt hành động!",
                             reward.compression_reward, threshold
                         );
@@ -66,7 +67,7 @@ impl RuleEngine {
                 }
             }
         }
-        println!("MCG: Trạng thái ổn định. Không cần hành động.");
+        info!("MCG: Trạng thái ổn định. Không cần hành động.");
         ActionTrigger::NoAction
     }
 }
@@ -78,16 +79,16 @@ impl MetaCognitiveGovernor {
 
     #[cfg(feature = "ml")]
     pub fn monitor_and_decide_ml(&self, cwm_output: &ProbabilisticOutput) -> ActionTrigger {
-        println!("\n--- Vòng lặp Siêu Nhận thức Bắt đầu ---");
+        info!("\n--- Vòng lặp Siêu Nhận thức Bắt đầu ---");
         let decision = self.rule_engine.evaluate_ml(cwm_output);
-        println!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");
+        info!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");
         decision
     }
 
     pub fn monitor_and_decide(&self, reward: &pandora_core::world_model::DualIntrinsicReward) -> ActionTrigger {
-        println!("\n--- Vòng lặp Siêu Nhận thức Bắt đầu ---");
+        info!("\n--- Vòng lặp Siêu Nhận thức Bắt đầu ---");
         let decision = self.rule_engine.evaluate(reward);
-        println!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");
+        info!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");
         decision
     }
 }

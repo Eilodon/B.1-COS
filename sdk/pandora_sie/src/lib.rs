@@ -1,6 +1,7 @@
 use pandora_error::PandoraError;
 use pandora_mcg::ActionTrigger;
 use async_trait::async_trait;
+use tracing::info;
 
 pub struct ImprovementAction { pub description: String }
 
@@ -19,7 +20,7 @@ impl ImprovementStrategy for RefinementStrategy {
     async fn propose_action(&self, trigger: &ActionTrigger) -> Result<ImprovementAction, PandoraError> {
         match trigger {
             ActionTrigger::TriggerSelfImprovementLevel1 { reason, target_component } => {
-                println!(
+                info!(
                     "SIE ({}): Nhận yêu cầu tinh chỉnh cho '{}' vì '{}'",
                     self.name(), target_component, reason
                 );
@@ -42,12 +43,12 @@ impl SelfImprovementEngine {
     pub fn new() -> Self {
         let mut strategies: std::collections::HashMap<u8, Box<dyn ImprovementStrategy>> = std::collections::HashMap::new();
         strategies.insert(1, Box::new(RefinementStrategy));
-        println!("SIE: Đã khởi tạo và đăng ký các chiến lược tự cải thiện.");
+        info!("SIE: Đã khởi tạo và đăng ký các chiến lược tự cải thiện.");
         Self { strategies }
     }
 
     pub async fn execute(&self, trigger: &ActionTrigger) -> Result<ImprovementAction, PandoraError> {
-        println!("\n--- Động cơ Tự Cải thiện Bắt đầu ---");
+        info!("\n--- Động cơ Tự Cải thiện Bắt đầu ---");
         let strategy = match trigger {
             ActionTrigger::TriggerSelfImprovementLevel1 { .. } => self.strategies.get(&1),
             ActionTrigger::TriggerSelfImprovementLevel2 { .. } => self.strategies.get(&2),
@@ -56,8 +57,8 @@ impl SelfImprovementEngine {
 
         if let Some(s) = strategy {
             let action = s.propose_action(trigger).await?;
-            println!("SIE: Đã đề xuất hành động: '{}'", action.description);
-            println!("--- Động cơ Tự Cải thiện Kết thúc ---");
+            info!("SIE: Đã đề xuất hành động: '{}'", action.description);
+            info!("--- Động cơ Tự Cải thiện Kết thúc ---");
             Ok(action)
         } else {
             Err(PandoraError::Config(format!("Không tìm thấy chiến lược phù hợp cho trigger: {:?}", trigger)))

@@ -26,6 +26,9 @@ criterion = "0.5"
 [[bench]]
 name = "flow_bench"
 harness = false
+[[bench]]
+name = "hashmap_bench"
+harness = false
 
 [profile.bench]
 debug = true

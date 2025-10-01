@@ -2,8 +2,10 @@ use async_trait::async_trait;
 use pandora_core::interfaces::skills::SkillModule;
 use pandora_error::PandoraError;
 use std::collections::HashMap;
+use fnv::FnvHashMap;
 use std::sync::Arc;
 use std::time::Duration;
+use std::time::Instant;
 mod circuit_breaker;
 use circuit_breaker::{CircuitBreakerManager, CircuitBreakerConfig, CircuitStats};
 use tokio::time::sleep;
@@ -30,14 +32,12 @@ pub trait OrchestratorTrait: Send + Sync {
 /// `SkillRegistry` chịu trách nhiệm lưu trữ và quản lý tất cả các skill có sẵn.
 /// Trong tương lai, nó sẽ có khả năng tự động khám phá các skill.
 pub struct SkillRegistry {
-    skills: HashMap<String, Arc<dyn SkillModule>>,
+    skills: FnvHashMap<String, Arc<dyn SkillModule>>,
 }
 
 impl SkillRegistry {
     pub fn new() -> Self {
-        Self {
-            skills: HashMap::new(),
-        }
+        Self { skills: FnvHashMap::default() }
     }
 
     /// Đăng ký một skill mới vào registry.

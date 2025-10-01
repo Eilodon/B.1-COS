@@ -16,6 +16,7 @@ tracing = { workspace = true }
 
 num-complex = { workspace = true }
 rustfft = { workspace = true }
+fnv = { workspace = true }
 
 # Temporarily disabled due to dependency conflicts
 # candle-core = { version = "0.3.3", optional = true }

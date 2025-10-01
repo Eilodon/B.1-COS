@@ -1,10 +1,11 @@
 use async_trait::async_trait;
 use pandora_core::interfaces::fep_cell::FepCell;
 use std::collections::HashMap;
+use fnv::FnvHashMap;
 use tracing::info;
 
 // --- Định nghĩa các kiểu dữ liệu cụ thể cho FEP_Seed ---
-pub type Belief = HashMap<String, bool>;
+pub type Belief = FnvHashMap<String, bool>;
 pub type Observation = HashMap<String, bool>;
 pub type Action = String;
 
@@ -17,7 +18,7 @@ pub struct FepSeedRust {
 
 impl FepSeedRust {
     pub fn new() -> Self {
-        let mut belief = HashMap::new();
+        let mut belief = FnvHashMap::default();
         // Niềm tin cốt lõi: 'THẾ GIỚI PHẢI SÁNG'
         belief.insert("is_lit".to_string(), true);
         info!("Hạt Giống Rust đã được sinh ra. Niềm tin đã được khắc tạc.");
@@ -47,8 +48,8 @@ impl FepCell for FepSeedRust {
                 "TỐI"
             }
         );
-
-        if observation != self.preferred_state {
+        let obs_fnv: FnvHashMap<String, bool> = observation.into_iter().collect();
+        if obs_fnv != self.preferred_state {
             self.prediction_error = 1.0;
             info!(
                 "Phát hiện 'Khổ' (Sai số dự đoán: {}).",

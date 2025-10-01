@@ -53,13 +53,13 @@ impl ImprovementStrategy for RefinementStrategy {
 }
 
 pub struct SelfImprovementEngine {
-    strategies: std::collections::HashMap<u8, Box<dyn ImprovementStrategy>>,
+    strategies: fnv::FnvHashMap<u8, Box<dyn ImprovementStrategy>>,
 }
 
 impl SelfImprovementEngine {
     pub fn new() -> Self {
-        let mut strategies: std::collections::HashMap<u8, Box<dyn ImprovementStrategy>> =
-            std::collections::HashMap::new();
+        let mut strategies: fnv::FnvHashMap<u8, Box<dyn ImprovementStrategy>> =
+            fnv::FnvHashMap::default();
         strategies.insert(1, Box::new(RefinementStrategy));
         info!("SIE: Đã khởi tạo và đăng ký các chiến lược tự cải thiện.");
         Self { strategies }

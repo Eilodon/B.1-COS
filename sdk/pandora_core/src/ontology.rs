@@ -24,19 +24,18 @@ pub enum Vedana {
 pub struct EpistemologicalFlow {
     /// Sắc: Use Bytes for zero-copy slicing
     pub rupa: Option<bytes::Bytes>,
-    
+
     /// Thọ: Inlined for cache efficiency
     pub vedana: Option<Vedana>,
-    
+
     /// Tưởng: Compact representation
     pub sanna: Option<DataEidos>,
-    
+
     /// Related eidos: SmallVec avoids heap for small counts
     pub related_eidos: Option<smallvec::SmallVec<[DataEidos; 4]>>,
-    
+
     /// Hành: Use Arc<str> for cheap cloning of interned strings
     pub sankhara: Option<Arc<str>>,
-    
     // Thức (Consciousness) sẽ là kết quả cuối cùng của dòng chảy.
 }
 

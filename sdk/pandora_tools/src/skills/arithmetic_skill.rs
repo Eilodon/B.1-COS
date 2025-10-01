@@ -24,7 +24,7 @@ impl SkillModule for ArithmeticSkill {
                 message: "Thiếu trường 'expression'".into(),
             },
         )?;
-        
+
         match ArithmeticParser::parse(expr) {
             Ok(result) => Ok(json!({"result": result})),
             Err(e) => Err(PandoraError::SkillExecution {
@@ -52,11 +52,11 @@ impl ArithmeticParser {
             pos: 0,
         };
         let result = parser.expr()?;
-        
+
         if parser.pos < parser.input.len() {
             return Err(format!("Unexpected character at position {}", parser.pos));
         }
-        
+
         Ok(result)
     }
 
@@ -72,7 +72,7 @@ impl ArithmeticParser {
 
     fn expr(&mut self) -> Result<f64, String> {
         let mut result = self.term()?;
-        
+
         while let Some(op) = self.current() {
             match op {
                 '+' => {
@@ -86,13 +86,13 @@ impl ArithmeticParser {
                 _ => break,
             }
         }
-        
+
         Ok(result)
     }
 
     fn term(&mut self) -> Result<f64, String> {
         let mut result = self.factor()?;
-        
+
         while let Some(op) = self.current() {
             match op {
                 '*' => {
@@ -110,7 +110,7 @@ impl ArithmeticParser {
                 _ => break,
             }
         }
-        
+
         Ok(result)
     }
 
@@ -137,7 +137,7 @@ impl ArithmeticParser {
     fn number(&mut self) -> Result<f64, String> {
         let start = self.pos;
         let mut has_dot = false;
-        
+
         while let Some(c) = self.current() {
             if c.is_ascii_digit() {
                 self.consume();
@@ -148,12 +148,13 @@ impl ArithmeticParser {
                 break;
             }
         }
-        
+
         let num_str: String = self.input[start..self.pos].iter().copied().collect();
         if num_str.is_empty() {
             return Err("Expected number".to_string());
         }
-        num_str.parse::<f64>()
+        num_str
+            .parse::<f64>()
             .map_err(|_| format!("Invalid number: {}", num_str))
     }
 }

@@ -1,27 +1,27 @@
-use pandora_orchestrator::{Orchestrator, SkillRegistry, OrchestratorTrait};
+use pandora_orchestrator::{Orchestrator, OrchestratorTrait, SkillRegistry};
 use pandora_tools::skills::{
-    arithmetic_skill::ArithmeticSkill,
-    logical_reasoning_skill::LogicalReasoningSkill,
-    pattern_matching_skill::PatternMatchingSkill,
     analogy_reasoning_skill::AnalogyReasoningSkill,
     // Temporarily disabled due to dependency conflicts
     // information_retrieval_skill::InformationRetrievalSkill,
+    arithmetic_skill::ArithmeticSkill,
+    logical_reasoning_skill::LogicalReasoningSkill,
+    pattern_matching_skill::PatternMatchingSkill,
 };
-use std::sync::Arc;
 use std::io::{self, Write};
+use std::sync::Arc;
 use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing subscriber
     tracing_subscriber::fmt::init();
-    
+
     println!("🔱 Pandora Genesis SDK - CLI Demo");
     println!("=====================================\n");
 
     // Khởi tạo Skill Registry
     let mut registry = SkillRegistry::new();
-    
+
     // Đăng ký các skills
     registry.register(Arc::new(ArithmeticSkill));
     registry.register(Arc::new(LogicalReasoningSkill));

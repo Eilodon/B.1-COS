@@ -10,15 +10,23 @@ use std::sync::Arc;
 /// Một mô hình cũ, cồng kềnh với độ phức tạp cao.
 struct OldComplexModel;
 impl WorldModel for OldComplexModel {
-    fn get_mdl(&self) -> f64 { 100.0 } // Độ phức tạp cao
-    fn get_prediction_error(&self, _flow: &EpistemologicalFlow) -> f64 { 0.5 }
+    fn get_mdl(&self) -> f64 {
+        100.0
+    } // Độ phức tạp cao
+    fn get_prediction_error(&self, _flow: &EpistemologicalFlow) -> f64 {
+        0.5
+    }
 }
 
 /// Một mô hình mới, thanh thoát hơn, đã "giác ngộ" được quy luật đơn giản hơn.
 struct NewSimpleModel;
 impl WorldModel for NewSimpleModel {
-    fn get_mdl(&self) -> f64 { 20.0 } // Độ phức tạp thấp hơn nhiều
-    fn get_prediction_error(&self, _flow: &EpistemologicalFlow) -> f64 { 0.4 } // Sai số có thể cao hơn một chút
+    fn get_mdl(&self) -> f64 {
+        20.0
+    } // Độ phức tạp thấp hơn nhiều
+    fn get_prediction_error(&self, _flow: &EpistemologicalFlow) -> f64 {
+        0.4
+    } // Sai số có thể cao hơn một chút
 }
 
 #[tokio::test]
@@ -29,7 +37,7 @@ async fn test_wisdom_compass_integration() {
 
     // --- 2. Thiết lập hệ thống ---
     let learning_engine = Arc::new(LearningEngine::new(0.5, 0.5));
-    
+
     let processor = SkandhaProcessor::new(
         Box::new(BasicRupaSkandha),
         Box::new(BasicVedanaSkandha),
@@ -38,14 +46,12 @@ async fn test_wisdom_compass_integration() {
         Box::new(BasicVinnanaSkandha),
     );
 
-    let processor_with_learning = SkandhaProcessorWithLearning::new(
-        processor,
-        Arc::clone(&learning_engine),
-    );
+    let processor_with_learning =
+        SkandhaProcessorWithLearning::new(processor, Arc::clone(&learning_engine));
 
     let old_model = OldComplexModel;
     let new_model = NewSimpleModel;
-    
+
     let event = "some event data".to_string().into_bytes();
 
     // --- 3. Chạy chu trình và đánh giá ---

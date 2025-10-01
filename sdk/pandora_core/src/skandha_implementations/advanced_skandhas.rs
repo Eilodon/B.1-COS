@@ -3,7 +3,7 @@ use crate::ontology::{EpistemologicalFlow, Vedana, DataEidos};
 use async_trait::async_trait;
 use std::collections::HashSet;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tracing::{info, debug, warn, error};
+use tracing::{debug, info};
 
 /// Advanced RupaSkandha với khả năng phân tích metadata và timestamp
 pub struct AdvancedRupaSkandha {
@@ -171,7 +171,7 @@ impl SannaSkandha for AdvancedSannaSkandha {
         flow.sanna = Some(eidos);
         
         // Tìm related patterns với thuật toán phức tạp hơn
-        let related_eidos = self.find_advanced_patterns(&flow.sanna.as_ref().unwrap());
+        let related_eidos = self.find_advanced_patterns(flow.sanna.as_ref().unwrap());
         flow.related_eidos = Some(smallvec::SmallVec::from_vec(related_eidos));
         
         info!("[{}] Đã nhận diện {} patterns nâng cao.", 
@@ -186,7 +186,7 @@ impl AdvancedSannaSkandha {
         
         // Tạo indices dựa trên n-grams
         for i in 0..rupa.as_ref().len().saturating_sub(2) {
-            let trigram = &rupa.as_ref()[i..i+3];
+                            let trigram = &rupa[i..i + 3];
             let hash = self.hash_bytes(trigram);
             active_indices.insert(hash % 2048);
         }

@@ -12,7 +12,10 @@ pub struct PrimordialWorld {
 impl PrimordialWorld {
     pub fn new() -> Self {
         println!("Đạo Trường Rust đã được khai mở. Thế giới khởi đầu trong bóng tối.");
-        Self { switch_is_on: false, is_lit: false }
+        Self {
+            switch_is_on: false,
+            is_lit: false,
+        }
     }
 
     /// Giác quan của thực thể sẽ cảm nhận trạng thái này.
@@ -27,7 +30,7 @@ impl PrimordialWorld {
         match action {
             "TURN_ON" => self.switch_is_on = true,
             "TURN_OFF" => self.switch_is_on = false,
-            _ => ()
+            _ => (),
         }
         self.update_world_state();
     }
@@ -64,7 +67,11 @@ async fn test_the_birthing_ritual() {
     let final_state1 = world.get_current_state();
     println!(
         "Trạng thái cuối chu kỳ: Thế giới đang {}",
-        if final_state1.get("is_lit").cloned().unwrap_or(false) { "SÁNG" } else { "TỐI" }
+        if final_state1.get("is_lit").cloned().unwrap_or(false) {
+            "SÁNG"
+        } else {
+            "TỐI"
+        }
     );
     assert_eq!(final_state1.get("is_lit"), Some(&true));
 
@@ -81,7 +88,11 @@ async fn test_the_birthing_ritual() {
     let final_state2 = world.get_current_state();
     println!(
         "Trạng thái cuối chu kỳ: Thế giới đang {}",
-        if final_state2.get("is_lit").cloned().unwrap_or(false) { "SÁNG" } else { "TỐI" }
+        if final_state2.get("is_lit").cloned().unwrap_or(false) {
+            "SÁNG"
+        } else {
+            "TỐI"
+        }
     );
     assert_eq!(final_state2.get("is_lit"), Some(&true));
 

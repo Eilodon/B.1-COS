@@ -1,5 +1,7 @@
+use pandora_cwm::interdependent_repr::irl::{
+    EntityState, InterdependentEntity, InterdependentNetwork,
+};
 use pandora_cwm::interdependent_repr::itr_nn::InterdependentTopoRelationalNN;
-use pandora_cwm::interdependent_repr::irl::{InterdependentNetwork, InterdependentEntity, EntityState};
 
 #[tokio::test]
 async fn test_interdependent_insight() {
@@ -10,11 +12,11 @@ async fn test_interdependent_insight() {
     // --- Test ITR-NN (Interdependent Topo-Relational Neural Network) ---
     println!("\n--- TEST ITR-NN: Phân tích Dữ liệu Topo ---");
     let itr_nn = InterdependentTopoRelationalNN::new();
-    
+
     // Tạo dữ liệu đồ thị giả lập (các nút và cạnh)
     let graph_data = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
     itr_nn.process_graph(&graph_data);
-    
+
     println!("✅ ITR-NN: Đã xử lý đồ thị với {} nút", graph_data.len());
 
     // --- Test IRL (Interdependent Representation Learning) ---
@@ -58,7 +60,10 @@ async fn test_interdependent_insight() {
 
     // Tìm các thực thể có ảnh hưởng mạnh nhất đến A
     let influencers = network.find_key_influencers("A");
-    println!("✅ IRL: Tìm thấy {} thực thể có ảnh hưởng đến A", influencers.len());
+    println!(
+        "✅ IRL: Tìm thấy {} thực thể có ảnh hưởng đến A",
+        influencers.len()
+    );
     for (id, influence) in influencers {
         println!("   - '{}': ảnh hưởng {:.3}", id, influence);
     }
@@ -69,14 +74,14 @@ async fn test_interdependent_insight() {
 
     // --- Test kết hợp ITR-NN và IRL ---
     println!("\n--- TEST KẾT HỢP: ITR-NN + IRL ---");
-    
+
     // Sử dụng ITR-NN để phân tích cấu trúc topo của mạng lưới
     let network_structure = vec![0.8, 0.6, 0.9, 0.7, 0.5, 0.3, 0.4, 0.2];
     itr_nn.process_graph(&network_structure);
-    
+
     // Sử dụng IRL để học biểu diễn duyên khởi
     network.learn_interdependent_representation("B");
-    
+
     println!("✅ KẾT HỢP: ITR-NN phân tích cấu trúc, IRL học quan hệ duyên khởi");
 
     println!("\n=============================================");

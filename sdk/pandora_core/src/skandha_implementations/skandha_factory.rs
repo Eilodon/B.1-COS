@@ -1,9 +1,5 @@
 use crate::interfaces::skandhas::*;
-use crate::skandha_implementations::{
-    basic_skandhas::*,
-    advanced_skandhas::*,
-};
-use tracing::info;
+use crate::skandha_implementations::{basic_skandhas::*, advanced_skandhas::*};
 
 /// Factory để tạo các Skandha variants khác nhau
 pub struct SkandhaFactory;
@@ -45,11 +41,11 @@ impl SkandhaFactory {
 
     /// Tạo bộ Advanced Skandhas với cấu hình tùy chỉnh
     pub fn create_custom_advanced_skandhas(
-        rupa_config: (bool, bool), // (enable_metadata, enable_timestamp)
-        vedana_config: (f32, bool), // (karma_threshold, enable_context_analysis)
-        sanna_config: (f64, bool), // (pattern_threshold, enable_semantic_analysis)
+        rupa_config: (bool, bool),    // (enable_metadata, enable_timestamp)
+        vedana_config: (f32, bool),   // (karma_threshold, enable_context_analysis)
+        sanna_config: (f64, bool),    // (pattern_threshold, enable_semantic_analysis)
         sankhara_config: (f64, bool), // (decision_threshold, enable_priority_system)
-        vinnana_config: (f64, bool), // (synthesis_threshold, enable_metacognition)
+        vinnana_config: (f64, bool),  // (synthesis_threshold, enable_metacognition)
     ) -> (
         Box<dyn RupaSkandha>,
         Box<dyn VedanaSkandha>,
@@ -61,13 +57,21 @@ impl SkandhaFactory {
             Box::new(AdvancedRupaSkandha::new(rupa_config.0, rupa_config.1)),
             Box::new(AdvancedVedanaSkandha::new(vedana_config.0, vedana_config.1)),
             Box::new(AdvancedSannaSkandha::new(sanna_config.0, sanna_config.1)),
-            Box::new(AdvancedSankharaSkandha::new(sankhara_config.0, sankhara_config.1)),
-            Box::new(AdvancedVinnanaSkandha::new(vinnana_config.0, vinnana_config.1)),
+            Box::new(AdvancedSankharaSkandha::new(
+                sankhara_config.0,
+                sankhara_config.1,
+            )),
+            Box::new(AdvancedVinnanaSkandha::new(
+                vinnana_config.0,
+                vinnana_config.1,
+            )),
         )
     }
 
     /// Tạo Skandha processor với preset configurations
-    pub fn create_preset_processor(preset: SkandhaPreset) -> (
+    pub fn create_preset_processor(
+        preset: SkandhaPreset,
+    ) -> (
         Box<dyn RupaSkandha>,
         Box<dyn VedanaSkandha>,
         Box<dyn SannaSkandha>,
@@ -96,7 +100,7 @@ impl SkandhaFactory {
             Box::new(AdvancedVedanaSkandha::new(0.3, false)), // Threshold thấp, tắt context analysis
             Box::new(AdvancedSannaSkandha::new(0.2, false)), // Threshold thấp, tắt semantic analysis
             Box::new(AdvancedSankharaSkandha::new(0.2, false)), // Threshold thấp, tắt priority system
-            Box::new(AdvancedVinnanaSkandha::new(0.3, false)), // Threshold thấp, tắt metacognition
+            Box::new(AdvancedVinnanaSkandha::new(0.3, false)),  // Threshold thấp, tắt metacognition
         )
     }
 

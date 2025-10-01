@@ -8,9 +8,9 @@ use tracing::info;
 #[derive(Debug, Clone)]
 pub struct SimpleWorldModel {
     pub name: String,
-    pub complexity: f64,        // Độ phức tạp của mô hình (MDL)
-    pub accuracy: f64,          // Độ chính xác dự đoán (0.0 - 1.0)
-    pub parameters: Vec<f64>,   // Các tham số của mô hình
+    pub complexity: f64,      // Độ phức tạp của mô hình (MDL)
+    pub accuracy: f64,        // Độ chính xác dự đoán (0.0 - 1.0)
+    pub parameters: Vec<f64>, // Các tham số của mô hình
 }
 
 impl SimpleWorldModel {
@@ -70,15 +70,16 @@ impl AdaptiveWorldModel {
     /// Thích ứng mô hình dựa trên phản hồi từ môi trường.
     pub fn adapt(&mut self, feedback: f64) {
         // Cập nhật độ chính xác dựa trên phản hồi
-        self.current_accuracy = (self.current_accuracy + self.learning_rate * feedback).clamp(0.0, 1.0);
-        
+        self.current_accuracy =
+            (self.current_accuracy + self.learning_rate * feedback).clamp(0.0, 1.0);
+
         // Điều chỉnh độ phức tạp dựa trên hiệu suất
         let complexity_change = if feedback > 0.0 {
             -self.learning_rate * 0.1 // Giảm phức tạp nếu hiệu suất tốt
         } else {
-            self.learning_rate * 0.1  // Tăng phức tạp nếu hiệu suất kém
+            self.learning_rate * 0.1 // Tăng phức tạp nếu hiệu suất kém
         };
-        
+
         let new_complexity = (self.base_complexity + complexity_change).max(0.1);
         self.adaptation_history.push(new_complexity);
         self.base_complexity = new_complexity;
@@ -88,8 +89,8 @@ impl AdaptiveWorldModel {
     pub fn spawn_child(&self) -> Self {
         let child_name = format!("{}_child", self.name);
         let child_complexity = self.base_complexity * 0.8; // Mô hình con đơn giản hơn
-        let child_accuracy = self.current_accuracy * 1.1;  // Nhưng chính xác hơn
-        
+        let child_accuracy = self.current_accuracy * 1.1; // Nhưng chính xác hơn
+
         Self::new(child_name, child_complexity, child_accuracy)
     }
 }
@@ -97,7 +98,8 @@ impl AdaptiveWorldModel {
 impl WorldModel for AdaptiveWorldModel {
     fn get_mdl(&self) -> f64 {
         // MDL dựa trên độ phức tạp hiện tại và lịch sử thích ứng
-        let avg_complexity = self.adaptation_history.iter().sum::<f64>() / self.adaptation_history.len() as f64;
+        let avg_complexity =
+            self.adaptation_history.iter().sum::<f64>() / self.adaptation_history.len() as f64;
         avg_complexity * (1.0 + self.adaptation_history.len() as f64 * 0.1)
     }
 
@@ -119,14 +121,14 @@ pub fn test_learning_engine() {
     // Tạo mô hình ban đầu (phức tạp, kém chính xác)
     let initial_model = SimpleWorldModel::new(
         "Initial Model".to_string(),
-        5.0,  // Độ phức tạp cao
-        0.3,  // Độ chính xác thấp
+        5.0, // Độ phức tạp cao
+        0.3, // Độ chính xác thấp
     );
 
     // Tạo mô hình cải tiến (đơn giản hơn, chính xác hơn)
     let improved_model = initial_model.evolve(
-        3.0,  // Độ phức tạp thấp hơn
-        0.8,  // Độ chính xác cao hơn
+        3.0, // Độ phức tạp thấp hơn
+        0.8, // Độ chính xác cao hơn
     );
 
     // Tạo một EpistemologicalFlow giả lập
@@ -137,10 +139,16 @@ pub fn test_learning_engine() {
     let total_reward = learning_engine.get_total_weighted_reward(&reward);
 
     info!("\n--- Kết quả Học tập Vô Chấp ---");
-    info!("Mô hình ban đầu: MDL = {:.4}, Accuracy = {:.4}", 
-             initial_model.get_mdl(), 1.0 - initial_model.get_prediction_error(&flow));
-    info!("Mô hình cải tiến: MDL = {:.4}, Accuracy = {:.4}", 
-             improved_model.get_mdl(), 1.0 - improved_model.get_prediction_error(&flow));
+    info!(
+        "Mô hình ban đầu: MDL = {:.4}, Accuracy = {:.4}",
+        initial_model.get_mdl(),
+        1.0 - initial_model.get_prediction_error(&flow)
+    );
+    info!(
+        "Mô hình cải tiến: MDL = {:.4}, Accuracy = {:.4}",
+        improved_model.get_mdl(),
+        1.0 - improved_model.get_prediction_error(&flow)
+    );
     info!("Tổng phần thưởng: {:.4}", total_reward);
 
     if total_reward > 0.0 {
@@ -153,20 +161,25 @@ pub fn test_learning_engine() {
     info!("\n--- Test Mô hình Thích ứng ---");
     let mut adaptive_model = AdaptiveWorldModel::new(
         "Adaptive Model".to_string(),
-        4.0,  // Độ phức tạp ban đầu
-        0.1,  // Tốc độ học
+        4.0, // Độ phức tạp ban đầu
+        0.1, // Tốc độ học
     );
 
     // Mô phỏng quá trình học tập
     for i in 0..5 {
         let feedback = if i < 3 { 0.2 } else { -0.1 }; // Phản hồi tích cực rồi tiêu cực
         adaptive_model.adapt(feedback);
-        
+
         let child_model = adaptive_model.spawn_child();
         let reward = learning_engine.calculate_reward(&adaptive_model, &child_model, &flow);
         let total_reward = learning_engine.get_total_weighted_reward(&reward);
-        
-        info!("Lần {}: Feedback = {:.1}, Total Reward = {:.4}", i + 1, feedback, total_reward);
+
+        info!(
+            "Lần {}: Feedback = {:.1}, Total Reward = {:.4}",
+            i + 1,
+            feedback,
+            total_reward
+        );
     }
 
     info!("\n=============================================");

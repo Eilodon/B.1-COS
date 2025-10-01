@@ -1,10 +1,10 @@
 use pandora_core::ontology::EpistemologicalFlow;
-use pandora_core::world_model::{WorldModel, DualIntrinsicReward};
+use pandora_core::world_model::{DualIntrinsicReward, WorldModel};
 use tracing::info;
 
-pub mod world_models;
 pub mod skandha_integration;
 pub mod transcendental_processor;
+pub mod world_models;
 
 pub use skandha_integration::SkandhaProcessorWithLearning;
 pub use transcendental_processor::TranscendentalProcessor;
@@ -17,7 +17,10 @@ pub struct LearningEngine {
 
 impl LearningEngine {
     pub fn new(exploit_weight: f64, transcend_weight: f64) -> Self {
-        Self { exploit_weight, transcend_weight }
+        Self {
+            exploit_weight,
+            transcend_weight,
+        }
     }
 
     /// Tính toán phần thưởng nội tại kép dựa trên sự thay đổi giữa hai mô hình.
@@ -53,7 +56,7 @@ impl LearningEngine {
     /// Tính toán tổng phần thưởng có trọng số.
     pub fn get_total_weighted_reward(&self, reward: &DualIntrinsicReward) -> f64 {
         let total = self.exploit_weight * reward.prediction_reward
-                  + self.transcend_weight * reward.compression_reward;
+            + self.transcend_weight * reward.compression_reward;
         info!("=> Tổng Phần thưởng Nội tại: {:.4}", total);
         total
     }

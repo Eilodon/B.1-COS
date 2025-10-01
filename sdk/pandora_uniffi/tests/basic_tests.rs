@@ -21,14 +21,14 @@ fn test_string_operations() {
 #[test]
 fn test_json_operations() {
     use serde_json::json;
-    
+
     // Test JSON creation and manipulation
     let data = json!({
         "name": "test",
         "value": 42,
         "active": true
     });
-    
+
     assert_eq!(data["name"], "test");
     assert_eq!(data["value"], 42);
     assert_eq!(data["active"], true);
@@ -40,7 +40,7 @@ fn test_error_handling() {
     let result: Result<i32, &str> = Ok(42);
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), 42);
-    
+
     let error_result: Result<i32, &str> = Err("Something went wrong");
     assert!(error_result.is_err());
     assert_eq!(error_result.unwrap_err(), "Something went wrong");
@@ -53,7 +53,7 @@ fn test_collections() {
     vec.push(1);
     vec.push(2);
     vec.push(3);
-    
+
     assert_eq!(vec.len(), 3);
     assert_eq!(vec[0], 1);
     assert_eq!(vec[1], 2);
@@ -65,7 +65,7 @@ fn test_option_handling() {
     // Test Option handling
     let some_value = Some(42);
     let none_value: Option<i32> = None;
-    
+
     assert!(some_value.is_some());
     assert!(none_value.is_none());
     assert_eq!(some_value.unwrap(), 42);
@@ -77,7 +77,7 @@ fn test_string_validation() {
     let valid_name = "arithmetic";
     let empty_name = "";
     let long_name = "a".repeat(1000);
-    
+
     assert!(!valid_name.is_empty());
     assert!(empty_name.is_empty());
     assert!(long_name.len() > 100);
@@ -89,7 +89,7 @@ fn test_unicode_handling() {
     let chinese_text = "你好世界";
     let emoji_text = "Hello 🦀";
     let mixed_text = "Hello 世界 🦀";
-    
+
     assert_eq!(chinese_text.len(), 12); // 4 Chinese characters = 12 bytes
     assert!(emoji_text.contains("🦀"));
     assert!(mixed_text.contains("Hello"));
@@ -100,22 +100,20 @@ fn test_unicode_handling() {
 #[test]
 fn test_concurrent_operations() {
     use std::thread;
-    
+
     // Test basic concurrent operations
     let mut handles = vec![];
-    
+
     for i in 0..5 {
-        let handle = thread::spawn(move || {
-            i * 2
-        });
+        let handle = thread::spawn(move || i * 2);
         handles.push(handle);
     }
-    
+
     let mut results = vec![];
     for handle in handles {
         results.push(handle.join().unwrap());
     }
-    
+
     assert_eq!(results.len(), 5);
     assert_eq!(results[0], 0);
     assert_eq!(results[1], 2);
@@ -127,7 +125,7 @@ fn test_concurrent_operations() {
 #[test]
 fn test_json_schema_validation() {
     use serde_json::json;
-    
+
     // Test JSON schema-like validation
     let skill_data = json!({
         "name": "arithmetic",
@@ -135,16 +133,19 @@ fn test_json_schema_validation() {
         "input_schema": r#"{"expression": "string"}"#,
         "output_schema": r#"{"result": "number"}"#
     });
-    
+
     // Validate required fields
     assert!(skill_data["name"].is_string());
     assert!(skill_data["description"].is_string());
     assert!(skill_data["input_schema"].is_string());
     assert!(skill_data["output_schema"].is_string());
-    
+
     // Validate field values
     assert_eq!(skill_data["name"], "arithmetic");
-    assert!(skill_data["description"].as_str().unwrap().contains("arithmetic"));
+    assert!(skill_data["description"]
+        .as_str()
+        .unwrap()
+        .contains("arithmetic"));
 }
 
 #[test]
@@ -157,12 +158,12 @@ fn test_error_code_simulation() {
         ExecutionFailed,
         ConfigError,
     }
-    
+
     let not_found = TestErrorCode::NotFound;
     let invalid = TestErrorCode::Invalid;
     let execution_failed = TestErrorCode::ExecutionFailed;
     let config_error = TestErrorCode::ConfigError;
-    
+
     assert_eq!(not_found, TestErrorCode::NotFound);
     assert_eq!(invalid, TestErrorCode::Invalid);
     assert_eq!(execution_failed, TestErrorCode::ExecutionFailed);
@@ -179,19 +180,19 @@ fn test_skill_struct_simulation() {
         input_schema: String,
         output_schema: String,
     }
-    
+
     let skill = TestSkill {
         name: "arithmetic".to_string(),
         description: "Performs arithmetic calculations".to_string(),
         input_schema: r#"{"expression": "string"}"#.to_string(),
         output_schema: r#"{"result": "number"}"#.to_string(),
     };
-    
+
     assert_eq!(skill.name, "arithmetic");
     assert_eq!(skill.description, "Performs arithmetic calculations");
     assert!(skill.input_schema.contains("expression"));
     assert!(skill.output_schema.contains("result"));
-    
+
     // Test cloning
     let skill_clone = skill.clone();
     assert_eq!(skill.name, skill_clone.name);

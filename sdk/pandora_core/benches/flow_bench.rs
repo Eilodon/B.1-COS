@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use pandora_core::ontology::EpistemologicalFlow;
 use pandora_core::intents;
+use pandora_core::ontology::EpistemologicalFlow;
 use std::sync::Arc;
 
 fn benchmark_flow_creation(c: &mut Criterion) {
@@ -51,5 +51,3 @@ fn benchmark_flow_creation(c: &mut Criterion) {
 
 criterion_group!(benches, benchmark_flow_creation);
 criterion_main!(benches);
-
-

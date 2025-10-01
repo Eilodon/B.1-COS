@@ -4,7 +4,6 @@
 //! Crate này chịu trách nhiệm biểu diễn, lưu trữ và suy luận trên một cơ sở tri thức
 //! được xây dựng dựa trên bản chất "Duyên Khởi".
 
+pub mod interdependent_repr;
 pub mod nn;
 pub mod vsa;
-pub mod interdependent_repr;
-

@@ -5,30 +5,48 @@ use tracing::info;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionTrigger {
-    TriggerSelfImprovementLevel1 { reason: String, target_component: String },
-    TriggerSelfImprovementLevel2 { reason: String, target_component: String },
-    RequestMoreInformation { reason: String },
+    TriggerSelfImprovementLevel1 {
+        reason: String,
+        target_component: String,
+    },
+    TriggerSelfImprovementLevel2 {
+        reason: String,
+        target_component: String,
+    },
+    RequestMoreInformation {
+        reason: String,
+    },
     NoAction,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MetaRule {
     #[cfg(feature = "ml")]
-    IfUncertaintyExceeds { threshold: f32, action: ActionTrigger },
-    IfCompressionRewardExceeds { threshold: f64, action: ActionTrigger },
+    IfUncertaintyExceeds {
+        threshold: f32,
+        action: ActionTrigger,
+    },
+    IfCompressionRewardExceeds {
+        threshold: f64,
+        action: ActionTrigger,
+    },
 }
-
 
 pub struct RuleEngine {
     rules: Vec<MetaRule>,
 }
 
 impl RuleEngine {
-    pub fn new(rules: Vec<MetaRule>) -> Self { Self { rules } }
+    pub fn new(rules: Vec<MetaRule>) -> Self {
+        Self { rules }
+    }
 
     #[cfg(feature = "ml")]
     pub fn evaluate_ml(&self, output: &ProbabilisticOutput) -> ActionTrigger {
-        let mean_variance = output.variance.mean_all().and_then(|t| t.to_scalar::<f32>());
+        let mean_variance = output
+            .variance
+            .mean_all()
+            .and_then(|t| t.to_scalar::<f32>());
         if let Ok(variance_val) = mean_variance {
             for rule in &self.rules {
                 match rule {
@@ -49,7 +67,10 @@ impl RuleEngine {
         ActionTrigger::NoAction
     }
 
-    pub fn evaluate(&self, reward: &pandora_core::world_model::DualIntrinsicReward) -> ActionTrigger {
+    pub fn evaluate(
+        &self,
+        reward: &pandora_core::world_model::DualIntrinsicReward,
+    ) -> ActionTrigger {
         for rule in &self.rules {
             match rule {
                 MetaRule::IfCompressionRewardExceeds { threshold, action } => {
@@ -72,10 +93,14 @@ impl RuleEngine {
     }
 }
 
-pub struct MetaCognitiveGovernor { rule_engine: RuleEngine }
+pub struct MetaCognitiveGovernor {
+    rule_engine: RuleEngine,
+}
 
 impl MetaCognitiveGovernor {
-    pub fn new(rule_engine: RuleEngine) -> Self { Self { rule_engine } }
+    pub fn new(rule_engine: RuleEngine) -> Self {
+        Self { rule_engine }
+    }
 
     #[cfg(feature = "ml")]
     pub fn monitor_and_decide_ml(&self, cwm_output: &ProbabilisticOutput) -> ActionTrigger {
@@ -85,7 +110,10 @@ impl MetaCognitiveGovernor {
         decision
     }
 
-    pub fn monitor_and_decide(&self, reward: &pandora_core::world_model::DualIntrinsicReward) -> ActionTrigger {
+    pub fn monitor_and_decide(
+        &self,
+        reward: &pandora_core::world_model::DualIntrinsicReward,
+    ) -> ActionTrigger {
         info!("\n--- Vòng lặp Siêu Nhận thức Bắt đầu ---");
         let decision = self.rule_engine.evaluate(reward);
         info!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");

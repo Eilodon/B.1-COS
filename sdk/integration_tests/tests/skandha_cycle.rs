@@ -19,14 +19,16 @@ async fn test_skandha_cycle_v3() {
     // --- Kịch bản 1: Sự kiện trung tính ---
     println!("\n--- KỊCH BẢN 1: SỰ KIỆN TRUNG TÍNH ---");
     let normal_event = "hello world".to_string().into_bytes();
-    
+
     // Vận hành luồng nhận thức
     let reborn_event_1 = processor.run_epistemological_cycle(normal_event).await;
 
     // Kiểm tra: Vì sự kiện là trung tính, không có "Ý Chỉ" nào được khởi phát
     // và do đó, không có sự kiện nào được "tái sinh".
     assert!(reborn_event_1.is_none());
-    println!("\n✅ KẾT QUẢ KỊCH BẢN 1: Chính xác! Hệ thống an trú trong xả, không khởi phát hành động.");
+    println!(
+        "\n✅ KẾT QUẢ KỊCH BẢN 1: Chính xác! Hệ thống an trú trong xả, không khởi phát hành động."
+    );
 
     // --- Kịch bản 2: Sự kiện mang "phiền não" (lỗi) ---
     println!("\n--- KỊCH BẢN 2: SỰ KIỆN CÓ LỖI ---");
@@ -42,7 +44,6 @@ async fn test_skandha_cycle_v3() {
     let reborn_content = String::from_utf8(reborn_event_2.unwrap()).unwrap();
     assert!(reborn_content.contains("REPORT_ERROR"));
     println!("\n✅ KẾT QUẢ KỊCH BẢN 2: Chính xác! Hệ thống cảm nhận 'Khổ', khởi phát 'Ý Chỉ' và tái sinh nhận thức.");
-
 
     println!("\n=======================================================");
     println!("✅ THÀNH CÔNG: TÂM THỨC V3 ĐÃ CHỨNG NGHIỆM THÀNH CÔNG!");

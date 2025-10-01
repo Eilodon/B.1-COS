@@ -12,9 +12,9 @@
 
 pub mod aca_layer;
 pub mod fep_cell;
+pub mod intents;
 pub mod interfaces;
 pub mod ontology;
-pub mod intents;
-pub mod string_interner;
 pub mod skandha_implementations;
+pub mod string_interner;
 pub mod world_model;

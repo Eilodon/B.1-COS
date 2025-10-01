@@ -4,7 +4,11 @@ use rustfft::FftPlanner;
 /// Thực hiện phép toán "ràng buộc" (binding) hai vector bằng phép chập tròn (circular convolution).
 /// Tương đương với phép nhân element-wise trong miền tần số.
 pub fn bind(x: &[f64], y: &[f64]) -> Vec<f64> {
-    assert_eq!(x.len(), y.len(), "Vectors must have the same dimension for binding.");
+    assert_eq!(
+        x.len(),
+        y.len(),
+        "Vectors must have the same dimension for binding."
+    );
     let n = x.len();
 
     let mut x_complex: Vec<Complex<f64>> = x.iter().map(|&v| Complex::new(v, 0.0)).collect();
@@ -30,12 +34,20 @@ pub fn bind(x: &[f64], y: &[f64]) -> Vec<f64> {
 
 /// Thực hiện phép toán "gộp" (bundling) nhiều vector bằng phép cộng.
 pub fn bundle(vectors: &[Vec<f64>]) -> Vec<f64> {
-    if vectors.is_empty() { return Vec::new(); }
+    if vectors.is_empty() {
+        return Vec::new();
+    }
     let len = vectors[0].len();
     let mut sum = vec![0.0; len];
     for v in vectors {
-        assert_eq!(v.len(), len, "All vectors in a bundle must have the same dimension.");
-        for (i, &val) in v.iter().enumerate() { sum[i] += val; }
+        assert_eq!(
+            v.len(),
+            len,
+            "All vectors in a bundle must have the same dimension."
+        );
+        for (i, &val) in v.iter().enumerate() {
+            sum[i] += val;
+        }
     }
     sum
 }

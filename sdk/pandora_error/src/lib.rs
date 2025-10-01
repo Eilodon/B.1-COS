@@ -20,4 +20,3 @@ pub enum PandoraError {
     #[error("Circuit breaker open for skill {skill_name}")]
     CircuitOpen { skill_name: String },
 }
-

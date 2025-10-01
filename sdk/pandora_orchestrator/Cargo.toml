@@ -16,6 +16,9 @@ async-trait = { workspace = true }
 parking_lot = "0.12"
 fastrand = "2"
 
+# NEW: LRU cache
+lru = "0.12"
+
 [[example]]
 name = "simple_cli"
 path = "examples/simple_cli.rs"

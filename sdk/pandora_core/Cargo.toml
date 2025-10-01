@@ -27,6 +27,9 @@ criterion = "0.5"
 name = "flow_bench"
 harness = false
 
+[profile.bench]
+debug = true
+
 [lib]
 name = "pandora_core"
 path = "src/lib.rs"

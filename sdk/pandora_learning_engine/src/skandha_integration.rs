@@ -13,17 +13,17 @@ pub struct SkandhaProcessorWithLearning {
 }
 
 impl SkandhaProcessorWithLearning {
-    pub fn new(
-        processor: SkandhaProcessor,
-        learning_engine: Arc<LearningEngine>,
-    ) -> Self {
+    pub fn new(processor: SkandhaProcessor, learning_engine: Arc<LearningEngine>) -> Self {
         info!("✅ SkandhaProcessorWithLearning đã được khởi tạo với La Bàn Tuệ Giác.");
-        Self { processor, learning_engine }
+        Self {
+            processor,
+            learning_engine,
+        }
     }
 
     /// Vận hành một chu trình nhận thức và tự đánh giá sự tiến bộ.
     pub async fn run_and_evaluate_cycle(
-        &self, 
+        &self,
         event: Vec<u8>,
         current_model: &dyn WorldModel,
         new_model: &dyn WorldModel,
@@ -32,15 +32,17 @@ impl SkandhaProcessorWithLearning {
 
         // 1. Chạy chu trình nhận thức Ngũ Uẩn
         let reborn_event = self.processor.run_epistemological_cycle(event).await;
-        
+
         // 2. Tạo một EpistemologicalFlow giả lập để tính toán phần thưởng
         let flow = EpistemologicalFlow::default();
-        
+
         // 3. Tự Đánh giá (Self-Evaluation): Sử dụng LearningEngine để tính toán phần thưởng
-        let reward = self.learning_engine.calculate_reward(current_model, new_model, &flow);
-        
+        let reward = self
+            .learning_engine
+            .calculate_reward(current_model, new_model, &flow);
+
         info!("--- LUỒNG NHẬN THỨC LUẬN VÀ TỰ ĐÁNH GIÁ KẾT THÚC ---");
-        
+
         (reborn_event, reward)
     }
 

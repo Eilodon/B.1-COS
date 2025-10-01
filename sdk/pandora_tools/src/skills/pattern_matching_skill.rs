@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(clippy::items_after_test_module, clippy::unwrap_used)]
 mod tests {
     use super::*;
     use serde_json::json;

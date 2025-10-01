@@ -32,7 +32,7 @@ async fn test_v3_consciousness_cycle() {
 
     // Sự kiện có lỗi sẽ tạo ra ý chỉ "REPORT_ERROR", nên có tái sinh
     assert!(result2.is_some());
-    let reborn_event = result2.unwrap();
+    let reborn_event = result2.expect("expected reborn event for error case");
     let reborn_text = String::from_utf8_lossy(&reborn_event);
     assert!(reborn_text.contains("REPORT_ERROR"));
     println!(

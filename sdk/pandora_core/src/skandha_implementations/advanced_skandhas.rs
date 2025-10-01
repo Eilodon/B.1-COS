@@ -43,7 +43,7 @@ impl RupaSkandha for AdvancedRupaSkandha {
         if self.enable_timestamp {
             let timestamp = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .unwrap()
+                .unwrap_or_default()
                 .as_secs();
             info!("[{}] Timestamp: {}", self.name(), timestamp);
         }
@@ -171,11 +171,14 @@ impl SannaSkandha for AdvancedSannaSkandha {
         flow.sanna = Some(eidos);
         
         // Tìm related patterns với thuật toán phức tạp hơn
-        let related_eidos = self.find_advanced_patterns(flow.sanna.as_ref().unwrap());
+        let related_eidos = match flow.sanna.as_ref() {
+            Some(s) => self.find_advanced_patterns(s),
+            None => Vec::new(),
+        };
         flow.related_eidos = Some(smallvec::SmallVec::from_vec(related_eidos));
         
-        info!("[{}] Đã nhận diện {} patterns nâng cao.", 
-                self.name(), flow.related_eidos.as_ref().unwrap().len());
+        let related_len = flow.related_eidos.as_ref().map(|v| v.len()).unwrap_or(0);
+        info!("[{}] Đã nhận diện {} patterns nâng cao.", self.name(), related_len);
     }
 }
 
@@ -443,7 +446,7 @@ impl AdvancedVinnanaSkandha {
         // Thêm timestamp
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or_default()
             .as_secs();
         event_parts.push(format!("Timestamp: {}", timestamp));
         

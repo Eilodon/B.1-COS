@@ -1,0 +1,6 @@
+[target.'cfg(all())']
+rustflags = [
+    "-A", "clippy::result_large_err",
+]
+
+

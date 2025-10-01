@@ -3,7 +3,6 @@
 /// IRL là kiến trúc học biểu diễn nhận biết được bản chất "tương tức, phụ thuộc lẫn nhau"
 /// của vạn vật. Nó học cách biểu diễn các thực thể không phải như những đối tượng
 /// độc lập, mà như những phần tử trong một mạng lưới quan hệ phức tạp.
-use std::collections::HashMap;
 use fnv::FnvHashMap;
 use tracing::info;
 
@@ -108,7 +107,7 @@ impl InterdependentNetwork {
 
         // Tính toán ảnh hưởng gián tiếp thông qua các thực thể trung gian
         let mut indirect_influence = 0.0;
-        for (intermediate, _) in &self.entities {
+        for intermediate in self.entities.keys() {
             if let Some(weight1) = self
                 .relationships
                 .get(&(from.to_string(), intermediate.clone()))
@@ -129,7 +128,7 @@ impl InterdependentNetwork {
     pub fn find_key_influencers(&self, entity_id: &str) -> Vec<(String, f64)> {
         let mut influencers = Vec::new();
 
-        for (other_id, _) in &self.entities {
+        for other_id in self.entities.keys() {
             if other_id != entity_id {
                 let influence = self.calculate_influence(other_id, entity_id);
                 if influence > 0.1 {
@@ -140,7 +139,7 @@ impl InterdependentNetwork {
         }
 
         // Sắp xếp theo mức độ ảnh hưởng giảm dần
-        influencers.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        influencers.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         influencers
     }
 
@@ -175,4 +174,8 @@ impl InterdependentNetwork {
             }
         }
     }
+}
+
+impl Default for InterdependentNetwork {
+    fn default() -> Self { Self::new() }
 }

@@ -29,6 +29,10 @@ impl FepSeedRust {
     }
 }
 
+impl Default for FepSeedRust {
+    fn default() -> Self { Self::new() }
+}
+
 #[async_trait]
 impl FepCell for FepSeedRust {
     type Belief = Belief;

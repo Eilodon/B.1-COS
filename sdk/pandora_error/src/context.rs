@@ -33,6 +33,7 @@ where
 }
 
 #[cfg(test)]
+#[allow(clippy::panic, clippy::unreachable)]
 mod tests {
     use super::*;
     use std::error::Error as _;
@@ -44,10 +45,12 @@ mod tests {
 
         let with_context = result.context("Failed to read config file");
         assert!(with_context.is_err());
-
-        let err = with_context.unwrap_err();
-        assert!(err.to_string().contains("Failed to read config file"));
-        assert!(err.source().is_some());
+        if let Err(err) = with_context {
+            assert!(err.to_string().contains("Failed to read config file"));
+            assert!(err.source().is_some());
+        } else {
+            unreachable!("expected error, got Ok");
+        }
     }
 
     #[test]

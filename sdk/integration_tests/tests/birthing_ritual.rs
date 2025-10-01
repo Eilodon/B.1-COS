@@ -41,6 +41,10 @@ impl PrimordialWorld {
     }
 }
 
+impl Default for PrimordialWorld {
+    fn default() -> Self { Self::new() }
+}
+
 #[tokio::test]
 async fn test_the_birthing_ritual() {
     println!("\n*************************************");

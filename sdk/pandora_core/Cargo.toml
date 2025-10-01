@@ -7,9 +7,6 @@ authors = ["B.ONE Team <team@b1os.dev>"]
 license = "Apache-2.0"
 
 [dependencies]
-
-pandora_protocols = { path = "../pandora_protocols" }
-pandora_error = { path = "../pandora_error" }
 async-trait = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -18,10 +15,15 @@ tracing = { workspace = true }
 smallvec = "1.13"
 bytes = "1.10"
 parking_lot = "0.12"
-
+pandora_error = { path = "../pandora_error" }
 [dev-dependencies]
+proptest = { workspace = true }
+futures = { workspace = true }
+pandora_protocols = { path = "../pandora_protocols" }
+pandora_error = { path = "../pandora_error" }
 tokio = { workspace = true }
 criterion = "0.5"
+
 
 [[bench]]
 name = "flow_bench"

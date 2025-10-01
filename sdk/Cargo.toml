@@ -49,6 +49,8 @@ rustfft = "6.4.1"
 bytes = "1.10"
 parking_lot = "0.12"
 criterion = "0.5"
+proptest = "1.5"
+futures = "0.3"
 
 # Optional: ML dependencies (currently disabled due to MSRV conflicts)
 # candle-core = { version = "0.3.3", optional = true }

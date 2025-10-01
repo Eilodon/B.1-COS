@@ -1,4 +1,6 @@
+#![allow(unexpected_cfgs)]
 #[cfg(feature = "ml")]
+#[allow(unexpected_cfgs)]
 use pandora_cwm::nn::uq_models::ProbabilisticOutput;
 use serde::{Deserialize, Serialize};
 use tracing::info;
@@ -22,6 +24,7 @@ pub enum ActionTrigger {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MetaRule {
     #[cfg(feature = "ml")]
+    #[allow(unexpected_cfgs)]
     IfUncertaintyExceeds {
         threshold: f32,
         action: ActionTrigger,
@@ -42,6 +45,7 @@ impl RuleEngine {
     }
 
     #[cfg(feature = "ml")]
+    #[allow(unexpected_cfgs)]
     pub fn evaluate_ml(&self, output: &ProbabilisticOutput) -> ActionTrigger {
         let mean_variance = output
             .variance
@@ -83,6 +87,7 @@ impl RuleEngine {
                     }
                 }
                 #[cfg(feature = "ml")]
+                #[allow(unexpected_cfgs)]
                 MetaRule::IfUncertaintyExceeds { .. } => {
                     // Bỏ qua quy tắc ML trong chế độ này
                 }
@@ -103,6 +108,7 @@ impl MetaCognitiveGovernor {
     }
 
     #[cfg(feature = "ml")]
+    #[allow(unexpected_cfgs)]
     pub fn monitor_and_decide_ml(&self, cwm_output: &ProbabilisticOutput) -> ActionTrigger {
         info!("\n--- Vòng lặp Siêu Nhận thức Bắt đầu ---");
         let decision = self.rule_engine.evaluate_ml(cwm_output);

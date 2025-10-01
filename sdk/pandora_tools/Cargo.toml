@@ -28,6 +28,8 @@ tokio = { workspace = true }
 regex = { workspace = true, optional = true }
 strsim = { workspace = true, optional = true }
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt", "env-filter"] }
+thiserror = { workspace = true }
 fnv = { workspace = true }
 # Temporarily disabled due to dependency conflicts
 # lance = { version = "0.13", optional = true }

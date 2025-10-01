@@ -23,6 +23,7 @@ impl Default for GraphNeuralNetwork {
 /// ITR_NN kết hợp GNN với Phân tích Dữ liệu Topo (TDA) để tạo ra
 /// một biểu diễn nhận biết được cả quan hệ cục bộ và cấu trúc toàn cục.
 pub struct InterdependentTopoRelationalNN {
+    #[allow(dead_code)]
     gnn_processor: GraphNeuralNetwork,
     // Topological feature extractor sẽ được thêm vào đây
 }

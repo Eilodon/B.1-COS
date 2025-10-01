@@ -12,6 +12,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 fnv = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt", "env-filter"] }
+thiserror = { workspace = true }
 smallvec = "1.13"
 bytes = "1.10"
 parking_lot = "0.12"
@@ -22,7 +24,7 @@ futures = { workspace = true }
 pandora_protocols = { path = "../pandora_protocols" }
 pandora_error = { path = "../pandora_error" }
 tokio = { workspace = true }
-criterion = "0.5"
+criterion = { version = "0.5", features = ["html_reports", "async_tokio"] }
 
 
 [[bench]]
@@ -30,6 +32,10 @@ name = "flow_bench"
 harness = false
 [[bench]]
 name = "hashmap_bench"
+harness = false
+
+[[bench]]
+name = "comprehensive_bench"
 harness = false
 
 [profile.bench]

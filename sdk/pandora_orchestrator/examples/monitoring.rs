@@ -1,15 +1,22 @@
-use pandora_orchestrator::{Orchestrator, SkillRegistry};
 use pandora_orchestrator::OrchestratorTrait;
+use pandora_orchestrator::{Orchestrator, SkillRegistry};
 use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};
+use tracing::info;
 use tracing_subscriber::{fmt, EnvFilter};
 
 fn init_logging() {
-    let filter = EnvFilter::from_default_env()
-        .add_directive("pandora_core=info".parse().unwrap())
-        .add_directive("pandora_simulation=info".parse().unwrap())
-        .add_directive("pandora_orchestrator=info".parse().unwrap());
+    let mut filter = EnvFilter::from_default_env();
+    if let Ok(d) = "pandora_core=info".parse() {
+        filter = filter.add_directive(d);
+    }
+    if let Ok(d) = "pandora_simulation=info".parse() {
+        filter = filter.add_directive(d);
+    }
+    if let Ok(d) = "pandora_orchestrator=info".parse() {
+        filter = filter.add_directive(d);
+    }
 
     fmt().with_env_filter(filter).init();
 }
@@ -21,15 +28,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Setup orchestrator
     let mut registry = SkillRegistry::new();
     registry.register(Arc::new(ArithmeticSkill));
-    
+
     let orchestrator = Arc::new(Orchestrator::new(Arc::new(registry)));
-    
+
     // Start cleanup task
     let _cleanup_handle = orchestrator.clone().start_cleanup_task();
 
     // Simulate load
-    println!("🚀 Starting load simulation...");
-    
+    info!("🚀 Starting load simulation...");
+
     for i in 0..100 {
         let orch = orchestrator.clone();
         tokio::spawn(async move {
@@ -42,18 +49,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for _ in 0..10 {
         sleep(Duration::from_secs(2)).await;
         let stats = orchestrator.circuit_stats();
-        println!(
-            "📊 Circuits: {} total | {} closed | {} open | {} half-open | {}/{} capacity",
-            stats.total_circuits,
-            stats.closed,
-            stats.open,
-            stats.half_open,
-            stats.total_circuits,
-            stats.capacity
+        info!(
+            total = stats.total_circuits,
+            closed = stats.closed,
+            open = stats.open,
+            half_open = stats.half_open,
+            capacity = stats.capacity,
+            "📊 Circuits"
         );
     }
 
     Ok(())
 }
-
-

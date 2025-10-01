@@ -1,14 +1,16 @@
+use crate::intents;
 use crate::interfaces::skandhas::*;
 use crate::ontology::{EpistemologicalFlow, Vedana};
 use async_trait::async_trait;
-use tracing::info;
 use bytes::Bytes;
-use crate::intents;
+use tracing::{info, warn};
 
 // --- 1. Sắc Uẩn ---
 pub struct BasicRupaSkandha;
 impl Skandha for BasicRupaSkandha {
-    fn name(&self) -> &'static str { "Basic Rupa (Form)" }
+    fn name(&self) -> &'static str {
+        "Basic Rupa (Form)"
+    }
 }
 #[async_trait]
 impl RupaSkandha for BasicRupaSkandha {
@@ -21,7 +23,9 @@ impl RupaSkandha for BasicRupaSkandha {
 // --- 2. Thọ Uẩn ---
 pub struct BasicVedanaSkandha;
 impl Skandha for BasicVedanaSkandha {
-    fn name(&self) -> &'static str { "Basic Vedana (Feeling)" }
+    fn name(&self) -> &'static str {
+        "Basic Vedana (Feeling)"
+    }
 }
 impl VedanaSkandha for BasicVedanaSkandha {
     fn feel(&self, flow: &mut EpistemologicalFlow) {
@@ -44,22 +48,28 @@ impl VedanaSkandha for BasicVedanaSkandha {
 // --- 3. Tưởng Uẩn ---
 pub struct BasicSannaSkandha;
 impl Skandha for BasicSannaSkandha {
-    fn name(&self) -> &'static str { "Basic Sanna (Perception)" }
+    fn name(&self) -> &'static str {
+        "Basic Sanna (Perception)"
+    }
 }
 impl SannaSkandha for BasicSannaSkandha {
     fn perceive(&self, flow: &mut EpistemologicalFlow) {
         info!("[{}] Đối chiếu sự kiện, nhận diện quy luật.", self.name());
-        
+
         // Tạo DataEidos dựa trên nội dung sự kiện (an toàn, không panic)
         let eidos = self.create_eidos(flow);
         flow.sanna = Some(eidos.clone());
-        
+
         // Tìm related eidos (giới hạn để tránh chi phí lớn)
         let related_eidos = self.find_related_patterns(&eidos);
         flow.related_eidos = Some(smallvec::SmallVec::from_vec(related_eidos));
-        
+
         let related_len = flow.related_eidos.as_ref().map(|v| v.len()).unwrap_or(0);
-        info!("[{}] Đã nhận diện {} patterns liên quan.", self.name(), related_len);
+        info!(
+            "[{}] Đã nhận diện {} patterns liên quan.",
+            self.name(),
+            related_len
+        );
     }
 }
 
@@ -70,14 +80,18 @@ impl BasicSannaSkandha {
             dimensionality: 2048,
         };
 
-        let Some(rupa) = &flow.rupa else { return default_eidos; };
+        let Some(rupa) = &flow.rupa else {
+            return default_eidos;
+        };
 
         let content = String::from_utf8_lossy(rupa.as_ref());
         let mut active_indices = std::collections::HashSet::new();
 
         // Hash-based indices (giới hạn để tránh quá tải)
         for (i, byte) in rupa.as_ref().iter().enumerate().take(1000) {
-            if *byte > 0 { active_indices.insert(((i * 7) as u32 + (*byte as u32)) % 2048); }
+            if *byte > 0 {
+                active_indices.insert(((i * 7) as u32 + (*byte as u32)) % 2048);
+            }
         }
 
         // Keyword-based indices (an toàn)
@@ -88,11 +102,17 @@ impl BasicSannaSkandha {
             }
         }
 
-        crate::ontology::DataEidos { active_indices: active_indices.into_iter().collect(), dimensionality: 2048 }
+        crate::ontology::DataEidos {
+            active_indices: active_indices.into_iter().collect(),
+            dimensionality: 2048,
+        }
     }
 
     /// Tìm các patterns liên quan dựa trên DataEidos
-    fn find_related_patterns(&self, eidos: &crate::ontology::DataEidos) -> Vec<crate::ontology::DataEidos> {
+    fn find_related_patterns(
+        &self,
+        eidos: &crate::ontology::DataEidos,
+    ) -> Vec<crate::ontology::DataEidos> {
         let mut related = Vec::with_capacity(3);
         for i in 0..3 {
             let mut related_eidos = eidos.clone();
@@ -109,16 +129,24 @@ impl BasicSannaSkandha {
 // --- 4. Hành Uẩn ---
 pub struct BasicSankharaSkandha;
 impl Skandha for BasicSankharaSkandha {
-    fn name(&self) -> &'static str { "Basic Sankhara (Formations)" }
+    fn name(&self) -> &'static str {
+        "Basic Sankhara (Formations)"
+    }
 }
 impl SankharaSkandha for BasicSankharaSkandha {
     fn form_intent(&self, flow: &mut EpistemologicalFlow) {
         // Logic đơn giản: Nếu cảm thấy "Khổ", khởi ý niệm "báo cáo lỗi".
-        if let Some(Vedana::Unpleasant {..}) = flow.vedana {
-            info!("[{}] Khởi phát ý chỉ: 'Báo cáo lỗi'.", self.name());
+        if let Some(Vedana::Unpleasant { .. }) = flow.vedana {
+            info!(
+                skandha = %self.name(),
+                intent = %intents::constants::REPORT_ERROR,
+                agent_pos = ?None::<(usize,usize)>,
+                goal_pos = ?None::<(usize,usize)>,
+                "Intent formed"
+            );
             flow.set_static_intent(intents::constants::REPORT_ERROR);
         } else {
-             info!("[{}] Không có ý chỉ nào được khởi phát.", self.name());
+            warn!(skandha = %self.name(), "No intent formed");
         }
     }
 }
@@ -126,14 +154,19 @@ impl SankharaSkandha for BasicSankharaSkandha {
 // --- 5. Thức Uẩn ---
 pub struct BasicVinnanaSkandha;
 impl Skandha for BasicVinnanaSkandha {
-    fn name(&self) -> &'static str { "Basic Vinnana (Consciousness)" }
+    fn name(&self) -> &'static str {
+        "Basic Vinnana (Consciousness)"
+    }
 }
 impl VinnanaSkandha for BasicVinnanaSkandha {
     fn synthesize(&self, flow: &EpistemologicalFlow) -> Option<Vec<u8>> {
         // Logic đơn giản: Nếu có "Ý Chỉ", tổng hợp nó thành một sự kiện mới để tái sinh.
         if let Some(intent) = &flow.sankhara {
             let conscious_event = format!("Synthesized consciousness: Intent is '{}'", intent);
-            info!("[{}] Tổng hợp nhận thức. Tái sinh sự kiện mới.", self.name());
+            info!(
+                "[{}] Tổng hợp nhận thức. Tái sinh sự kiện mới.",
+                self.name()
+            );
             Some(conscious_event.into_bytes())
         } else {
             info!("[{}] Tổng hợp nhận thức. Vòng lặp kết thúc.", self.name());

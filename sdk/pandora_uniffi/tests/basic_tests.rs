@@ -43,7 +43,10 @@ fn test_error_handling() {
 
     let error_result: Result<i32, &str> = Err("Something went wrong");
     assert!(error_result.is_err());
-    assert_eq!(error_result.expect_err("expected Err result"), "Something went wrong");
+    assert_eq!(
+        error_result.expect_err("expected Err result"),
+        "Something went wrong"
+    );
 }
 
 #[test]

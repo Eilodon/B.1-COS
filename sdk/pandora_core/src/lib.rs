@@ -11,6 +11,7 @@
 //!   bao gồm `FEPCell` và các tầng `ACALayer`.
 
 pub mod aca_layer;
+pub mod error;
 pub mod fep_cell;
 pub mod intents;
 pub mod interfaces;

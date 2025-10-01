@@ -1,4 +1,4 @@
-use pandora_orchestrator::circuit_breaker::{CircuitBreakerManager, CircuitBreakerConfig};
+use pandora_orchestrator::circuit_breaker::{CircuitBreakerConfig, CircuitBreakerManager};
 use proptest::prelude::*;
 
 proptest! {
@@ -52,5 +52,3 @@ proptest! {
         prop_assert!(manager.is_open(&skill1));
     }
 }
-
-

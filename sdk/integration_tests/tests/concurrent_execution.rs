@@ -1,7 +1,7 @@
-use pandora_orchestrator::{Orchestrator, SkillRegistry, OrchestratorTrait};
+use pandora_orchestrator::{Orchestrator, OrchestratorTrait, SkillRegistry};
 use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
-use std::sync::Arc;
 use serde_json::json;
+use std::sync::Arc;
 use tokio::time::Duration;
 
 #[tokio::test]
@@ -50,9 +50,10 @@ async fn test_concurrent_circuit_breaker_isolation() {
             }
         }
 
-        async fn execute(&self, _: serde_json::Value)
-            -> pandora_core::interfaces::skills::SkillOutput
-        {
+        async fn execute(
+            &self,
+            _: serde_json::Value,
+        ) -> pandora_core::interfaces::skills::SkillOutput {
             Ok(json!({"status": "ok"}))
         }
     }
@@ -68,9 +69,10 @@ async fn test_concurrent_circuit_breaker_isolation() {
             }
         }
 
-        async fn execute(&self, _: serde_json::Value)
-            -> pandora_core::interfaces::skills::SkillOutput
-        {
+        async fn execute(
+            &self,
+            _: serde_json::Value,
+        ) -> pandora_core::interfaces::skills::SkillOutput {
             Err(pandora_error::PandoraError::skill_exec("failing", "Error"))
         }
     }
@@ -102,7 +104,9 @@ async fn test_concurrent_circuit_breaker_isolation() {
         }));
     }
 
-    for handle in handles { let _ = handle.await; }
+    for handle in handles {
+        let _ = handle.await;
+    }
 
     let result = orchestrator.process_request("working", json!({})).await;
     assert!(result.is_ok());
@@ -168,5 +172,3 @@ async fn test_high_concurrency_stress() {
 
     assert!(successes > 950, "Only {} successes out of 1000", successes);
 }
-
-

@@ -39,7 +39,11 @@ pub enum PandoraError {
     CircuitOpen { resource: String },
 
     #[error("Rate limit exceeded for '{resource}': {limit} requests per {window_secs}s")]
-    RateLimitExceeded { resource: String, limit: u64, window_secs: u64 },
+    RateLimitExceeded {
+        resource: String,
+        limit: u64,
+        window_secs: u64,
+    },
 
     // === Resource Errors ===
     #[error("Resource '{resource}' not found")]
@@ -51,15 +55,27 @@ pub enum PandoraError {
 
     // === I/O Errors ===
     #[error("I/O error: {message}")]
-    Io { message: String, #[source] source: std::io::Error },
+    Io {
+        message: String,
+        #[source]
+        source: std::io::Error,
+    },
 
     // === Serialization Errors ===
     #[error("Serialization error: {message}")]
-    Serialization { message: String, #[source] source: Option<serde_json::Error> },
+    Serialization {
+        message: String,
+        #[source]
+        source: Option<serde_json::Error>,
+    },
 
     // === FFI Errors ===
     #[error("FFI interface error: {message}")]
-    Ffi { message: String, #[source] source: Option<Box<dyn std::error::Error + Send + Sync>> },
+    Ffi {
+        message: String,
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    },
 
     // === Unknown/Catch-all ===
     #[error("Unknown error: {0}")]
@@ -72,23 +88,46 @@ pub enum PandoraError {
 
 impl PandoraError {
     pub fn config<S: Into<String>>(message: S) -> Self {
-        Self::Config { message: message.into(), source: None }
+        Self::Config {
+            message: message.into(),
+            source: None,
+        }
     }
 
     pub fn config_with_source<S, E>(message: S, source: E) -> Self
     where
         S: Into<String>,
         E: std::error::Error + Send + Sync + 'static,
-    { Self::Config { message: message.into(), source: Some(Box::new(source)) } }
+    {
+        Self::Config {
+            message: message.into(),
+            source: Some(Box::new(source)),
+        }
+    }
 
     pub fn skill_exec<S1, S2>(skill_name: S1, message: S2) -> Self
-    where S1: Into<String>, S2: Into<String> {
-        Self::SkillExecution { skill_name: skill_name.into(), message: message.into(), source: None }
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        Self::SkillExecution {
+            skill_name: skill_name.into(),
+            message: message.into(),
+            source: None,
+        }
     }
 
     pub fn skill_exec_with_source<S1, S2, E>(skill_name: S1, message: S2, source: E) -> Self
-    where S1: Into<String>, S2: Into<String>, E: std::error::Error + Send + Sync + 'static {
-        Self::SkillExecution { skill_name: skill_name.into(), message: message.into(), source: Some(Box::new(source)) }
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        Self::SkillExecution {
+            skill_name: skill_name.into(),
+            message: message.into(),
+            source: Some(Box::new(source)),
+        }
     }
 
     pub fn code(&self) -> &'static str {
@@ -113,18 +152,39 @@ impl PandoraError {
     }
 
     pub fn is_retryable(&self) -> bool {
-        matches!(self, Self::Timeout { .. } | Self::CircuitOpen { .. } | Self::Io { .. } | Self::InsufficientResources { .. })
+        matches!(
+            self,
+            Self::Timeout { .. }
+                | Self::CircuitOpen { .. }
+                | Self::Io { .. }
+                | Self::InsufficientResources { .. }
+        )
     }
 
     pub fn is_transient(&self) -> bool {
-        matches!(self, Self::Timeout { .. } | Self::RateLimitExceeded { .. } | Self::InsufficientResources { .. })
+        matches!(
+            self,
+            Self::Timeout { .. }
+                | Self::RateLimitExceeded { .. }
+                | Self::InsufficientResources { .. }
+        )
     }
 }
 
 impl From<std::io::Error> for PandoraError {
-    fn from(err: std::io::Error) -> Self { Self::Io { message: err.to_string(), source: err } }
+    fn from(err: std::io::Error) -> Self {
+        Self::Io {
+            message: err.to_string(),
+            source: err,
+        }
+    }
 }
 
 impl From<serde_json::Error> for PandoraError {
-    fn from(err: serde_json::Error) -> Self { Self::Serialization { message: err.to_string(), source: Some(err) } }
+    fn from(err: serde_json::Error) -> Self {
+        Self::Serialization {
+            message: err.to_string(),
+            source: Some(err),
+        }
+    }
 }

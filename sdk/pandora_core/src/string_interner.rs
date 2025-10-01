@@ -1,6 +1,6 @@
 use fnv::FnvHashMap;
-use std::sync::Arc;
 use parking_lot::RwLock;
+use std::sync::Arc;
 
 /// Thread-safe string interner for reducing allocations
 /// of frequently-used strings
@@ -87,5 +87,3 @@ mod tests {
         assert_eq!(stats.total_bytes, 10);
     }
 }
-
-

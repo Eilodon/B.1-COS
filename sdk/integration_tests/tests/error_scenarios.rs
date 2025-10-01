@@ -1,8 +1,8 @@
-use pandora_orchestrator::{Orchestrator, SkillRegistry, OrchestratorTrait};
-use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
 use pandora_error::PandoraError;
-use std::sync::Arc;
+use pandora_orchestrator::{Orchestrator, OrchestratorTrait, SkillRegistry};
+use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
 use serde_json::json;
+use std::sync::Arc;
 
 #[tokio::test]
 async fn test_skill_not_found() {
@@ -78,7 +78,7 @@ async fn test_division_by_zero() {
 
 #[tokio::test]
 async fn test_timeout_error() {
-    use pandora_orchestrator::{TimeoutPolicy, CircuitBreakerConfig};
+    use pandora_orchestrator::{CircuitBreakerConfig, TimeoutPolicy};
     use tokio::time::Duration;
 
     // Skill ch ea m
@@ -95,9 +95,10 @@ async fn test_timeout_error() {
             }
         }
 
-        async fn execute(&self, _input: serde_json::Value)
-            -> pandora_core::interfaces::skills::SkillOutput
-        {
+        async fn execute(
+            &self,
+            _input: serde_json::Value,
+        ) -> pandora_core::interfaces::skills::SkillOutput {
             tokio::time::sleep(Duration::from_secs(10)).await;
             Ok(json!({"result": "done"}))
         }
@@ -106,19 +107,18 @@ async fn test_timeout_error() {
     let mut registry = SkillRegistry::new();
     registry.register(Arc::new(SlowSkill));
 
-    let orchestrator = Orchestrator::with_config(
-        Arc::new(registry),
-        CircuitBreakerConfig::default(),
-    )
-    .with_timeout_policy(TimeoutPolicy { timeout_ms: 100 });
+    let orchestrator =
+        Orchestrator::with_config(Arc::new(registry), CircuitBreakerConfig::default())
+            .with_timeout_policy(TimeoutPolicy { timeout_ms: 100 });
 
-    let result = orchestrator
-        .process_request("slow_skill", json!({}))
-        .await;
+    let result = orchestrator.process_request("slow_skill", json!({})).await;
 
     assert!(result.is_err());
     match result.unwrap_err() {
-        PandoraError::Timeout { operation, timeout_ms } => {
+        PandoraError::Timeout {
+            operation,
+            timeout_ms,
+        } => {
             assert!(operation.contains("slow_skill"));
             assert_eq!(timeout_ms, 100);
         }
@@ -144,9 +144,10 @@ async fn test_circuit_breaker_opens() {
             }
         }
 
-        async fn execute(&self, _input: serde_json::Value)
-            -> pandora_core::interfaces::skills::SkillOutput
-        {
+        async fn execute(
+            &self,
+            _input: serde_json::Value,
+        ) -> pandora_core::interfaces::skills::SkillOutput {
             Err(PandoraError::skill_exec("failing_skill", "Always fails"))
         }
     }
@@ -181,5 +182,3 @@ async fn test_circuit_breaker_opens() {
         e => panic!("Expected CircuitOpen, got: {:?}", e),
     }
 }
-
-

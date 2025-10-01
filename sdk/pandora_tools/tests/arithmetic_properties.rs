@@ -1,8 +1,8 @@
-use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
 use pandora_core::interfaces::skills::SkillModule;
+use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
 use proptest::prelude::*;
-use tokio::runtime::Runtime;
 use serde_json::json;
+use tokio::runtime::Runtime;
 
 proptest! {
     #[test]
@@ -71,5 +71,3 @@ proptest! {
         if a > 1 && b > 0 && c > 0 { prop_assert_ne!(result1, result2); }
     }
 }
-
-

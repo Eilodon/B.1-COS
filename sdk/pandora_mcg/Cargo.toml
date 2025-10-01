@@ -5,9 +5,9 @@ edition = "2021"
 license = "Apache-2.0"
 
 [features]
+ml = ["pandora_cwm/ml"]
+tda = []
 default = []
-# Temporarily disabled due to dependency conflicts
-# ml = ["pandora_cwm/ml"]
 
 [dependencies]
 pandora_core = { path = "../pandora_core" }

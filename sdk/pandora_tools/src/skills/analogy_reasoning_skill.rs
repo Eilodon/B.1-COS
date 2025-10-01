@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(clippy::items_after_test_module, clippy::unwrap_used)]
 mod tests {
 	use super::*;
 	use serde_json::json;
@@ -12,7 +13,7 @@ mod tests {
 			"c": "woman",
 			"candidates": ["queen", "prince", "duke"]
 		});
-		let output = skill.execute(input).await.unwrap();
+        let output = skill.execute(input).await.unwrap();
 		assert_eq!(output, json!({"best_match": "queen"}));
 	}
 

@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use pandora_core::interfaces::skills::{SkillDescriptor, SkillModule, SkillOutput};
-use pandora_error::{PandoraError, ErrorContext};
+use pandora_error::PandoraError;
 use serde_json::json;
 use serde_json::Value as SkillInput;
+use tokio::time::{timeout, Duration};
 
 pub struct ArithmeticSkill;
 
@@ -23,9 +24,35 @@ impl SkillModule for ArithmeticSkill {
             .and_then(|v| v.as_str())
             .ok_or_else(|| PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Missing 'expression' field".into() })?;
 
-        ArithmeticParser::parse(expr)
-            .map(|result| json!({"result": result}))
-            .map_err(|e| PandoraError::skill_exec("arithmetic", format!("Parse error: {}", e)))
+        // Guardrails: length, charset whitelist, parenthesis depth
+        if expr.len() > 1024 {
+            return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Expression too long".into() });
+        }
+        if !expr.chars().all(|c| c.is_ascii_whitespace() || c.is_ascii_digit() || matches!(c, '+' | '-' | '*' | '/' | '(' | ')' | '.')) {
+            return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Expression contains invalid characters".into() });
+        }
+        let mut depth: i32 = 0;
+        for c in expr.chars() {
+            if c == '(' { depth += 1; }
+            if c == ')' { depth -= 1; if depth < 0 { return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Unbalanced parentheses".into() }); } }
+            if depth > 64 { return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Parentheses too deep".into() }); }
+        }
+        if depth != 0 {
+            return Err(PandoraError::InvalidSkillInput { skill_name: "arithmetic".into(), message: "Unbalanced parentheses".into() });
+        }
+
+        // Execute parse in blocking thread with a strict timeout
+        let expr_owned = expr.to_string();
+        let fut = tokio::task::spawn_blocking(move || ArithmeticParser::parse(&expr_owned));
+        match timeout(Duration::from_millis(200), fut).await {
+            Ok(join_res) => match join_res {
+                Ok(parse_res) => parse_res
+                    .map(|result| json!({"result": result}))
+                    .map_err(|e| PandoraError::skill_exec("arithmetic", format!("Parse error: {}", e))),
+                Err(e) => Err(PandoraError::skill_exec("arithmetic", format!("Join error: {}", e))),
+            },
+            Err(_) => Err(PandoraError::Timeout { operation: "skill:arithmetic".into(), timeout_ms: 200 }),
+        }
     }
 }
 
@@ -153,6 +180,7 @@ impl ArithmeticParser {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::approx_constant)]
 mod tests {
     use super::*;
     use serde_json::json;

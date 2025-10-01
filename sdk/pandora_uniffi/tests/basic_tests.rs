@@ -39,20 +39,17 @@ fn test_error_handling() {
     // Test error handling patterns
     let result: Result<i32, &str> = Ok(42);
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), 42);
+    assert_eq!(result.expect("expected Ok result"), 42);
 
     let error_result: Result<i32, &str> = Err("Something went wrong");
     assert!(error_result.is_err());
-    assert_eq!(error_result.unwrap_err(), "Something went wrong");
+    assert_eq!(error_result.expect_err("expected Err result"), "Something went wrong");
 }
 
 #[test]
 fn test_collections() {
     // Test collection operations
-    let mut vec = Vec::new();
-    vec.push(1);
-    vec.push(2);
-    vec.push(3);
+    let vec = vec![1, 2, 3];
 
     assert_eq!(vec.len(), 3);
     assert_eq!(vec[0], 1);
@@ -68,7 +65,7 @@ fn test_option_handling() {
 
     assert!(some_value.is_some());
     assert!(none_value.is_none());
-    assert_eq!(some_value.unwrap(), 42);
+    assert_eq!(some_value.expect("expected Some(42)"), 42);
 }
 
 #[test]
@@ -111,7 +108,7 @@ fn test_concurrent_operations() {
 
     let mut results = vec![];
     for handle in handles {
-        results.push(handle.join().unwrap());
+        results.push(handle.join().expect("thread join failed"));
     }
 
     assert_eq!(results.len(), 5);
@@ -144,7 +141,7 @@ fn test_json_schema_validation() {
     assert_eq!(skill_data["name"], "arithmetic");
     assert!(skill_data["description"]
         .as_str()
-        .unwrap()
+        .expect("description should be string")
         .contains("arithmetic"));
 }
 

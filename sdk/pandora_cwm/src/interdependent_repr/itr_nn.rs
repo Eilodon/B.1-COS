@@ -16,6 +16,10 @@ impl GraphNeuralNetwork {
     }
 }
 
+impl Default for GraphNeuralNetwork {
+    fn default() -> Self { Self::new() }
+}
+
 /// ITR_NN kết hợp GNN với Phân tích Dữ liệu Topo (TDA) để tạo ra
 /// một biểu diễn nhận biết được cả quan hệ cục bộ và cấu trúc toàn cục.
 pub struct InterdependentTopoRelationalNN {
@@ -150,4 +154,9 @@ impl InterdependentTopoRelationalNN {
             graph_data.len()
         );
     }
+}
+
+#[cfg(not(feature = "tda"))]
+impl Default for InterdependentTopoRelationalNN {
+    fn default() -> Self { Self::new() }
 }

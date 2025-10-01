@@ -26,7 +26,7 @@ fn benchmark_flow_creation(c: &mut Criterion) {
     c.bench_function("flow_set_static_intent", |b| {
         let mut flow = EpistemologicalFlow::default();
         b.iter(|| {
-            flow.set_static_intent(black_box(intents::intents::REPORT_ERROR));
+            flow.set_static_intent(black_box(intents::constants::REPORT_ERROR));
         });
     });
 

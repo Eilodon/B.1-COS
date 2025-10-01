@@ -41,7 +41,8 @@ async fn test_skandha_cycle_v3() {
     // 1. Phải có một sự kiện được tái sinh.
     // 2. Sự kiện đó phải chứa "Ý Chỉ" đã được khởi phát là "REPORT_ERROR".
     assert!(reborn_event_2.is_some());
-    let reborn_content = String::from_utf8(reborn_event_2.unwrap()).unwrap();
+    let reborn_bytes = reborn_event_2.expect("expected reborn event in error scenario");
+    let reborn_content = String::from_utf8(reborn_bytes).expect("reborn event should be valid UTF-8");
     assert!(reborn_content.contains("REPORT_ERROR"));
     println!("\n✅ KẾT QUẢ KỊCH BẢN 2: Chính xác! Hệ thống cảm nhận 'Khổ', khởi phát 'Ý Chỉ' và tái sinh nhận thức.");
 

@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(clippy::items_after_test_module, clippy::unwrap_used)]
 mod tests {
 	use super::*;
 	use serde_json::json;
@@ -52,7 +53,7 @@ use pandora_core::interfaces::skills::{SkillModule, SkillDescriptor, SkillOutput
 use serde_json::Value as SkillInput;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use pandora_error::{PandoraError, ErrorContext};
+use pandora_error::PandoraError;
 
 pub struct LogicalReasoningSkill;
 

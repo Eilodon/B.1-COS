@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(clippy::module_inception, clippy::panic, clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use crate::interfaces::skandhas::*;
     use crate::ontology::EpistemologicalFlow;
@@ -14,7 +15,7 @@ mod tests {
 
         assert!(flow.rupa.is_some());
         assert_eq!(
-            flow.rupa.as_ref().unwrap().as_ref(),
+            flow.rupa.as_ref().expect("expected rupa bytes in test").as_ref(),
             b"test event with metadata"
         );
     }
@@ -30,7 +31,7 @@ mod tests {
         skandha.feel(&mut flow);
 
         assert!(flow.vedana.is_some());
-        match flow.vedana.as_ref().unwrap() {
+        match flow.vedana.as_ref().expect("expected vedana in test") {
             crate::ontology::Vedana::Pleasant { karma_weight } => {
                 assert!(*karma_weight > 0.0);
             }
@@ -50,7 +51,7 @@ mod tests {
 
         assert!(flow.sanna.is_some());
         assert!(flow.related_eidos.is_some());
-        assert!(!flow.related_eidos.as_ref().unwrap().is_empty());
+        assert!(!flow.related_eidos.as_ref().expect("expected related in test").is_empty());
     }
 
     #[tokio::test]
@@ -69,7 +70,7 @@ mod tests {
         skandha.form_intent(&mut flow);
 
         assert!(flow.sankhara.is_some());
-        let intent = flow.sankhara.as_ref().unwrap();
+        let intent = flow.sankhara.as_ref().expect("expected intent in test");
         assert!(intent.contains("CORRECTIVE") || intent.contains("HIGH_PRIORITY"));
     }
 
@@ -96,7 +97,7 @@ mod tests {
         let result = skandha.synthesize(&flow);
 
         assert!(result.is_some());
-        let result_bytes = result.unwrap();
+        let result_bytes = result.expect("expected result bytes in test");
         let event = String::from_utf8_lossy(&result_bytes);
         assert!(event.contains("AdvancedConsciousness"));
         assert!(event.contains("SynthesisScore"));
@@ -198,7 +199,7 @@ mod tests {
         let result = vinnana.synthesize(&flow);
         assert!(result.is_some());
 
-        let result_bytes = result.unwrap();
+        let result_bytes = result.expect("expected result bytes in test");
         let synthesized = String::from_utf8_lossy(&result_bytes);
         assert!(synthesized.contains("AdvancedConsciousness"));
     }

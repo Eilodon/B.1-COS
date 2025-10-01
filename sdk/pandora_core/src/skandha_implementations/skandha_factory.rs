@@ -6,6 +6,7 @@ pub struct SkandhaFactory;
 
 impl SkandhaFactory {
     /// Tạo bộ Basic Skandhas
+    #[allow(clippy::type_complexity)]
     pub fn create_basic_skandhas() -> (
         Box<dyn RupaSkandha>,
         Box<dyn VedanaSkandha>,
@@ -23,6 +24,7 @@ impl SkandhaFactory {
     }
 
     /// Tạo bộ Advanced Skandhas với cấu hình mặc định
+    #[allow(clippy::type_complexity)]
     pub fn create_advanced_skandhas() -> (
         Box<dyn RupaSkandha>,
         Box<dyn VedanaSkandha>,
@@ -40,6 +42,7 @@ impl SkandhaFactory {
     }
 
     /// Tạo bộ Advanced Skandhas với cấu hình tùy chỉnh
+    #[allow(clippy::type_complexity)]
     pub fn create_custom_advanced_skandhas(
         rupa_config: (bool, bool),    // (enable_metadata, enable_timestamp)
         vedana_config: (f32, bool),   // (karma_threshold, enable_context_analysis)
@@ -69,6 +72,7 @@ impl SkandhaFactory {
     }
 
     /// Tạo Skandha processor với preset configurations
+    #[allow(clippy::type_complexity)]
     pub fn create_preset_processor(
         preset: SkandhaPreset,
     ) -> (
@@ -88,6 +92,7 @@ impl SkandhaFactory {
     }
 
     /// Tạo bộ Skandhas tối ưu cho hiệu suất cao
+    #[allow(clippy::type_complexity)]
     fn create_high_performance_skandhas() -> (
         Box<dyn RupaSkandha>,
         Box<dyn VedanaSkandha>,
@@ -105,6 +110,7 @@ impl SkandhaFactory {
     }
 
     /// Tạo bộ Skandhas cho debug
+    #[allow(clippy::type_complexity)]
     fn create_debug_skandhas() -> (
         Box<dyn RupaSkandha>,
         Box<dyn VedanaSkandha>,
@@ -122,6 +128,7 @@ impl SkandhaFactory {
     }
 
     /// Tạo bộ Skandhas tối giản
+    #[allow(clippy::type_complexity)]
     fn create_minimal_skandhas() -> (
         Box<dyn RupaSkandha>,
         Box<dyn VedanaSkandha>,

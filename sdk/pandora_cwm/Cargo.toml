@@ -13,10 +13,12 @@ tda = []
 pandora_core = { path = "../pandora_core" }
 pandora_error = { path = "../pandora_error" }
 tracing = { workspace = true }
-
 num-complex = { workspace = true }
 rustfft = { workspace = true }
 fnv = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
 
 # Temporarily disabled due to dependency conflicts
 # candle-core = { version = "0.3.3", optional = true }

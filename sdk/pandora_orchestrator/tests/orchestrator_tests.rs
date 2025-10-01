@@ -72,7 +72,7 @@ async fn test_orchestrator_trait_process_request_success() {
     let result = orchestrator.process_request("arithmetic", input).await;
 
     assert!(result.is_ok());
-    let output = result.unwrap();
+    let output = result.expect("expected success from arithmetic skill");
     assert_eq!(output["result"], 5.0);
 }
 
@@ -85,7 +85,7 @@ async fn test_orchestrator_trait_process_request_skill_not_found() {
     let result = orchestrator.process_request("non_existent", input).await;
 
     assert!(result.is_err());
-    match result.unwrap_err() {
+    match result.expect_err("expected SkillNotFound error") {
         pandora_error::PandoraError::SkillNotFound { skill_name } => {
             assert_eq!(skill_name, "non_existent");
         }
@@ -104,7 +104,7 @@ async fn test_orchestrator_trait_process_request_skill_execution_error() {
     let result = orchestrator.process_request("mock_fail", input).await;
 
     assert!(result.is_err());
-    match result.unwrap_err() {
+    match result.expect_err("expected SkillExecution error") {
         pandora_error::PandoraError::SkillExecution { skill_name, message, .. } => {
             assert_eq!(skill_name, "mock_fail");
             assert_eq!(message, "Mock failure");
@@ -166,7 +166,8 @@ async fn test_orchestrator_trait_multiple_skills_integration() {
         .process_request("arithmetic", json!({"expression": "10 * 5"}))
         .await;
     assert!(arith_result.is_ok());
-    assert_eq!(arith_result.unwrap()["result"], 50.0);
+    let arith_val = arith_result.expect("arithmetic should succeed");
+    assert_eq!(arith_val["result"], 50.0);
 
     // Test logical reasoning
     let logic_result = orchestrator
@@ -182,7 +183,8 @@ async fn test_orchestrator_trait_multiple_skills_integration() {
         )
         .await;
     assert!(logic_result.is_ok());
-    assert_eq!(logic_result.unwrap()["result"], true);
+    let logic_val = logic_result.expect("logical_reasoning should succeed");
+    assert_eq!(logic_val["result"], true);
 
     // Test pattern matching
     let pattern_result = orchestrator
@@ -195,8 +197,8 @@ async fn test_orchestrator_trait_multiple_skills_integration() {
         )
         .await;
     assert!(pattern_result.is_ok());
-    let pattern_output = pattern_result.unwrap();
-    let matches = pattern_output["matches"].as_array().unwrap();
+    let pattern_output = pattern_result.expect("expected pattern_matching success");
+    let matches = pattern_output["matches"].as_array().expect("matches should be array");
     assert_eq!(matches.len(), 2); // "ab" and "aab"
 
     // Test analogy reasoning
@@ -212,7 +214,7 @@ async fn test_orchestrator_trait_multiple_skills_integration() {
         )
         .await;
     assert!(analogy_result.is_ok());
-    let analogy_output = analogy_result.unwrap();
+    let analogy_output = analogy_result.expect("expected analogy_reasoning success");
     assert_eq!(analogy_output["best_match"], "queen");
 }
 
@@ -262,7 +264,7 @@ async fn test_orchestrator_trait_concurrent_requests() {
 
     // Wait for all requests to complete
     for handle in handles {
-        let result = handle.await.unwrap();
+        let result = handle.await.expect("join handle await failed");
         assert!(result.is_ok());
     }
 }

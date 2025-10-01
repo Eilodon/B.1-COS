@@ -94,7 +94,7 @@ impl CircuitBreakerManager {
         if state.is_expired(ttl) {
             debug!("Circuit state expired for '{}'", skill_name);
             // Remove expired entry entirely; caller sees circuit as closed
-            drop(state);
+            let _ = state;
             states.pop(skill_name);
             return false;
         }
@@ -121,7 +121,8 @@ impl CircuitBreakerManager {
             }
             CircuitState::HalfOpen { trial_permits, .. } => {
                 if *trial_permits > 0 {
-                    *trial_permits -= 1;
+                    let remaining = trial_permits.saturating_sub(1);
+                    *state = CircuitState::HalfOpen { trial_permits: remaining, last_updated: Instant::now() };
                     false
                 } else {
                     true

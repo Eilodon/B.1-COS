@@ -14,24 +14,13 @@ use pandora_cwm::ml::predictor::WorldModelPredictor;
 use pandora_cwm::nn::uq_models::ProbabilisticOutput;
 #[cfg(feature = "ml")]
 use ndarray::Array2;
-#[cfg(feature = "ml")]
+#[cfg(any(feature = "ml", feature = "prometheus_export"))]
 use std::time::Instant;
 
 #[cfg(feature = "prometheus_export")]
-use metrics::{counter, histogram, register_counter, register_histogram, Counter, Histogram};
-#[cfg(feature = "prometheus_export")]
-use std::time::Instant;
+use metrics::{counter, histogram};
 
-#[cfg(feature = "prometheus_export")]
-lazy_static::lazy_static! {
-    static ref E2E_CYCLES_TOTAL: Counter = register_counter!("e2e_cycles_total", "Total E2E integration cycles").unwrap();
-    static ref E2E_CYCLE_DURATION: Histogram = register_histogram!("e2e_cycle_duration_seconds", "E2E cycle duration").unwrap();
-    static ref MCG_DECISIONS_TOTAL: Counter = register_counter!("mcg_decisions_total", "MCG decisions made", &["decision_type"]).unwrap();
-    static ref SIE_ACTIONS_TOTAL: Counter = register_counter!("sie_actions_total", "SIE actions executed", &["strategy"]).unwrap();
-    static ref LEARNING_REWARDS: Histogram = register_histogram!("learning_rewards", "Learning engine rewards").unwrap();
-    static ref GNN_PROCESSING_DURATION: Histogram = register_histogram!("gnn_processing_duration_seconds", "GNN processing time").unwrap();
-    static ref UQ_PREDICTIONS_TOTAL: Counter = register_counter!("uq_predictions_total", "UQ predictions made", &["confidence_level"]).unwrap();
-}
+// Note: Using direct metrics macros instead of lazy_static for simplicity
 
 #[tokio::main(flavor = "multi_thread")] 
 async fn main() {
@@ -76,7 +65,7 @@ async fn main() {
     #[cfg(feature = "prometheus_export")]
     {
         let total_reward = le.get_total_weighted_reward(&reward);
-        LEARNING_REWARDS.observe(total_reward);
+        histogram!("learning_rewards").record(total_reward);
     }
 
     // MCG monitoring (mocked system metrics)
@@ -100,7 +89,7 @@ async fn main() {
             EnhancedTrigger::OptimizeResources { .. } => "optimize",
             EnhancedTrigger::NoAction => "no_action",
         };
-        MCG_DECISIONS_TOTAL.with_label_values(&[decision_type]).inc();
+        counter!("mcg_decisions_total", "decision_type" => decision_type).increment(1);
     }
 
     // Route decision to SIE
@@ -129,7 +118,7 @@ async fn main() {
                 RootTrigger::TriggerSelfImprovementLevel4 { .. } => "meta_learning",
                 _ => "unknown",
             };
-            SIE_ACTIONS_TOTAL.with_label_values(&[strategy]).inc();
+            counter!("sie_actions_total", "strategy" => strategy).increment(1);
         }
     }
 
@@ -160,7 +149,7 @@ async fn main() {
         info!("GNN: Aggregated features: {:?}", aggregated_features);
         
         #[cfg(feature = "prometheus_export")]
-        GNN_PROCESSING_DURATION.observe(_gnn_duration);
+        histogram!("gnn_processing_duration_seconds").record(_gnn_duration);
     }
 
     // UQ Predictor Demo
@@ -196,14 +185,14 @@ async fn main() {
               variance_scalar, confidence_level);
         
         #[cfg(feature = "prometheus_export")]
-        UQ_PREDICTIONS_TOTAL.with_label_values(&[confidence_level]).inc();
+        counter!("uq_predictions_total", "confidence_level" => confidence_level).increment(1);
     }
 
     #[cfg(feature = "prometheus_export")]
     {
         let cycle_duration = cycle_start.elapsed().as_secs_f64();
-        E2E_CYCLE_DURATION.observe(cycle_duration);
-        E2E_CYCLES_TOTAL.inc();
+        histogram!("e2e_cycle_duration_seconds").record(cycle_duration);
+        counter!("e2e_cycles_total").increment(1);
     }
 
     info!("E2E: Completed one integrated cycle with GNN + UQ.");

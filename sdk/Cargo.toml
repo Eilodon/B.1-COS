@@ -53,7 +53,7 @@ proptest = "1.5"
 futures = "0.3"
 
 # ML stack (Pure Rust)
-ndarray = { version = "0.15", features = ["blas"] }
+ndarray = { version = "0.15", features = [] }
 ndarray-rand = "0.14"
 ndarray-stats = "0.5"
 smartcore = { version = "0.3", features = ["serde"] }
@@ -64,7 +64,7 @@ argmin = "0.9"
 argmin-math = "0.4"
 statrs = "0.16"
 metrics = "0.23"
-metrics-exporter-prometheus = "0.14"
+metrics-exporter-prometheus = { version = "0.17", default-features = false, features = ["hyper-rustls", "http-listener"] }
 
 # Optional: ML dependencies (currently disabled due to MSRV conflicts)
 # candle-core = { version = "0.3.3", optional = true }

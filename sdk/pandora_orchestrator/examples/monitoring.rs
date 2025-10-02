@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Init Prometheus exporter at 0.0.0.0:9000 -> /metrics
     let builder = PrometheusBuilder::new();
-    let handle = builder.with_http_listener(([0,0,0,0], 9000)).install_recorder()?;
+    let _handle = builder.with_http_listener(([0,0,0,0], 9000)).install_recorder()?;
     info!("Prometheus metrics exporter listening on :9000/metrics");
 
     // Setup orchestrator

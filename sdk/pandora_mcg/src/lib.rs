@@ -120,7 +120,9 @@ impl MetaCognitiveGovernor {
         info!("\n--- Vòng lặp Siêu Nhận thức Bắt đầu ---");
         let decision = self.rule_engine.evaluate_ml(cwm_output);
         #[cfg(feature = "metrics_instrumentation")]
-        counter!("mcg.decisions_total_ml", 1);
+        {
+            counter!("mcg.decisions_total_ml").increment(1);
+        }
         info!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");
         decision
     }
@@ -134,9 +136,10 @@ impl MetaCognitiveGovernor {
         let decision = self.rule_engine.evaluate(reward);
         let _elapsed = start.elapsed().as_secs_f64();
         #[cfg(feature = "metrics_instrumentation")]
-        histogram!("mcg.evaluate_latency_seconds", _elapsed);
-        #[cfg(feature = "metrics_instrumentation")]
-        counter!("mcg.decisions_total_non_ml", 1);
+        {
+            histogram!("mcg.evaluate_latency_seconds").record(_elapsed);
+            counter!("mcg.decisions_total_non_ml").increment(1);
+        }
         info!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");
         decision
     }

@@ -198,8 +198,8 @@ impl SelfImprovementEngine {
             let _elapsed = start.elapsed().as_secs_f64();
             #[cfg(feature = "metrics_instrumentation")]
             {
-                counter!("sie.proposals_total", 1);
-                histogram!("sie.proposal_latency_seconds", _elapsed);
+                counter!("sie.proposals_total").increment(1);
+                histogram!("sie.proposal_latency_seconds").record(_elapsed);
             }
             info!("SIE: Đã đề xuất hành động: '{}'", action.description);
             info!("--- Động cơ Tự Cải thiện Kết thúc ---");

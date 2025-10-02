@@ -9,9 +9,11 @@ pub mod circuit_breaker;
 pub use circuit_breaker::{CircuitBreakerConfig, CircuitBreakerManager, CircuitStats};
 pub mod simple_api;
 pub mod static_skills;
-pub use static_skills::{HybridSkillRegistry, StaticSkill};
+#[cfg(feature = "prometheus_export")]
 use once_cell::sync::Lazy;
+#[cfg(feature = "prometheus_export")]
 use prometheus::{register_counter_vec, register_histogram_vec, CounterVec, HistogramVec};
+pub use static_skills::{HybridSkillRegistry, StaticSkill};
 use tokio::time::sleep;
 use tokio::time::timeout as tokio_timeout;
 use tracing::{info, instrument, warn};
@@ -170,6 +172,7 @@ impl Orchestrator {
 
         let mut last_err: Option<PandoraError> = None;
         for skill_name in candidates {
+            #[cfg(feature = "prometheus_export")]
             let _timer = METRICS
                 .request_duration
                 .with_label_values(&[&skill_name])
@@ -178,10 +181,13 @@ impl Orchestrator {
                 Ok(val) => return Ok(val),
                 Err(e) => {
                     warn!("Policy attempt failed for skill '{}': {}", skill_name, e);
-                    METRICS
-                        .request_errors
-                        .with_label_values(&[&skill_name])
-                        .inc();
+                    #[cfg(feature = "prometheus_export")]
+                    {
+                        METRICS
+                            .request_errors
+                            .with_label_values(&[&skill_name])
+                            .inc();
+                    }
                     last_err = Some(e);
                     // Nếu lỗi do circuit open hoặc timeout, thử fallback tiếp theo
                     continue;
@@ -229,10 +235,13 @@ impl Orchestrator {
                 }
                 Err(err) => {
                     self.record_failure(skill_name);
-                    METRICS
-                        .request_errors
-                        .with_label_values(&[skill_name])
-                        .inc();
+                    #[cfg(feature = "prometheus_export")]
+                    {
+                        METRICS
+                            .request_errors
+                            .with_label_values(&[skill_name])
+                            .inc();
+                    }
                     // Không retry nếu lỗi không retryable
                     if !err.is_retryable() {
                         return Err(err);
@@ -266,7 +275,10 @@ impl Orchestrator {
                 let exec_fut = skill_ref.execute(input);
                 return match tokio_timeout(Duration::from_millis(timeout_ms), exec_fut).await {
                     Ok(res) => {
-                        METRICS.request_total.with_label_values(&[skill_name]).inc();
+                        #[cfg(feature = "prometheus_export")]
+                        {
+                            METRICS.request_total.with_label_values(&[skill_name]).inc();
+                        }
                         res
                     }
                     Err(_) => Err(PandoraError::Timeout {
@@ -277,12 +289,12 @@ impl Orchestrator {
             }
         }
 
-        let skill = self
-            .registry
-            .get_skill(skill_name)
-            .ok_or_else(|| PandoraError::SkillNotFound {
-                skill_name: skill_name.to_string(),
-            })?;
+        let skill =
+            self.registry
+                .get_skill(skill_name)
+                .ok_or_else(|| PandoraError::SkillNotFound {
+                    skill_name: skill_name.to_string(),
+                })?;
 
         // Optional: validate input against skill's declared JSON schema
         #[cfg(feature = "schema_validation")]
@@ -333,7 +345,10 @@ impl Orchestrator {
                         }
                     }
                 }
-                METRICS.request_total.with_label_values(&[skill_name]).inc();
+                #[cfg(feature = "prometheus_export")]
+                {
+                    METRICS.request_total.with_label_values(&[skill_name]).inc();
+                }
                 res
             }
             Err(_) => Err(PandoraError::Timeout {
@@ -708,12 +723,14 @@ fn compile_and_validate(
     Ok(())
 }
 
+#[cfg(feature = "prometheus_export")]
 struct Metrics {
     request_total: CounterVec,
     request_errors: CounterVec,
     request_duration: HistogramVec,
 }
 
+#[cfg(feature = "prometheus_export")]
 static METRICS: Lazy<Metrics> = Lazy::new(|| {
     let request_total = register_counter_vec!(
         "cognitive_requests_total",

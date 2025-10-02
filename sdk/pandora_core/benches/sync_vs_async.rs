@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use pandora_core::fep_cell::SkandhaProcessor;
-use pandora_core::skandha_implementations::{basic_skandhas::*};
+use pandora_core::skandha_implementations::basic_skandhas::*;
 use tokio::runtime::Runtime;
 
 fn make_processor() -> SkandhaProcessor {
@@ -40,5 +40,3 @@ fn benchmark_async_cycle(c: &mut Criterion) {
 
 criterion_group!(benches, benchmark_sync_cycle, benchmark_async_cycle);
 criterion_main!(benches);
-
-

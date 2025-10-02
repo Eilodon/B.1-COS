@@ -19,26 +19,55 @@ use tracing::info;
 /// - **Memory**: ~2KB per cycle (with recycling)
 /// - **Throughput**: >30,000 cycles/sec (single thread)
 ///
-/// # Examples
-///
-/// ```rust
-/// use pandora_core::fep_cell::SkandhaProcessor;
-/// use pandora_core::skandha_implementations::basic_skandhas::*;
-///
-/// let processor = SkandhaProcessor::new(
-///     Box::new(BasicRupaSkandha),
-///     Box::new(BasicVedanaSkandha),
-///     Box::new(BasicSannaSkandha),
-///     Box::new(BasicSankharaSkandha),
-///     Box::new(BasicVinnanaSkandha),
-/// );
-///
-/// let event = b"system error detected".to_vec();
-/// let result = processor.run_epistemological_cycle(event);
-///
-/// // Error events produce reborn events with corrective intent
-/// assert!(result.is_some());
-/// ```
+    /// # Examples
+    ///
+    /// ```rust
+    /// use pandora_core::fep_cell::SkandhaProcessor;
+    /// use pandora_core::skandha_implementations::basic_skandhas::*;
+    ///
+    /// let processor = SkandhaProcessor::new(
+    ///     Box::new(BasicRupaSkandha),
+    ///     Box::new(BasicVedanaSkandha),
+    ///     Box::new(BasicSannaSkandha),
+    ///     Box::new(BasicSankharaSkandha),
+    ///     Box::new(BasicVinnanaSkandha),
+    /// );
+    ///
+    /// let event = b"system error detected".to_vec();
+    /// let result = processor.run_epistemological_cycle(event);
+    ///
+    /// // Error events produce reborn events with corrective intent
+    /// assert!(result.is_some());
+    /// ```
+    ///
+    /// # Async Processing
+    ///
+    /// ```rust
+    /// # use pandora_core::fep_cell::SkandhaProcessor;
+    /// # use pandora_core::skandha_implementations::basic_skandhas::*;
+    /// # let processor = SkandhaProcessor::new(
+    /// #     Box::new(BasicRupaSkandha),
+    /// #     Box::new(BasicVedanaSkandha),
+    /// #     Box::new(BasicSannaSkandha),
+    /// #     Box::new(BasicSankharaSkandha),
+    /// #     Box::new(BasicVinnanaSkandha),
+    /// # );
+/// # async fn example() {
+/// # use pandora_core::fep_cell::SkandhaProcessor;
+/// # use pandora_core::skandha_implementations::basic_skandhas::*;
+/// # let processor = SkandhaProcessor::new(
+/// #     Box::new(BasicRupaSkandha),
+/// #     Box::new(BasicVedanaSkandha),
+/// #     Box::new(BasicSannaSkandha),
+/// #     Box::new(BasicSankharaSkandha),
+/// #     Box::new(BasicVinnanaSkandha),
+/// # );
+/// let event = b"normal operation".to_vec();
+/// let result = processor.run_epistemological_cycle_async(event).await;
+/// // Normal events typically don't produce reborn events
+/// assert!(result.is_none());
+/// # }
+    /// ```
 ///
 /// # Thread Safety
 ///
@@ -66,7 +95,13 @@ impl SkandhaProcessor {
         vinnana: Box<dyn VinnanaSkandha>,
     ) -> Self {
         info!("✅ SkandhaProcessor V3 đã được khởi tạo.");
-        Self { rupa, vedana, sanna, sankhara, vinnana }
+        Self {
+            rupa,
+            vedana,
+            sanna,
+            sankhara,
+            vinnana,
+        }
     }
 
     /// Runs a complete epistemological cycle synchronously.

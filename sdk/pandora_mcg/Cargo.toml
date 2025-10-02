@@ -8,6 +8,7 @@ license = "Apache-2.0"
 ml = ["pandora_cwm/ml"]
 tda = []
 default = []
+metrics_instrumentation = []
 
 [dependencies]
 pandora_core = { path = "../pandora_core" }
@@ -18,3 +19,7 @@ tracing-subscriber = { workspace = true, features = ["fmt", "env-filter"] }
 thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+metrics = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }

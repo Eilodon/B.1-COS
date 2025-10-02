@@ -170,3 +170,21 @@ This project is in active development. The core architecture is stable, but many
 - [API Documentation](https://docs.rs/pandora-core) (Coming soon)
 - [Architecture Guide](docs/architecture.md) (Coming soon)
 - [Contributing Guide](CONTRIBUTING.md)
+
+# 🚩 Observability (Prometheus + Tracing)
+
+Optional and feature-gated to avoid extra system deps by default.
+
+- Prometheus exporter example
+  - Requires OpenSSL dev on Linux (Ubuntu/Debian): `sudo apt-get install -y libssl-dev pkg-config`
+  - Run exporter (exposes `:9000/metrics`):
+    ```bash
+    cargo run -p pandora_orchestrator --example monitoring --features pandora_orchestrator/prometheus_export
+    ```
+
+- Metrics instrumentation in MCG/SIE
+  - Disabled by default. Enable:
+    ```bash
+    cargo test --features pandora_mcg/metrics_instrumentation,pandora_sie/metrics_instrumentation
+    ```
+  - Emits counters/histograms via the exporter when enabled.

@@ -1,10 +1,10 @@
 use lru::LruCache;
 use parking_lot::Mutex;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::num::NonZeroUsize;
 use std::time::{Duration, Instant};
 use tracing::{debug, warn};
-use std::hash::{Hash, Hasher};
-use std::collections::hash_map::DefaultHasher;
 
 /// Circuit breaker state with timestamp for TTL
 #[derive(Debug, Clone)]
@@ -67,7 +67,7 @@ const SHARD_COUNT: usize = 16;
 const SHARD_MASK: usize = SHARD_COUNT - 1;
 
 /// Sharded circuit breaker manager to reduce lock contention.
-/// 
+///
 /// Each shard maintains its own LRU cache of circuit states,
 /// allowing concurrent access to different skills without contention.
 pub struct ShardedCircuitBreakerManager {
@@ -82,9 +82,7 @@ impl ShardedCircuitBreakerManager {
             .unwrap_or_else(|| NonZeroUsize::new(1).expect("1 is non-zero"));
 
         // Initialize array of shards using const generics
-        let shards = std::array::from_fn(|_| {
-            Mutex::new(LruCache::new(capacity))
-        });
+        let shards = std::array::from_fn(|_| Mutex::new(LruCache::new(capacity)));
 
         Self { shards, config }
     }
@@ -105,7 +103,7 @@ impl ShardedCircuitBreakerManager {
     }
 
     /// Check if circuit is open for a skill.
-    /// 
+    ///
     /// This method only locks ONE shard, not the entire state.
     pub fn is_open(&self, skill_name: &str) -> bool {
         let shard = self.get_shard(skill_name);
@@ -123,7 +121,9 @@ impl ShardedCircuitBreakerManager {
         }
 
         // Get mutable reference for in-place transitions
-        let state = states.get_mut(skill_name).expect("state exists after insert");
+        let state = states
+            .get_mut(skill_name)
+            .expect("state exists after insert");
 
         // Check if expired and reset if needed
         let ttl = Duration::from_secs(self.config.state_ttl_secs);
@@ -175,7 +175,7 @@ impl ShardedCircuitBreakerManager {
     pub fn record_success(&self, skill_name: &str) {
         let shard = self.get_shard(skill_name);
         let mut states = shard.lock();
-        
+
         states.put(
             skill_name.to_string(),
             CircuitState::Closed {
@@ -289,16 +289,17 @@ impl ShardedCircuitBreakerManager {
 
             for name in to_remove {
                 states.pop(&name);
-                debug!("Cleaned up expired circuit state for '{}' in shard {}", name, shard_idx);
+                debug!(
+                    "Cleaned up expired circuit state for '{}' in shard {}",
+                    name, shard_idx
+                );
             }
         }
     }
 
     /// Get per-shard statistics for monitoring distribution.
     pub fn shard_stats(&self) -> Vec<usize> {
-        self.shards.iter()
-            .map(|shard| shard.lock().len())
-            .collect()
+        self.shards.iter().map(|shard| shard.lock().len()).collect()
     }
 }
 
@@ -639,8 +640,8 @@ mod tests {
 #[cfg(test)]
 mod sharded_tests {
     use super::*;
-    use std::thread;
     use std::sync::Arc;
+    use std::thread;
 
     #[test]
     fn test_sharded_isolation() {
@@ -675,7 +676,8 @@ mod sharded_tests {
             let mgr = Arc::clone(&manager);
             let handle = thread::spawn(move || {
                 let skill_name = format!("skill_{}", i);
-                for _ in 0..5 { // Fewer iterations to avoid hitting threshold
+                for _ in 0..5 {
+                    // Fewer iterations to avoid hitting threshold
                     assert!(!mgr.is_open(&skill_name));
                     mgr.record_failure(&skill_name);
                 }
@@ -721,13 +723,16 @@ mod sharded_tests {
 
         let shard_stats = manager.shard_stats();
         assert_eq!(shard_stats.len(), SHARD_COUNT);
-        
+
         // All shards should have some circuits (distribution may vary)
         let total: usize = shard_stats.iter().sum();
         assert_eq!(total, 100);
-        
+
         // At least some shards should be used
         let used_shards = shard_stats.iter().filter(|&&count| count > 0).count();
-        assert!(used_shards > 1, "Skills should be distributed across multiple shards");
+        assert!(
+            used_shards > 1,
+            "Skills should be distributed across multiple shards"
+        );
     }
 }

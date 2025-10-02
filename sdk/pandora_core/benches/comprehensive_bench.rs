@@ -28,7 +28,7 @@ fn benchmark_skandha_pipeline(c: &mut Criterion) {
             b.to_async(tokio::runtime::Runtime::new().unwrap())
                 .iter_batched(
                     || vec![0u8; size],
-                    |event| async { processor.run_epistemological_cycle(black_box(event)).await },
+                    |event| async { processor.run_epistemological_cycle(black_box(event)) },
                     BatchSize::SmallInput,
                 );
         });
@@ -50,7 +50,7 @@ fn benchmark_individual_skandhas(c: &mut Criterion) {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter_batched(
                 || vec![0u8; 100],
-                |event| async { rupa.process_event(black_box(event)).await },
+                |event| async { rupa.process_event(black_box(event)) },
                 BatchSize::SmallInput,
             );
     });

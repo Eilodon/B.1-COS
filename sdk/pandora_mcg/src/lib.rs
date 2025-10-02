@@ -1,9 +1,12 @@
 #![allow(unexpected_cfgs)]
 #[cfg(feature = "ml")]
-#[allow(unexpected_cfgs)]
 use pandora_cwm::nn::uq_models::ProbabilisticOutput;
 use serde::{Deserialize, Serialize};
-use tracing::info;
+use tracing::{info, instrument};
+#[cfg(feature = "metrics_instrumentation")]
+use metrics::{counter, histogram};
+
+pub mod enhanced_mcg;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionTrigger {
@@ -12,6 +15,14 @@ pub enum ActionTrigger {
         target_component: String,
     },
     TriggerSelfImprovementLevel2 {
+        reason: String,
+        target_component: String,
+    },
+    TriggerSelfImprovementLevel3 {
+        reason: String,
+        target_component: String,
+    },
+    TriggerSelfImprovementLevel4 {
         reason: String,
         target_component: String,
     },
@@ -45,7 +56,7 @@ impl RuleEngine {
     }
 
     #[cfg(feature = "ml")]
-    #[allow(unexpected_cfgs)]
+    #[instrument(skip(self, output))]
     pub fn evaluate_ml(&self, output: &ProbabilisticOutput) -> ActionTrigger {
         let mean_variance = output
             .variance
@@ -53,17 +64,14 @@ impl RuleEngine {
             .and_then(|t| t.to_scalar::<f32>());
         if let Ok(variance_val) = mean_variance {
             for rule in &self.rules {
-                match rule {
-                    MetaRule::IfUncertaintyExceeds { threshold, action } => {
-                        if variance_val > *threshold {
-                            info!(
-                                "MCG: Phát hiện độ bất định ({:.4}) > ngưỡng ({:.4}). Kích hoạt hành động.",
-                                variance_val, threshold
-                            );
-                            return action.clone();
-                        }
+                if let MetaRule::IfUncertaintyExceeds { threshold, action } = rule {
+                    if variance_val > *threshold {
+                        info!(
+                            "MCG: Phát hiện độ bất định ({:.4}) > ngưỡng ({:.4}). Kích hoạt hành động.",
+                            variance_val, threshold
+                        );
+                        return action.clone();
                     }
-                    _ => {} // Bỏ qua các quy tắc khác
                 }
             }
         }
@@ -71,6 +79,7 @@ impl RuleEngine {
         ActionTrigger::NoAction
     }
 
+    #[instrument(skip(self, reward))]
     pub fn evaluate(
         &self,
         reward: &pandora_core::world_model::DualIntrinsicReward,
@@ -87,7 +96,6 @@ impl RuleEngine {
                     }
                 }
                 #[cfg(feature = "ml")]
-                #[allow(unexpected_cfgs)]
                 MetaRule::IfUncertaintyExceeds { .. } => {
                     // Bỏ qua quy tắc ML trong chế độ này
                 }
@@ -108,10 +116,11 @@ impl MetaCognitiveGovernor {
     }
 
     #[cfg(feature = "ml")]
-    #[allow(unexpected_cfgs)]
     pub fn monitor_and_decide_ml(&self, cwm_output: &ProbabilisticOutput) -> ActionTrigger {
         info!("\n--- Vòng lặp Siêu Nhận thức Bắt đầu ---");
         let decision = self.rule_engine.evaluate_ml(cwm_output);
+        #[cfg(feature = "metrics_instrumentation")]
+        counter!("mcg.decisions_total_ml", 1);
         info!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");
         decision
     }
@@ -121,7 +130,13 @@ impl MetaCognitiveGovernor {
         reward: &pandora_core::world_model::DualIntrinsicReward,
     ) -> ActionTrigger {
         info!("\n--- Vòng lặp Siêu Nhận thức Bắt đầu ---");
+        let start = std::time::Instant::now();
         let decision = self.rule_engine.evaluate(reward);
+        let _elapsed = start.elapsed().as_secs_f64();
+        #[cfg(feature = "metrics_instrumentation")]
+        histogram!("mcg.evaluate_latency_seconds", _elapsed);
+        #[cfg(feature = "metrics_instrumentation")]
+        counter!("mcg.decisions_total_non_ml", 1);
         info!("--- Vòng lặp Siêu Nhận thức Kết thúc ---");
         decision
     }

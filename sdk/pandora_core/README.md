@@ -66,6 +66,19 @@ let processor = SkandhaProcessor::new(
 
 let event = b"error detected".to_vec();
 let result = processor.run_epistemological_cycle(event);
+// Error events produce reborn events with corrective intent
+assert!(result.is_some());
+```
+
+### Async Processing
+
+```rust
+# async fn example() {
+let event = b"normal operation".to_vec();
+let result = processor.run_epistemological_cycle_async(event).await;
+// Normal events typically don't produce reborn events
+assert!(result.is_none());
+# }
 ```
 
 ### Advanced: Custom Skandha

@@ -1,6 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use pandora_orchestrator::circuit_breaker::{
-    CircuitBreakerConfig, ShardedCircuitBreakerManager, LegacyCircuitBreakerManager,
+    CircuitBreakerConfig, LegacyCircuitBreakerManager, ShardedCircuitBreakerManager,
 };
 use std::sync::Arc;
 use std::thread;
@@ -106,7 +106,7 @@ fn benchmark_circuit_breaker_operations(c: &mut Criterion) {
     group.bench_function("sharded_stats", |b| {
         let config = CircuitBreakerConfig::default();
         let manager = ShardedCircuitBreakerManager::new(config);
-        
+
         // Pre-populate with some circuits
         for i in 0..50 {
             manager.record_failure(&format!("skill_{}", i));
@@ -120,5 +120,9 @@ fn benchmark_circuit_breaker_operations(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, benchmark_circuit_breaker_contention, benchmark_circuit_breaker_operations);
+criterion_group!(
+    benches,
+    benchmark_circuit_breaker_contention,
+    benchmark_circuit_breaker_operations
+);
 criterion_main!(benches);

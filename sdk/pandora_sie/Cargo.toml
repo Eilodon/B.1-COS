@@ -13,3 +13,11 @@ tracing-subscriber = { workspace = true, features = ["fmt", "env-filter"] }
 thiserror = { workspace = true }
 async-trait = { workspace = true }
 fnv = { workspace = true }
+metrics = { workspace = true }
+
+[features]
+default = []
+metrics_instrumentation = []
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

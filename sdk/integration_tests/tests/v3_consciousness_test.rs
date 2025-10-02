@@ -19,7 +19,9 @@ async fn test_v3_consciousness_cycle() {
     // --- 2. Test Case 1: Sự kiện bình thường ---
     println!("\n--- TEST CASE 1: Sự kiện bình thường ---");
     let normal_event = b"Hello, world!".to_vec();
-    let result1 = processor.run_epistemological_cycle_async(normal_event).await;
+    let result1 = processor
+        .run_epistemological_cycle_async(normal_event)
+        .await;
 
     // Sự kiện bình thường không tạo ra ý chỉ, nên không có tái sinh
     assert!(result1.is_none());
@@ -42,7 +44,9 @@ async fn test_v3_consciousness_cycle() {
 
     // --- 4. Test Case 3: Vòng lặp tái sinh ---
     println!("\n--- TEST CASE 3: Vòng lặp tái sinh ---");
-    let reborn_result = processor.run_epistemological_cycle_async(reborn_event).await;
+    let reborn_result = processor
+        .run_epistemological_cycle_async(reborn_event)
+        .await;
 
     // Sự kiện tái sinh không chứa "error" nên không tạo ra ý chỉ mới
     assert!(reborn_result.is_none());

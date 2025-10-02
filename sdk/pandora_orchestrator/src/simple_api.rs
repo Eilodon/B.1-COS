@@ -5,7 +5,7 @@ use tracing::info;
 type SkillFn = dyn Fn(&str) -> String + Send + Sync;
 
 pub struct SkillRegistry {
-    skills: HashMap<String, Box<SkillFn>>, 
+    skills: HashMap<String, Box<SkillFn>>,
 }
 
 impl SkillRegistry {
@@ -25,7 +25,9 @@ impl SkillRegistry {
 }
 
 impl Default for SkillRegistry {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 pub trait OrchestratorTrait {

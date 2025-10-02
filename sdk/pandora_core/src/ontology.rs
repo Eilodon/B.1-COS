@@ -22,7 +22,7 @@ pub enum Vedana {
 /// Tối ưu hóa cho performance với minimal allocations.
 #[derive(Debug, Clone, Default)]
 pub struct EpistemologicalFlow {
-    /// Sắc: Use Bytes for zero-copy slicing
+    /// Sắc: Use `Bytes` for zero-copy slicing
     pub rupa: Option<bytes::Bytes>,
 
     /// Thọ: Inlined for cache efficiency
@@ -34,7 +34,7 @@ pub struct EpistemologicalFlow {
     /// Related eidos: SmallVec avoids heap for small counts
     pub related_eidos: Option<smallvec::SmallVec<[DataEidos; 4]>>,
 
-    /// Hành: Use Arc<str> for cheap cloning of interned strings
+    /// Hành: Use `Arc<str>` for cheap cloning of interned strings
     pub sankhara: Option<Arc<str>>,
     // Thức (Consciousness) sẽ là kết quả cuối cùng của dòng chảy.
 }

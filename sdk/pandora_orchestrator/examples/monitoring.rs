@@ -4,6 +4,7 @@ use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};
 use tracing::info;
+use metrics_exporter_prometheus::PrometheusBuilder;
 use tracing_subscriber::{fmt, EnvFilter};
 
 fn init_logging() {
@@ -24,6 +25,11 @@ fn init_logging() {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
+
+    // Init Prometheus exporter at 0.0.0.0:9000 -> /metrics
+    let builder = PrometheusBuilder::new();
+    let handle = builder.with_http_listener(([0,0,0,0], 9000)).install_recorder()?;
+    info!("Prometheus metrics exporter listening on :9000/metrics");
 
     // Setup orchestrator
     let mut registry = SkillRegistry::new();

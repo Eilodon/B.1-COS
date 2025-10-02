@@ -5,11 +5,45 @@ use tracing::info;
 pub mod skandha_integration;
 pub mod transcendental_processor;
 pub mod world_models;
+pub mod experience_buffer;
+pub mod value_estimator;
+pub mod policy;
 
 pub use skandha_integration::SkandhaProcessorWithLearning;
 pub use transcendental_processor::TranscendentalProcessor;
+pub use experience_buffer::{ExperienceBuffer, ExperienceSample, PriorityExperienceBuffer};
+pub use value_estimator::{ExponentialMovingAverageEstimator, MeanRewardEstimator, ValueEstimator};
+pub use policy::{EpsilonGreedyPolicy, Policy, Action};
 
-/// `LearningEngine` chịu trách nhiệm tính toán phần thưởng và điều hướng quá trình học.
+/// Learning Engine responsible for calculating rewards and guiding the learning process.
+///
+/// This engine implements dual intrinsic reward calculation based on the Free Energy
+/// Principle, combining prediction accuracy and model compression rewards.
+///
+/// # Examples
+///
+/// ```rust
+/// use pandora_learning_engine::{LearningEngine, ExponentialMovingAverageEstimator, ExperienceBuffer};
+/// use pandora_core::ontology::EpistemologicalFlow;
+/// use bytes::Bytes;
+///
+/// struct MockModel { mdl: f64, err: f64 }
+/// impl pandora_core::world_model::WorldModel for MockModel {
+///     fn get_mdl(&self) -> f64 { self.mdl }
+///     fn get_prediction_error(&self, _: &EpistemologicalFlow) -> f64 { self.err }
+/// }
+///
+/// let le = LearningEngine::new(0.7, 0.3);
+/// let current = MockModel { mdl: 10.0, err: 0.2 };
+/// let new_model = MockModel { mdl: 9.0, err: 0.1 };
+/// let flow = EpistemologicalFlow::from_bytes(Bytes::from(b"test".as_ref()));
+/// let mut ema = ExponentialMovingAverageEstimator::new(0.5);
+/// let mut buffer = ExperienceBuffer::with_capacity(10);
+///
+/// let (reward, advantage) = le.learn_single_step(&current, &new_model, &flow, &mut ema, &mut buffer);
+/// assert!(reward.prediction_reward.is_finite());
+/// assert!(advantage.is_finite());
+/// ```
 pub struct LearningEngine {
     exploit_weight: f64,
     transcend_weight: f64,
@@ -53,11 +87,120 @@ impl LearningEngine {
         }
     }
 
+    /// Tính toán phần thưởng có baseline ước lượng (ví dụ EMA) để giảm phương sai
+    pub fn calculate_reward_with_baseline(
+        &self,
+        current_model: &dyn WorldModel,
+        new_model: &dyn WorldModel,
+        flow: &EpistemologicalFlow,
+        baseline: &dyn ValueEstimator,
+    ) -> (DualIntrinsicReward, f64) {
+        let raw = self.calculate_reward(current_model, new_model, flow);
+        let baseline_est = baseline.estimate(flow);
+        let advantage = self.exploit_weight * (raw.prediction_reward - baseline_est)
+            + self.transcend_weight * raw.compression_reward;
+        (raw, advantage)
+    }
+
+    /// Biến thể: ghi vào PriorityExperienceBuffer với priority = |advantage| và gọi policy.update
+    pub fn learn_single_step_with_priority(
+        &self,
+        current_model: &dyn WorldModel,
+        new_model: &dyn WorldModel,
+        flow: &EpistemologicalFlow,
+        baseline: &mut ExponentialMovingAverageEstimator,
+        pbuffer: &mut PriorityExperienceBuffer,
+        policy: &mut dyn Policy,
+    ) -> (DualIntrinsicReward, f64) {
+        let (raw, advantage) = self.calculate_reward_with_baseline(
+            current_model,
+            new_model,
+            flow,
+            baseline,
+        );
+        let total = self.get_total_weighted_reward(&raw);
+        baseline.update(flow, total);
+        pbuffer.push(ExperienceSample { flow: flow.clone(), reward: total }, advantage.abs());
+        policy.update(flow, advantage);
+        (raw, advantage)
+    }
+
     /// Tính toán tổng phần thưởng có trọng số.
     pub fn get_total_weighted_reward(&self, reward: &DualIntrinsicReward) -> f64 {
         let total = self.exploit_weight * reward.prediction_reward
             + self.transcend_weight * reward.compression_reward;
         info!("=> Tổng Phần thưởng Nội tại: {:.4}", total);
         total
+    }
+
+    /// Chạy một vòng học: tính reward, advantage; cập nhật baseline EMA bằng tổng reward
+    pub fn learn_single_step(
+        &self,
+        current_model: &dyn WorldModel,
+        new_model: &dyn WorldModel,
+        flow: &EpistemologicalFlow,
+        baseline: &mut ExponentialMovingAverageEstimator,
+        buffer: &mut ExperienceBuffer,
+    ) -> (DualIntrinsicReward, f64) {
+        let (raw, advantage) = self.calculate_reward_with_baseline(
+            current_model,
+            new_model,
+            flow,
+            baseline,
+        );
+        let total = self.get_total_weighted_reward(&raw);
+        // cập nhật baseline bằng tổng reward có trọng số
+        baseline.update(flow, total);
+        buffer.push(ExperienceSample { flow: flow.clone(), reward: total });
+        (raw, advantage)
+    }
+}
+
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+    use bytes::Bytes;
+    use crate::policy::EpsilonGreedyPolicy;
+    use crate::experience_buffer::PriorityExperienceBuffer;
+
+    struct MockModel { mdl: f64, err: f64 }
+    impl WorldModel for MockModel {
+        fn get_mdl(&self) -> f64 { self.mdl }
+        fn get_prediction_error(&self, _flow: &EpistemologicalFlow) -> f64 { self.err }
+    }
+
+    #[test]
+    fn buffer_estimator_reward_flow() {
+        let le = LearningEngine::new(0.7, 0.3);
+        let cur = MockModel { mdl: 10.0, err: 0.2 };
+        let newm = MockModel { mdl: 9.0, err: 0.1 };
+        let flow = EpistemologicalFlow::from_bytes(Bytes::copy_from_slice(b"abc"));
+        let mut ema = ExponentialMovingAverageEstimator::new(0.5);
+        let mut buf = ExperienceBuffer::with_capacity(10);
+
+        let (_raw1, adv1) = le.learn_single_step(&cur, &newm, &flow, &mut ema, &mut buf);
+        let est1 = ema.estimate(&flow);
+        assert!(buf.len() == 1 && est1 != 0.0);
+
+        let (_raw2, adv2) = le.learn_single_step(&cur, &newm, &flow, &mut ema, &mut buf);
+        let est2 = ema.estimate(&flow);
+        // baseline có thể hội tụ đến cùng giá trị nếu reward lặp lại; chỉ cần đảm bảo hợp lệ
+        assert!(est2.is_finite());
+        // advantages are finite numbers
+        assert!(adv1.is_finite() && adv2.is_finite());
+    }
+
+    #[test]
+    fn priority_buffer_and_policy_update_flow() {
+        let le = LearningEngine::new(0.7, 0.3);
+        let cur = MockModel { mdl: 10.0, err: 0.2 };
+        let newm = MockModel { mdl: 9.0, err: 0.1 };
+        let flow = EpistemologicalFlow::from_bytes(Bytes::copy_from_slice(b"xyz"));
+        let mut ema = ExponentialMovingAverageEstimator::new(0.5);
+        let mut pbuf = PriorityExperienceBuffer::with_capacity(8);
+        let mut pol = EpsilonGreedyPolicy::default();
+
+        let (_raw, adv) = le.learn_single_step_with_priority(&cur, &newm, &flow, &mut ema, &mut pbuf, &mut pol);
+        assert!(pbuf.len() == 1 && adv.is_finite());
     }
 }

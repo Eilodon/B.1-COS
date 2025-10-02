@@ -134,7 +134,25 @@ impl InterdependentTopoRelationalNN {
         // 1. Quan hệ cục bộ giữa các nút (từ GNN)
         // 2. Cấu trúc toàn cục và vai trò của từng nút (từ TDA)
 
+        #[cfg(feature = "ml")]
+        {
+            use ndarray::arr2;
+            use crate::gnn::{message_passing::aggregate_mean, layers::GraphConvLayer};
+            let adj = arr2(&[[0.0, 1.0],[1.0, 0.0]]);
+            let x = arr2(&[[1.0, 0.0],[0.0, 1.0]]);
+            let w = arr2(&[[1.0, 0.0],[0.0, 1.0]]);
+            let layer = GraphConvLayer::new(w);
+            let _y = layer.forward(&adj, &x);
+        }
+
         info!("ITR-NN: Đã xử lý đồ thị với {} nút", graph_data.len());
+    }
+}
+
+#[cfg(feature = "tda")]
+impl Default for InterdependentTopoRelationalNN {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

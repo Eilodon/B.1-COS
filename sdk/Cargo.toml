@@ -52,6 +52,20 @@ criterion = "0.5"
 proptest = "1.5"
 futures = "0.3"
 
+# ML stack (Pure Rust)
+ndarray = { version = "0.15", features = ["blas"] }
+ndarray-rand = "0.14"
+ndarray-stats = "0.5"
+smartcore = { version = "0.3", features = ["serde"] }
+linfa = "0.7"
+linfa-nn = "0.7"
+dfdx = { version = "0.13", features = ["cpu"] }
+argmin = "0.9"
+argmin-math = "0.4"
+statrs = "0.16"
+metrics = "0.23"
+metrics-exporter-prometheus = "0.14"
+
 # Optional: ML dependencies (currently disabled due to MSRV conflicts)
 # candle-core = { version = "0.3.3", optional = true }
 # candle-nn = { version = "0.3.3", optional = true }

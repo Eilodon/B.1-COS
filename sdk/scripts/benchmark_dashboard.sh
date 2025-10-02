@@ -4,10 +4,16 @@ set -e
 echo "📊 Running all benchmarks and generating dashboard..."
 echo ""
 
-cd sdk
+# Already in sdk directory
 
 # Create benchmark results directory
 mkdir -p benchmark_results
+mkdir -p benchmark_results/trends
+mkdir -p benchmark_results/profiles
+
+# Get current timestamp for trend tracking
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+echo "Benchmark run timestamp: $TIMESTAMP"
 
 # Run all benchmarks and save results
 echo "Running pandora_core benchmarks..."
@@ -18,6 +24,65 @@ cargo bench -p pandora_orchestrator --bench load_test -- --save-baseline current
 
 echo "Running pandora_cwm benchmarks..."
 cargo bench -p pandora_cwm --bench hashmap_bench -- --save-baseline current
+
+echo "Running pandora_mcg benchmarks..."
+cargo bench -p pandora_mcg --bench enhanced_mcg_bench -- --save-baseline current 2>/dev/null || echo "MCG benchmarks not available"
+
+# Extract key metrics for trend tracking
+echo "Extracting performance metrics..."
+cat > benchmark_results/trends/extract_metrics.py << 'EOF'
+#!/usr/bin/env python3
+import json
+import os
+import sys
+from pathlib import Path
+
+def extract_criterion_metrics():
+    """Extract key metrics from Criterion benchmark results"""
+    metrics = {}
+    
+    # Look for Criterion JSON files
+    criterion_dir = Path("target/criterion")
+    if not criterion_dir.exists():
+        return metrics
+    
+    for bench_dir in criterion_dir.rglob("new/estimates.json"):
+        try:
+            with open(bench_dir, 'r') as f:
+                data = json.load(f)
+                
+            # Extract mean time
+            mean_time = data.get("mean", {}).get("point_estimate", 0)
+            std_dev = data.get("mean", {}).get("standard_error", 0)
+            
+            # Get benchmark name from path
+            bench_name = str(bench_dir.parent.parent.parent.name)
+            
+            metrics[bench_name] = {
+                "mean_ns": mean_time,
+                "std_dev_ns": std_dev,
+                "mean_us": mean_time / 1000,
+                "std_dev_us": std_dev / 1000
+            }
+        except Exception as e:
+            print(f"Error processing {bench_dir}: {e}")
+    
+    return metrics
+
+if __name__ == "__main__":
+    metrics = extract_criterion_metrics()
+    
+    # Save to JSON
+    with open("benchmark_results/trends/current_metrics.json", "w") as f:
+        json.dump(metrics, f, indent=2)
+    
+    # Print summary
+    print("📊 Performance Metrics Summary:")
+    for name, data in metrics.items():
+        print(f"  {name}: {data['mean_us']:.2f} ± {data['std_dev_us']:.2f} μs")
+EOF
+
+python3 benchmark_results/trends/extract_metrics.py
 
 # Generate HTML report
 echo ""
@@ -123,7 +188,11 @@ cat > benchmark_results/html/index.html << 'EOF'
         <p>Compare current benchmarks with baseline:</p>
         <ul>
             <li><a href="report/index.html">Full Criterion Report</a></li>
+            <li><a href="trends/current_metrics.json">Current Metrics (JSON)</a></li>
         </ul>
+        <div id="trends-chart" style="height: 300px; background: #f9f9f9; border: 1px solid #ddd; margin: 10px 0; display: flex; align-items: center; justify-content: center;">
+            <p>📊 Trend visualization will be added with historical data</p>
+        </div>
     </div>
     
     <div class="section">

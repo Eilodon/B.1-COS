@@ -1,10 +1,8 @@
 use pandora_core::interfaces::skills::{SkillDescriptor, SkillModule, SkillOutput};
 use pandora_error::PandoraError;
 use pandora_tools::skills::{
-    analogy_reasoning_skill::AnalogyReasoningSkill,
-    arithmetic_skill::ArithmeticSkill,
-    logical_reasoning_skill::LogicalReasoningSkill,
-    pattern_matching_skill::PatternMatchingSkill,
+    analogy_reasoning_skill::AnalogyReasoningSkill, arithmetic_skill::ArithmeticSkill,
+    logical_reasoning_skill::LogicalReasoningSkill, pattern_matching_skill::PatternMatchingSkill,
 };
 use serde_json::Value as SkillInput;
 
@@ -63,7 +61,7 @@ pub struct HybridSkillRegistry {
     static_skills: fnv::FnvHashMap<String, StaticSkill>,
 
     /// Plugin skills with dynamic dispatch
-    dynamic_skills: fnv::FnvHashMap<String, std::sync::Arc<dyn SkillModule>>, 
+    dynamic_skills: fnv::FnvHashMap<String, std::sync::Arc<dyn SkillModule>>,
 }
 
 impl HybridSkillRegistry {
@@ -168,5 +166,3 @@ mod tests {
         assert_eq!(result["result"], 4.0);
     }
 }
-
-

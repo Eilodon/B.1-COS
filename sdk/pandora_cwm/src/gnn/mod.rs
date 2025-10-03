@@ -99,6 +99,51 @@ impl GraphNeuralNetwork {
     pub fn graph_mut(&mut self) -> &mut CausalGraph {
         &mut self.graph
     }
+
+    /// Gets contextual embedding for an EpistemologicalFlow.
+    ///
+    /// This method extracts features from the flow and creates an embedding
+    /// that represents the current state and context for prediction.
+    ///
+    /// # Arguments
+    ///
+    /// * `flow` - The epistemological flow to embed
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<f32>, PandoraError>` - The contextual embedding
+    pub fn get_contextual_embedding(&self, flow: &pandora_core::ontology::EpistemologicalFlow) -> Result<Vec<f32>, PandoraError> {
+        // Simplified implementation: create a basic embedding from flow features
+        // In a full implementation, this would use the GNN to process the flow
+        
+        let mut embedding = vec![0.0; self.config.hidden_dims];
+        
+        // Extract basic features from the flow
+        // This is a placeholder - in reality, we'd use the GNN layers
+        // to process the flow's state and create a meaningful embedding
+        
+        // Simple feature extraction based on flow content
+        if let Some(ref sankhara) = flow.sankhara {
+            let intent_str = sankhara.as_ref();
+            // Hash the intent string to create a simple embedding
+            let mut hash = 0u32;
+            for byte in intent_str.bytes() {
+                hash = hash.wrapping_mul(31).wrapping_add(byte as u32);
+            }
+            // Normalize to [-1, 1] range
+            let normalized = (hash as f32) / (u32::MAX as f32) * 2.0 - 1.0;
+            embedding[0] = normalized;
+        }
+        
+        // Add some random noise to simulate more complex features
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        for val in embedding.iter_mut().skip(1) {
+            *val = rng.gen_range(-0.5..0.5);
+        }
+        
+        Ok(embedding)
+    }
 }
 
 #[cfg(test)]

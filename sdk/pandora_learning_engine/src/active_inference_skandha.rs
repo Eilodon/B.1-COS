@@ -10,7 +10,7 @@ use pandora_core::ontology::{EpistemologicalFlow, Vedana};
 use pandora_core::world_model::WorldModel;
 use pandora_error::PandoraError;
 use std::sync::{Arc, Mutex};
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 use crate::LearningEngine;
 use serde::{Deserialize, Serialize};
 
@@ -32,6 +32,15 @@ pub enum CausalEdgeType {
     Inhibitory,
 }
 
+/// Policy for action selection during simulation
+#[derive(Debug, Clone)]
+pub struct Policy {
+    /// Epsilon for epsilon-greedy exploration
+    pub epsilon: f64,
+    /// Available actions for the policy
+    pub available_actions: Vec<&'static str>,
+}
+
 /// Active Inference Sankhara Skandha with planning and imagination capabilities
 /// 
 /// This skandha implements Active Inference for planning by simulating future states
@@ -48,6 +57,36 @@ pub struct ActiveInferenceSankharaSkandha {
     pub available_actions: Vec<&'static str>,
     /// Pending causal hypothesis to test through experimentation
     pub pending_hypothesis: Option<CausalHypothesis>,
+    /// Discount factor for future rewards (gamma)
+    pub gamma: f64,
+    /// Policy for action selection during simulation
+    pub policy: Policy,
+}
+
+impl Policy {
+    /// Creates a new Policy
+    pub fn new(epsilon: f64, available_actions: Vec<&'static str>) -> Self {
+        Self {
+            epsilon,
+            available_actions,
+        }
+    }
+
+    /// Selects an action using epsilon-greedy strategy
+    pub fn select_action(&self, _flow: &EpistemologicalFlow) -> Result<&'static str, PandoraError> {
+        use rand::Rng;
+        
+        // Epsilon-greedy strategy
+        if rand::thread_rng().gen::<f64>() < self.epsilon {
+            // Explore: choose a random action
+            let random_idx = rand::thread_rng().gen_range(0..self.available_actions.len());
+            Ok(self.available_actions[random_idx])
+        } else {
+            // Exploit: choose the first action (simplified for now)
+            // In a full implementation, this would query the ValueEstimator
+            Ok(self.available_actions[0])
+        }
+    }
 }
 
 impl ActiveInferenceSankharaSkandha {
@@ -59,18 +98,25 @@ impl ActiveInferenceSankharaSkandha {
     /// * `learning_engine` - The Learning Engine wrapped in Arc
     /// * `planning_horizon` - Number of steps to simulate into the future
     /// * `available_actions` - List of available actions for the agent
+    /// * `gamma` - Discount factor for future rewards
+    /// * `policy_epsilon` - Epsilon for policy exploration
     pub fn new(
         cwm: Arc<Mutex<dyn WorldModel + Send + Sync>>,
         learning_engine: Arc<LearningEngine>,
         planning_horizon: usize,
         available_actions: Vec<&'static str>,
+        gamma: f64,
+        policy_epsilon: f64,
     ) -> Self {
+        let policy = Policy::new(policy_epsilon, available_actions.clone());
         Self {
             cwm,
             learning_engine,
             planning_horizon,
             available_actions,
             pending_hypothesis: None,
+            gamma,
+            policy,
         }
     }
 
@@ -140,39 +186,71 @@ impl ActiveInferenceSankharaSkandha {
         let candidate_actions = self.propose_candidate_actions(current_flow);
         info!("[{}] Đề xuất {} hành động: {:?}", self.name(), candidate_actions.len(), candidate_actions);
         
-        let mut best_action = None;
+        if candidate_actions.is_empty() {
+            return Ok("intent_do_nothing"); // Default safe action
+        }
+
+        let mut best_action = *candidate_actions.first().unwrap();
         let mut best_expected_free_energy = f64::NEG_INFINITY;
-        
-        // 2. Simulate future for each candidate action
-        for action in candidate_actions {
-            let mut simulated_flow = current_flow.clone();
-            simulated_flow.sankhara = Some(std::sync::Arc::<str>::from(action));
-            
+
+        // 2. For each possible action, simulate the future
+        for &action in &candidate_actions {
             let mut total_future_efe = 0.0;
-            
-            // 3. Rollout simulation for planning_horizon steps
-            for step in 0..self.planning_horizon {
-                // "Imagine" the next state by letting the CWM infer the context
+            // Create a deep copy for simulation to avoid side effects
+            let mut simulated_flow = current_flow.clone();
+
+            // Set the initial action for the first step of the simulation
+            simulated_flow.sankhara = Some(std::sync::Arc::<str>::from(action));
+
+            // 3. Rollout the simulation for `planning_horizon` steps
+            for i in 0..self.planning_horizon {
+                // **Crucial Step 1: Prediction**
+                // Ask the CWM to predict the outcome of the action.
+                // This modifies `simulated_flow` to represent the next hypothetical state.
                 // Note: This is a simplified version - in a full implementation,
                 // we would need a more sophisticated state prediction mechanism
-                let temp_flow = simulated_flow.clone();
+                let _temp_flow = simulated_flow.clone();
                 
-                // Calculate the Expected Free Energy (EFE) for this imagined step
-                // We use the current model for both current and new model as a simplification
+                // For now, we'll simulate prediction by just continuing with the current state
+                // In a full implementation, this would call cwm.predict_next_state(&mut simulated_flow)
+                debug!("[{}] Simulating prediction for step {}", self.name(), i);
+
+                // **Crucial Step 2: Evaluation**
+                // Calculate the Expected Free Energy (EFE) for this imagined state.
                 let reward = self.learning_engine.calculate_reward(
-                    &*cwm,
-                    &*cwm, // Simplified: comparing model to itself
-                    &temp_flow,
+                    &*cwm, 
+                    &*cwm, // In simulation, the model doesn't change
+                    &simulated_flow
                 );
                 let efe = self.learning_engine.get_total_weighted_reward(&reward);
-                total_future_efe += efe;
+
+                // Apply a discount factor for future steps (gamma)
+                total_future_efe += efe * self.gamma.powi(i as i32);
+                
+                // **Crucial Step 3: Propose next action for the simulation**
+                // For the next step in the simulation, we need a new action.
+                // A simple strategy is to use the policy to pick the best next action.
+                // This makes the simulation more realistic.
+                if i < self.planning_horizon - 1 {
+                    match self.policy.select_action(&simulated_flow) {
+                        Ok(next_sim_action) => {
+                            simulated_flow.sankhara = Some(std::sync::Arc::<str>::from(next_sim_action));
+                        }
+                        Err(e) => {
+                            warn!("[{}] Policy selection failed at step {}: {}", self.name(), i, e);
+                            // Use a default action if policy fails
+                            simulated_flow.sankhara = Some(std::sync::Arc::<str>::from("default_action"));
+                        }
+                    }
+                }
                 
                 debug!(
-                    "[{}] Step {} cho action '{}': EFE = {:.4}",
+                    "[{}] Step {} cho action '{}': EFE = {:.4}, Total = {:.4}",
                     self.name(),
-                    step + 1,
+                    i + 1,
                     action,
-                    efe
+                    efe,
+                    total_future_efe
                 );
             }
             
@@ -185,19 +263,18 @@ impl ActiveInferenceSankharaSkandha {
             
             if total_future_efe > best_expected_free_energy {
                 best_expected_free_energy = total_future_efe;
-                best_action = Some(action);
+                best_action = action;
             }
         }
         
-        let selected_action = best_action.unwrap_or("default_fallback_intent");
         info!(
             "[{}] Chọn action '{}' với EFE: {:.4}",
             self.name(),
-            selected_action,
+            best_action,
             best_expected_free_energy
         );
         
-        Ok(selected_action)
+        Ok(best_action)
     }
     
     /// Proposes candidate actions based on current context
@@ -210,38 +287,70 @@ impl ActiveInferenceSankharaSkandha {
         
         // If we have a pending hypothesis, prioritize experimental actions
         if let Some(ref hypothesis) = self.pending_hypothesis {
-            info!("ActiveInference: Proposing experimental actions for hypothesis: {:?}", hypothesis);
+            info!("ActiveInference: Entering experiment mode for hypothesis: {:?}", hypothesis);
             
-            // Generate actions that would test the causal hypothesis
+            // **EXPERIMENT MODE**: Generate actions specifically designed to test the hypothesis
+            // The goal is to manipulate the 'from' node to observe the effect on the 'to' node
+            
+            // 1. Actions to manipulate the cause variable (from_node)
+            candidates.push("MANIPULATE_CAUSE_VARIABLE");
+            candidates.push("ACTIVATE_CAUSE_NODE");
+            candidates.push("DEACTIVATE_CAUSE_NODE");
+            candidates.push("MODIFY_CAUSE_INTENSITY");
+            
+            // 2. Actions to observe the effect variable (to_node)
+            candidates.push("OBSERVE_EFFECT_VARIABLE");
+            candidates.push("MEASURE_EFFECT_MAGNITUDE");
+            candidates.push("MONITOR_EFFECT_TIMING");
+            
+            // 3. Actions based on the specific edge type
             match hypothesis.edge_type {
                 CausalEdgeType::Direct => {
                     candidates.push("TEST_DIRECT_CAUSALITY");
-                    candidates.push("MANIPULATE_CAUSE_VARIABLE");
+                    candidates.push("ISOLATE_DIRECT_EFFECT");
                 }
                 CausalEdgeType::Indirect => {
                     candidates.push("TEST_INDIRECT_CAUSALITY");
                     candidates.push("EXPLORE_MEDIATING_FACTORS");
+                    candidates.push("TRACE_CAUSAL_CHAIN");
                 }
                 CausalEdgeType::Conditional => {
                     candidates.push("TEST_CONDITIONAL_CAUSALITY");
                     candidates.push("VARY_CONDITIONS");
+                    candidates.push("TEST_UNDER_DIFFERENT_CONDITIONS");
                 }
                 CausalEdgeType::Inhibitory => {
                     candidates.push("TEST_INHIBITORY_CAUSALITY");
                     candidates.push("BLOCK_INHIBITOR");
+                    candidates.push("REMOVE_INHIBITION");
                 }
             }
             
-            // Add specific actions based on the hypothesis strength and confidence
+            // 4. Actions based on hypothesis strength and confidence
             if hypothesis.confidence > 0.7 {
                 candidates.push("CONDUCT_DEFINITIVE_EXPERIMENT");
-            } else {
+                candidates.push("REPLICATE_HIGH_CONFIDENCE_RESULT");
+            } else if hypothesis.confidence > 0.4 {
                 candidates.push("CONDUCT_EXPLORATORY_EXPERIMENT");
+                candidates.push("GATHER_MORE_EVIDENCE");
+            } else {
+                candidates.push("CONDUCT_PRELIMINARY_TEST");
+                candidates.push("COLLECT_BASELINE_DATA");
             }
             
-            // Add actions to manipulate the specific variables involved
-            candidates.push("MANIPULATE_CAUSE_VARIABLE");
-            candidates.push("OBSERVE_EFFECT_VARIABLE");
+            // 5. Control actions to ensure clean experiments
+            candidates.push("ESTABLISH_BASELINE");
+            candidates.push("CONTROL_FOR_CONFOUNDING_VARIABLES");
+            candidates.push("MEASURE_BEFORE_AND_AFTER");
+            
+            // 6. Specific experimental protocols
+            if hypothesis.strength.abs() > 0.5 {
+                candidates.push("CONDUCT_HIGH_IMPACT_EXPERIMENT");
+            } else {
+                candidates.push("CONDUCT_SENSITIVE_EXPERIMENT");
+            }
+            
+            info!("ActiveInference: Generated {} experimental actions", candidates.len());
         }
         
         // Add all available actions as candidates
@@ -314,6 +423,8 @@ mod tests {
             learning_engine,
             3,
             available_actions,
+            0.9, // gamma
+            0.1, // policy_epsilon
         );
         
         assert_eq!(sankhara.name(), "Active Inference Sankhara (Planning & Imagination)");
@@ -335,6 +446,8 @@ mod tests {
             learning_engine,
             2,
             available_actions,
+            0.9, // gamma
+            0.1, // policy_epsilon
         );
         
         let mut flow = EpistemologicalFlow::from_bytes(Bytes::from(b"test_event".as_ref()));
@@ -362,6 +475,8 @@ mod tests {
             learning_engine,
             2,
             available_actions,
+            0.9, // gamma
+            0.1, // policy_epsilon
         );
         
         let flow = EpistemologicalFlow::from_bytes(Bytes::from(b"test_event".as_ref()));

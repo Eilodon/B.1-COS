@@ -82,19 +82,51 @@ fn discover_with_lingam(
 ) -> PyResult<Vec<CausalHypothesis>> {
     debug!("CausalDiscovery: Using DirectLiNGAM algorithm");
     
-    // Import lingam module
-    let lingam = PyModule::import_bound(py, "lingam")?;
-    let direct_lingam_class = lingam.getattr("DirectLiNGAM")?;
+    // Import lingam module with error handling
+    let lingam = match PyModule::import_bound(py, "lingam") {
+        Ok(module) => module,
+        Err(e) => {
+            warn!("CausalDiscovery: Failed to import lingam module: {}", e);
+            return Ok(vec![]);
+        }
+    };
+    
+    let direct_lingam_class = match lingam.getattr("DirectLiNGAM") {
+        Ok(class) => class,
+        Err(e) => {
+            warn!("CausalDiscovery: Failed to get DirectLiNGAM class: {}", e);
+            return Ok(vec![]);
+        }
+    };
     
     // Convert Rust data to Python list of lists
     let py_data = PyList::new_bound(py, data_matrix.iter().map(|row| PyList::new_bound(py, row)));
     
-    // Create and fit the model
-    let model = direct_lingam_class.call1((py_data,))?;
-    let _fit_result = model.call_method0("fit")?;
+    // Create and fit the model with error handling
+    let model = match direct_lingam_class.call1((py_data,)) {
+        Ok(model) => model,
+        Err(e) => {
+            warn!("CausalDiscovery: Failed to create DirectLiNGAM model: {}", e);
+            return Ok(vec![]);
+        }
+    };
     
-    // Extract adjacency matrix
-    let adjacency_matrix: Vec<Vec<f32>> = model.getattr("adjacency_matrix_")?.extract()?;
+    let _fit_result = match model.call_method0("fit") {
+        Ok(result) => result,
+        Err(e) => {
+            warn!("CausalDiscovery: Failed to fit DirectLiNGAM model: {}", e);
+            return Ok(vec![]);
+        }
+    };
+    
+    // Extract adjacency matrix with error handling
+    let adjacency_matrix: Vec<Vec<f32>> = match model.getattr("adjacency_matrix_")?.extract() {
+        Ok(matrix) => matrix,
+        Err(e) => {
+            warn!("CausalDiscovery: Failed to extract adjacency matrix: {}", e);
+            return Ok(vec![]);
+        }
+    };
     
     // Convert adjacency matrix to hypotheses
     let mut hypotheses = Vec::new();

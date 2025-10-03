@@ -15,6 +15,8 @@ use pandora_mcg::causal_discovery::{
     CausalDiscoveryConfig, 
     CausalAlgorithm,
 };
+use pandora_orchestrator::AutomaticScientistOrchestrator;
+use pandora_core::ontology::EpistemologicalFlow;
 use std::sync::{Arc, Mutex};
 
 /// Simulates a hidden causal law: "flipping switch A causes light B to turn on"
@@ -119,6 +121,8 @@ fn test_automatic_scientist_discovery_loop() {
         learning_engine.clone(),
         3, // planning horizon
         available_actions,
+        0.9, // gamma
+        0.1, // policy_epsilon
     );
     
     // Set up the Enhanced MCG with causal discovery
@@ -328,4 +332,99 @@ fn test_crystallization_with_different_edge_types() {
         // Check that the edge was added
         assert!(cwm.gnn().edge_count() > 0, "No edges found after crystallizing {} edge", name);
     }
+}
+
+#[tokio::test]
+async fn test_automatic_scientist_orchestrator() {
+    // Set up the environment with a hidden causal law
+    let mut environment = HiddenCausalEnvironment::new();
+    
+    // Set up the CWM
+    let config = GnnConfig::new(2, 64, 2); // 2 input dims for switch and light
+    let cwm = Arc::new(Mutex::new(InterdependentCausalModel::new(config).unwrap()));
+    
+    // Set up the Learning Engine
+    let learning_engine = Arc::new(LearningEngine::new(0.5, 0.5));
+    
+    // Set up available actions
+    let available_actions = vec![
+        "FLIP_SWITCH_A",
+        "OBSERVE_LIGHT_B", 
+        "MANIPULATE_CAUSE_VARIABLE",
+        "OBSERVE_EFFECT_VARIABLE",
+        "CONDUCT_DEFINITIVE_EXPERIMENT",
+        "RANDOM_ACTION",
+        "DEFAULT_ACTION",
+    ];
+    let sankhara = Arc::new(Mutex::new(ActiveInferenceSankharaSkandha::new(
+        cwm.clone(),
+        learning_engine.clone(),
+        3, // planning horizon
+        available_actions,
+        0.9, // gamma
+        0.1, // policy_epsilon
+    )));
+    
+    // Set up the Enhanced MCG with causal discovery
+    let discovery_config = CausalDiscoveryConfig {
+        min_strength_threshold: 0.3,
+        min_confidence_threshold: 0.5,
+        max_hypotheses: 5,
+        algorithm: CausalAlgorithm::DirectLiNGAM,
+    };
+    let mcg = Arc::new(Mutex::new(EnhancedMetaCognitiveGovernor::new_with_discovery_config(discovery_config)));
+    
+    // Create the Automatic Scientist Orchestrator
+    let orchestrator = AutomaticScientistOrchestrator::new(
+        cwm.clone(),
+        learning_engine.clone(),
+        sankhara.clone(),
+        mcg.clone(),
+    );
+    
+    // Run the complete discovery loop
+    let mut flow = EpistemologicalFlow::default();
+    let mut cycles_completed = 0;
+    let max_cycles = 20;
+    
+    while cycles_completed < max_cycles {
+        // Run one cycle of the Automatic Scientist loop
+        if let Err(e) = orchestrator.run_cycle(&mut flow).await {
+            println!("Cycle {} failed: {:?}", cycles_completed, e);
+            break;
+        }
+        
+        // Check if an experiment is active
+        if let Ok(experiment_state) = orchestrator.get_experiment_state() {
+            if experiment_state.is_active {
+                println!("Experiment active: {:?}", experiment_state.hypothesis);
+                
+                // Simulate environment interaction
+                if let Some(ref intent) = flow.sankhara {
+                    let action = intent.as_ref();
+                    println!("Executing action: {}", action);
+                    
+                    // Apply the action to the environment
+                    let (switch_state, light_state) = environment.apply_action(action);
+                    println!("Environment state: switch={}, light={}", switch_state, light_state);
+                }
+            }
+        }
+        
+        cycles_completed += 1;
+        
+        // Check if we've discovered the causal relationship
+        let cwm_guard = cwm.lock().unwrap();
+        if environment.has_discovered_causality(&cwm_guard) {
+            println!("✅ Causal relationship discovered and crystallized!");
+            break;
+        }
+    }
+    
+    // Verify that the causal relationship was discovered and crystallized
+    let cwm_guard = cwm.lock().unwrap();
+    assert!(environment.has_discovered_causality(&cwm_guard), 
+            "The agent should have discovered and crystallized the causal relationship");
+    
+    println!("✅ Automatic Scientist Orchestrator test passed after {} cycles!", cycles_completed);
 }

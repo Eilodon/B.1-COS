@@ -102,6 +102,7 @@ async fn main() {
             Some(RootTrigger::TriggerSelfImprovementLevel3 { reason: reason.clone(), target_component: target_component.clone() }),
         EnhancedTrigger::RequestMoreInformation { .. }
         | EnhancedTrigger::OptimizeResources { .. }
+        | EnhancedTrigger::ProposeCausalHypothesis { .. }
         | EnhancedTrigger::NoAction => None,
     };
 

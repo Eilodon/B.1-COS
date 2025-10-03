@@ -31,6 +31,8 @@ fn test_active_inference_planning_basic() {
         learning_engine,
         3, // planning horizon
         available_actions,
+        0.9, // gamma
+        0.1, // policy_epsilon
     );
     
     // Create a test flow
@@ -81,6 +83,8 @@ fn test_planning_with_configured_cwm() {
         learning_engine,
         2, // planning horizon
         available_actions,
+        0.9, // gamma
+        0.1, // policy_epsilon
     );
     
     // Create a test flow
@@ -116,6 +120,8 @@ fn test_planning_with_different_horizons() {
             learning_engine.clone(),
             horizon,
             available_actions.clone(),
+            0.9, // gamma
+            0.1, // policy_epsilon
         );
         
         let mut flow = EpistemologicalFlow::from_bytes(Bytes::from(b"test_event".as_ref()));
@@ -139,6 +145,8 @@ fn test_planning_with_context_specific_actions() {
         learning_engine,
         2,
         available_actions,
+        0.9, // gamma
+        0.1, // policy_epsilon
     );
     
     // Create a flow with specific context that should trigger context-specific actions
@@ -166,6 +174,8 @@ fn test_planning_error_handling() {
         learning_engine,
         1,
         available_actions,
+        0.9, // gamma
+        0.1, // policy_epsilon
     );
     
     // Create a flow and test planning
@@ -214,6 +224,8 @@ fn test_complete_planning_workflow() {
         learning_engine,
         3, // planning horizon
         available_actions,
+        0.9, // gamma
+        0.1, // policy_epsilon
     );
     
     // Step 5: Create test flow
@@ -257,6 +269,8 @@ fn test_planning_with_different_reward_configs() {
             learning_engine,
             2,
             available_actions.clone(),
+            0.9, // gamma
+            0.1, // policy_epsilon
         );
         
         let mut flow = EpistemologicalFlow::from_bytes(Bytes::from(b"test_event".as_ref()));

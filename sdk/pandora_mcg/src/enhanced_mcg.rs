@@ -384,12 +384,81 @@ impl EnhancedMetaCognitiveGovernor {
     }
 
     /// Enhanced monitoring method that includes causal discovery capabilities.
+    /// 
+    /// This is the primary loop for the MCG. It monitors the system and decides on meta-actions.
+    pub fn monitor_and_decide(
+        &mut self,
+        reward: &DualIntrinsicReward,
+        _cwm: &dyn std::any::Any, // We'll use a trait object for now
+    ) -> ActionTrigger {
+        info!("\n--- Enhanced MCG with Causal Discovery ---");
+        
+        // 1. Collect data: Get the current state embeddings of all nodes in the CWM.
+        // For now, we'll simulate this with a placeholder
+        let current_embeddings = vec![0.0; 64]; // Placeholder - in real implementation, get from CWM
+        self.observation_buffer.add(current_embeddings);
+        
+        // 2. Trigger discovery
+        if self.observation_buffer.is_ready_for_discovery() {
+            info!("MCG: Buffer ready for causal discovery, running analysis...");
+            let data = self.observation_buffer.get_data_and_clear();
+            
+            match discover_causal_links(data, &self.discovery_config) {
+                Ok(hypotheses) => {
+                    if !hypotheses.is_empty() {
+                        info!("MCG: Found {} causal hypotheses", hypotheses.len());
+                        
+                        // Filter out hypotheses that are already known to the CWM
+                        if let Some(best_hypothesis) = self.filter_and_select_best_hypothesis(hypotheses) {
+                            info!("MCG: Proposing novel hypothesis: {:?}", best_hypothesis);
+                            self.pending_hypothesis = Some(best_hypothesis.clone());
+                            return ActionTrigger::ProposeCausalHypothesis {
+                                hypothesis: best_hypothesis,
+                            };
+                        }
+                    } else {
+                        info!("MCG: No significant causal relationships found");
+                    }
+                }
+                Err(e) => {
+                    warn!("MCG: Causal discovery failed: {:?}", e);
+                }
+            }
+        }
+        
+        // 3. Fallback to standard rule-based triggers
+        self.monitor_comprehensive(&SystemMetrics {
+            uncertainty: 0.5,
+            compression_reward: reward.compression_reward,
+            novelty_score: 0.5,
+            performance: 0.8,
+            resource_usage: ResourceMetrics {
+                cpu_usage: 0.6,
+                memory_usage: 0.7,
+                latency_ms: 10.0,
+            },
+        }).decision
+    }
+
+    /// Filters out hypotheses that are already known to the CWM.
+    fn filter_and_select_best_hypothesis(
+        &self, 
+        hypotheses: Vec<CausalHypothesis>
+    ) -> Option<CausalHypothesis> {
+        hypotheses.into_iter()
+            // For now, we'll just filter by strength since we don't have CWM access
+            // In a full implementation, we would check cwm.has_causal_link(h.from_node_index, h.to_node_index)
+            .filter(|h| h.strength.abs() > 0.3) // Filter out weak links
+            .max_by(|a, b| a.strength.abs().partial_cmp(&b.strength.abs()).unwrap())
+    }
+
+    /// Legacy method for backward compatibility
     pub fn monitor_and_decide_with_discovery(
         &mut self,
         reward: &DualIntrinsicReward,
         cwm_node_embeddings: Vec<f32>,
     ) -> ActionTrigger {
-        info!("\n--- Enhanced MCG with Causal Discovery ---");
+        info!("\n--- Enhanced MCG with Causal Discovery (Legacy) ---");
         
         // Add current observation to buffer
         self.observation_buffer.add(cwm_node_embeddings);

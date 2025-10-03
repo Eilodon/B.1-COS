@@ -35,6 +35,32 @@ fnv = { workspace = true }
 # lance = { version = "0.13", optional = true }
 # tantivy = { version = "0.19", optional = true, default-features = false, features = ["quickwit"] }
 
+# For Vector Search & Database
+lancedb = "0.22"
+hnsw_rs = "0.2.0"
+rand = "0.8"
+
+# For Knowledge Graph (in-memory)
+dashmap = "5.5"
+
+# Note: async-trait and tokio are already provided via workspace
+
+# For handling timestamps in event sequences
+chrono = { version = "0.4", features = ["serde"] }
+
+# For high-performance vector operations
+nalgebra = "0.32"
+
+# For caching compiled rules
+lru = "0.12"
+
+# Arithmetic backends
+fasteval = "0.2"
+nom = { version = "7", default-features = false, features = ["alloc"] }
+seahash = "4.1"
+lexical-core = "1.0"
+fast-float2 = "0.2"
+
 # additional dev deps
 proptest = { workspace = true }
 futures = { workspace = true }

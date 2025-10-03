@@ -57,8 +57,62 @@ use pandora_core::interfaces::skills::{SkillDescriptor, SkillModule, SkillOutput
 use pandora_error::PandoraError;
 use serde_json::Value as SkillInput;
 use serde_json::{json, Value};
+use std::sync::{Arc, Mutex};
+use lru::LruCache;
+use std::num::NonZeroUsize;
+use thiserror::Error;
 
 pub struct LogicalReasoningSkill;
+
+#[derive(Debug, Error)]
+pub enum LogicalError {
+    #[error("Lỗi parse JSON: {0}")]
+    JsonParse(#[from] serde_json::Error),
+    #[error("Quy tắc không hợp lệ: {0}")]
+    InvalidRule(String),
+    #[error("Input không hợp lệ")]
+    InvalidInput,
+}
+
+pub type CompiledRule = Box<dyn Fn(&Value) -> Result<bool, LogicalError> + Send + Sync>;
+
+pub struct OptimizedJsonAstEngine {
+    rule_cache: Arc<Mutex<LruCache<u64, CompiledRule>>>,
+}
+
+impl OptimizedJsonAstEngine {
+    pub fn new(cache_capacity: usize) -> Self {
+        Self {
+            rule_cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(cache_capacity).unwrap()))),
+        }
+    }
+
+    pub fn infer(&self, facts: &Value, rules_json: &str) -> Result<bool, LogicalError> {
+        let rule_hash = seahash::hash(rules_json.as_bytes());
+        let mut cache = self.rule_cache.lock().unwrap();
+
+        if let Some(compiled_rule) = cache.get(&rule_hash) {
+            return compiled_rule(facts);
+        }
+
+        let ast = serde_json::from_str(rules_json)?;
+        let compiled_rule = self.compile_ast_to_closure(ast)?;
+        let result = compiled_rule(facts);
+        cache.put(rule_hash, compiled_rule);
+        result
+    }
+
+    fn compile_ast_to_closure(&self, ast: Value) -> Result<CompiledRule, LogicalError> {
+        let rule_logic = move |facts: &Value| -> Result<bool, LogicalError> {
+            let ctx = facts
+                .as_object()
+                .ok_or(LogicalError::InvalidInput)?;
+            LogicalReasoningSkill::evaluate_node(&ast, ctx)
+                .map_err(LogicalError::InvalidRule)
+        };
+        Ok(Box::new(rule_logic))
+    }
+}
 
 #[async_trait]
 impl SkillModule for LogicalReasoningSkill {
@@ -72,25 +126,28 @@ impl SkillModule for LogicalReasoningSkill {
     }
 
     async fn execute(&self, input: SkillInput) -> SkillOutput {
-        let ast = input
+        let rules_json = input
             .get("ast")
+            .and_then(|v| serde_json::to_string(v).ok())
             .ok_or_else(|| PandoraError::InvalidSkillInput {
                 skill_name: "logical_reasoning".into(),
                 message: "Missing 'ast' field".into(),
             })?;
-        let context = input
+        let facts = input
             .get("context")
-            .and_then(|v| v.as_object())
             .ok_or_else(|| PandoraError::InvalidSkillInput {
                 skill_name: "logical_reasoning".into(),
                 message: "Missing or invalid 'context' field".into(),
             })?;
-        Self::evaluate_node(ast, context)
+        let engine = OptimizedJsonAstEngine::new(128);
+        engine
+            .infer(facts, &rules_json)
             .map(|result| json!({"result": result}))
-            .map_err(|e| PandoraError::skill_exec("logical_reasoning", e))
+            .map_err(|e| PandoraError::skill_exec("logical_reasoning", e.to_string()))
     }
 }
 
+#[allow(dead_code)]
 impl LogicalReasoningSkill {
     fn evaluate_node(
         node: &Value,

@@ -1,10 +1,9 @@
 //! Realistic load test scenarios simulating production usage
 
 use pandora_orchestrator::{CircuitBreakerConfig, Orchestrator, OrchestratorTrait, SkillRegistry};
-use pandora_tools::skills::{
-    arithmetic_skill::ArithmeticSkill, logical_reasoning_skill::LogicalReasoningSkill,
-    pattern_matching_skill::PatternMatchingSkill,
-};
+use pandora_tools::skills::logical_reasoning_skill::LogicalReasoningSkill;
+use pandora_tools::skills_alias::ArithmeticSkill;
+use pandora_tools::PatternMatchingSkill;
 use serde_json::json;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -18,9 +17,9 @@ use tokio::time::{sleep, Duration, Instant};
 #[ignore] // Run with: cargo test --test load_scenarios -- --ignored
 async fn test_realistic_web_service_load() {
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(ArithmeticSkill));
-    registry.register(Arc::new(PatternMatchingSkill));
-    registry.register(Arc::new(LogicalReasoningSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(PatternMatchingSkill));
+    registry.register_arc(Arc::new(LogicalReasoningSkill));
 
     let orchestrator = Arc::new(Orchestrator::new(Arc::new(registry)));
 
@@ -83,7 +82,7 @@ async fn test_realistic_web_service_load() {
         };
 
         let handle = tokio::spawn(async move {
-            match orch.process_request(skill, input).await {
+            match orch.process_request(skill, input) {
                 Ok(_) => success.fetch_add(1, Ordering::Relaxed),
                 Err(_) => errors.fetch_add(1, Ordering::Relaxed),
             };
@@ -131,7 +130,7 @@ async fn test_realistic_web_service_load() {
 #[ignore]
 async fn test_burst_traffic_scenario() {
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
 
     let config = CircuitBreakerConfig {
         failure_threshold: 10,
@@ -149,7 +148,7 @@ async fn test_burst_traffic_scenario() {
         let orch = orchestrator.clone();
         handles.push(tokio::spawn(async move {
             let input = json!({"expression": format!("{} + 1", i)});
-            orch.process_request("arithmetic", input).await
+            orch.process_request("arithmetic", input)
         }));
         if i % 10 == 0 {
             sleep(Duration::from_secs(1)).await;
@@ -169,7 +168,7 @@ async fn test_burst_traffic_scenario() {
         let orch = orchestrator.clone();
         handles.push(tokio::spawn(async move {
             let input = json!({"expression": format!("{} * 2", i)});
-            orch.process_request("arithmetic", input).await
+            orch.process_request("arithmetic", input)
         }));
     }
 

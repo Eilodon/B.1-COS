@@ -1,9 +1,9 @@
 #[cfg(feature = "ml")]
 use pandora_error::PandoraError;
 #[cfg(feature = "ml")]
-use smartcore::linear::logistic_regression::LogisticRegression;
-#[cfg(feature = "ml")]
 use smartcore::linalg::basic::matrix::DenseMatrix;
+#[cfg(feature = "ml")]
+use smartcore::linear::logistic_regression::LogisticRegression;
 
 /// A machine learning predictor for world model predictions using logistic regression.
 ///
@@ -51,7 +51,10 @@ impl WorldModelPredictor {
     /// # }
     /// ```
     pub fn new(feature_dim: usize) -> Self {
-        Self { model: None, feature_dim }
+        Self {
+            model: None,
+            feature_dim,
+        }
     }
 
     /// Trains the predictor on the provided data.
@@ -79,12 +82,17 @@ impl WorldModelPredictor {
     /// predictor.train(x, 2, 2, y).unwrap();
     /// # }
     /// ```
-    pub fn train(&mut self, x: Vec<f64>, nrows: usize, ncols: usize, y: Vec<i32>) -> Result<(), PandoraError> {
+    pub fn train(
+        &mut self,
+        x: Vec<f64>,
+        nrows: usize,
+        ncols: usize,
+        y: Vec<i32>,
+    ) -> Result<(), PandoraError> {
         if ncols != self.feature_dim {
             return Err(PandoraError::config(format!(
                 "Expected {} features, got {}",
-                self.feature_dim,
-                ncols
+                self.feature_dim, ncols
             )));
         }
         let x_mat = DenseMatrix::new(nrows, ncols, x.clone(), false);
@@ -116,13 +124,18 @@ impl WorldModelPredictor {
     /// let x = vec![0.0, 0.0, 1.0, 1.0];
     /// let y = vec![0, 1];
     /// predictor.train(x, 2, 2, y).unwrap();
-    /// 
+    ///
     /// let test_x = vec![0.5, 0.5];
     /// let predictions = predictor.predict(test_x, 1, 2).unwrap();
     /// assert_eq!(predictions.len(), 1);
     /// # }
     /// ```
-    pub fn predict(&self, x: Vec<f64>, nrows: usize, ncols: usize) -> Result<Vec<i32>, PandoraError> {
+    pub fn predict(
+        &self,
+        x: Vec<f64>,
+        nrows: usize,
+        ncols: usize,
+    ) -> Result<Vec<i32>, PandoraError> {
         let model = self
             .model
             .as_ref()
@@ -141,9 +154,7 @@ mod tests {
     #[test]
     #[cfg(feature = "ml")]
     fn test_train_predict() {
-        let x = vec![0.0, 0.0,
-                     1.0, 1.0,
-                     2.0, 2.0];
+        let x = vec![0.0, 0.0, 1.0, 1.0, 2.0, 2.0];
         let y = vec![0, 1, 1];
 
         let mut predictor = WorldModelPredictor::new(2);
@@ -153,5 +164,3 @@ mod tests {
         assert_eq!(predictions.len(), 3usize);
     }
 }
-
-

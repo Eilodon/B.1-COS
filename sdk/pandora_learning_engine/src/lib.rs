@@ -2,25 +2,30 @@ use pandora_core::ontology::EpistemologicalFlow;
 use pandora_core::world_model::{DualIntrinsicReward, WorldModel};
 use tracing::info;
 
-pub mod skandha_integration;
-pub mod transcendental_processor;
-pub mod world_models;
-pub mod experience_buffer;
-pub mod value_estimator;
-pub mod policy;
-pub mod active_inference_skandha;
-pub mod integration_test;
 #[cfg(test)]
 mod active_inference_planning_test;
+pub mod active_inference_skandha;
+pub mod experience_buffer;
+pub mod integration_test;
 #[cfg(test)]
 mod non_attachment_learning_test;
+pub mod policy;
+pub mod skandha_integration;
+pub mod transcendental_processor;
+pub mod value_estimator;
+pub mod world_models;
 
+pub use active_inference_skandha::ActiveInferenceSankharaSkandha;
+pub use experience_buffer::{ExperienceBuffer, ExperienceSample, PriorityExperienceBuffer};
+pub use policy::{Action, EpsilonGreedyPolicy, Policy, ValueDrivenPolicy};
 pub use skandha_integration::SkandhaProcessorWithLearning;
 pub use transcendental_processor::TranscendentalProcessor;
-pub use experience_buffer::{ExperienceBuffer, ExperienceSample, PriorityExperienceBuffer};
-pub use value_estimator::{ExponentialMovingAverageEstimator, MeanRewardEstimator, ValueEstimator, QValueEstimator, NeuralQValueEstimator};
-pub use policy::{EpsilonGreedyPolicy, Policy, Action, ValueDrivenPolicy};
-pub use active_inference_skandha::ActiveInferenceSankharaSkandha;
+pub use value_estimator::{
+    ExponentialMovingAverageEstimator, MeanRewardEstimator, NeuralQValueEstimator, QValueEstimator,
+    ValueEstimator,
+};
+// Temporary re-export to satisfy tests expecting SelfImprovementEngine here
+pub use crate::transcendental_processor::SelfImprovementEngine;
 
 /// Learning Engine responsible for calculating rewards and guiding the learning process.
 ///
@@ -119,15 +124,17 @@ impl LearningEngine {
         pbuffer: &mut PriorityExperienceBuffer,
         policy: &mut dyn Policy,
     ) -> (DualIntrinsicReward, f64) {
-        let (raw, advantage) = self.calculate_reward_with_baseline(
-            current_model,
-            new_model,
-            flow,
-            baseline,
-        );
+        let (raw, advantage) =
+            self.calculate_reward_with_baseline(current_model, new_model, flow, baseline);
         let total = self.get_total_weighted_reward(&raw);
         baseline.update(flow, total);
-        pbuffer.push(ExperienceSample { flow: flow.clone(), reward: total }, advantage.abs());
+        pbuffer.push(
+            ExperienceSample {
+                flow: flow.clone(),
+                reward: total,
+            },
+            advantage.abs(),
+        );
         policy.update(flow, advantage);
         (raw, advantage)
     }
@@ -149,16 +156,15 @@ impl LearningEngine {
         baseline: &mut ExponentialMovingAverageEstimator,
         buffer: &mut ExperienceBuffer,
     ) -> (DualIntrinsicReward, f64) {
-        let (raw, advantage) = self.calculate_reward_with_baseline(
-            current_model,
-            new_model,
-            flow,
-            baseline,
-        );
+        let (raw, advantage) =
+            self.calculate_reward_with_baseline(current_model, new_model, flow, baseline);
         let total = self.get_total_weighted_reward(&raw);
         // cập nhật baseline bằng tổng reward có trọng số
         baseline.update(flow, total);
-        buffer.push(ExperienceSample { flow: flow.clone(), reward: total });
+        buffer.push(ExperienceSample {
+            flow: flow.clone(),
+            reward: total,
+        });
         (raw, advantage)
     }
 }
@@ -166,20 +172,30 @@ impl LearningEngine {
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use bytes::Bytes;
-    use crate::policy::EpsilonGreedyPolicy;
     use crate::experience_buffer::PriorityExperienceBuffer;
+    use crate::policy::EpsilonGreedyPolicy;
+    use bytes::Bytes;
 
-    struct MockModel { mdl: f64, err: f64 }
+    struct MockModel {
+        mdl: f64,
+        err: f64,
+    }
     impl WorldModel for MockModel {
-        fn get_mdl(&self) -> f64 { self.mdl }
-        fn get_prediction_error(&self, _flow: &EpistemologicalFlow) -> f64 { self.err }
+        fn get_mdl(&self) -> f64 {
+            self.mdl
+        }
+        fn get_prediction_error(&self, _flow: &EpistemologicalFlow) -> f64 {
+            self.err
+        }
     }
 
     #[test]
     fn buffer_estimator_reward_flow() {
         let le = LearningEngine::new(0.7, 0.3);
-        let cur = MockModel { mdl: 10.0, err: 0.2 };
+        let cur = MockModel {
+            mdl: 10.0,
+            err: 0.2,
+        };
         let newm = MockModel { mdl: 9.0, err: 0.1 };
         let flow = EpistemologicalFlow::from_bytes(Bytes::copy_from_slice(b"abc"));
         let mut ema = ExponentialMovingAverageEstimator::new(0.5);
@@ -200,14 +216,18 @@ mod integration_tests {
     #[test]
     fn priority_buffer_and_policy_update_flow() {
         let le = LearningEngine::new(0.7, 0.3);
-        let cur = MockModel { mdl: 10.0, err: 0.2 };
+        let cur = MockModel {
+            mdl: 10.0,
+            err: 0.2,
+        };
         let newm = MockModel { mdl: 9.0, err: 0.1 };
         let flow = EpistemologicalFlow::from_bytes(Bytes::copy_from_slice(b"xyz"));
         let mut ema = ExponentialMovingAverageEstimator::new(0.5);
         let mut pbuf = PriorityExperienceBuffer::with_capacity(8);
         let mut pol = EpsilonGreedyPolicy::default();
 
-        let (_raw, adv) = le.learn_single_step_with_priority(&cur, &newm, &flow, &mut ema, &mut pbuf, &mut pol);
+        let (_raw, adv) =
+            le.learn_single_step_with_priority(&cur, &newm, &flow, &mut ema, &mut pbuf, &mut pol);
         assert!(pbuf.len() == 1 && adv.is_finite());
     }
 }

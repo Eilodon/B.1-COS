@@ -1,3 +1,132 @@
+// sdk/pandora_core/src/ontology.rs
+
+#![allow(clippy::all)]
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::time::Duration;
+use uuid::Uuid;
+
+// ===== Định danh =====
+pub type UserId = String;
+pub type SessionId = Uuid;
+pub type SkillId = String;
+pub type RuleId = String;
+pub type TaskId = Uuid;
+
+// ===== Các Enum Cốt lõi =====
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum TaskType {
+    Arithmetic,
+    LogicalReasoning,
+    InformationRetrieval,
+    PatternMatching,
+    AnalogyReasoning,
+    SelfCorrection,
+    MetaAnalysis,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+pub enum Priority {
+    Low,
+    #[default]
+    Normal,
+    High,
+    Critical,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub enum QualityPreference {
+    Fastest,
+    #[default]
+    Balanced,
+    HighestQuality,
+}
+
+// ===== Cấu trúc Input & Context =====
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CognitiveInput {
+    Text(String),
+    Structured(serde_json::Value),
+    Multimodal {
+        text: Option<String>,
+        data: Option<Vec<u8>>,
+    },
+    SelfReflection {
+        original_request: Box<CognitiveRequest>,
+        initial_response: Box<CognitiveResponse>,
+        improvement_directive: String,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct RequestContext {
+    pub location: Option<String>,
+    pub device_state: HashMap<String, String>,
+    pub user_preferences: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceConstraints {
+    pub max_cpu_cores: Option<u32>,
+    pub max_memory_mb: Option<u32>,
+    pub battery_aware: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CognitiveRequest {
+    pub id: Uuid,
+    pub timestamp: DateTime<Utc>,
+    pub user_id: Option<UserId>,
+    pub session_id: Option<SessionId>,
+
+    // Nội dung yêu cầu
+    pub task_type: TaskType,
+    pub input: CognitiveInput,
+    pub context: RequestContext,
+
+    // Metadata xử lý
+    pub priority: Priority,
+    pub deadline: Option<DateTime<Utc>>,
+    pub quality_preference: QualityPreference,
+    pub resource_constraints: Option<ResourceConstraints>,
+    pub preferred_skills: Option<Vec<SkillId>>,
+}
+
+// ===== Cấu trúc Output & Response =====
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ResponseContent {
+    Text(String),
+    Structured(serde_json::Value),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ReasoningStep {
+    pub component: String,
+    pub description: String,
+    pub confidence: f32,
+    pub duration_ms: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CognitiveResponse {
+    pub request_id: Uuid,
+    pub timestamp: DateTime<Utc>,
+    pub processing_duration: Duration,
+
+    // Nội dung phản hồi
+    pub content: ResponseContent,
+    pub confidence: f32,
+    pub reasoning_trace: Vec<ReasoningStep>,
+    pub metadata: HashMap<String, serde_json::Value>,
+    // ... các trường khác từ đặc tả sẽ được thêm ở các phase sau
+}
+
+// ===== Compat placeholders cho các module hiện có (Ngũ Uẩn) =====
+
 use fnv::FnvHashSet;
 use std::sync::Arc;
 
@@ -7,53 +136,32 @@ pub struct DataEidos {
     pub dimensionality: u32,
 }
 
-/// Cảm thọ được gán cho một sự kiện, nền tảng của nhận thức đạo đức.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Vedana {
-    /// Lạc Thọ (Pleasant): Hành động tích cực, karma_weight > 0.
     Pleasant { karma_weight: f32 },
-    /// Khổ Thọ (Unpleasant): Hành động tiêu cực, karma_weight < 0.
     Unpleasant { karma_weight: f32 },
-    /// Xả Thọ (Neutral): Hành động trung tính, karma_weight = 0.
     Neutral,
 }
 
-/// Dòng Chảy Nhận Thức Luận (Epistemological Flow), mang một "sự kiện" đi qua pipeline Ngũ Uẩn.
-/// Tối ưu hóa cho performance với minimal allocations.
 #[derive(Debug, Clone, Default)]
 pub struct EpistemologicalFlow {
-    /// Sắc: Use `Bytes` for zero-copy slicing
     pub rupa: Option<bytes::Bytes>,
-
-    /// Thọ: Inlined for cache efficiency
     pub vedana: Option<Vedana>,
-
-    /// Tưởng: Compact representation
     pub sanna: Option<DataEidos>,
-
-    /// Related eidos: SmallVec avoids heap for small counts
     pub related_eidos: Option<smallvec::SmallVec<[DataEidos; 4]>>,
-
-    /// Hành: Use `Arc<str>` for cheap cloning of interned strings
     pub sankhara: Option<Arc<str>>,
-    // Thức (Consciousness) sẽ là kết quả cuối cùng của dòng chảy.
 }
 
 impl EpistemologicalFlow {
-    /// Create flow from owned bytes (zero-copy)
     pub fn from_bytes(bytes: bytes::Bytes) -> Self {
         Self {
             rupa: Some(bytes),
             ..Default::default()
         }
     }
-
-    /// Set intent using static string (zero-copy)
     pub fn set_static_intent(&mut self, intent: &'static str) {
         self.sankhara = Some(Arc::from(intent));
     }
-
-    /// Set intent using interned string (cheap clone)
     pub fn set_interned_intent(&mut self, intent: Arc<str>) {
         self.sankhara = Some(intent);
     }

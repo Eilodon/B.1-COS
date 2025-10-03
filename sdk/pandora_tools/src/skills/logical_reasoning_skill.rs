@@ -53,13 +53,13 @@ mod tests {
     }
 }
 use async_trait::async_trait;
+use lru::LruCache;
 use pandora_core::interfaces::skills::{SkillDescriptor, SkillModule, SkillOutput};
 use pandora_error::PandoraError;
 use serde_json::Value as SkillInput;
 use serde_json::{json, Value};
-use std::sync::{Arc, Mutex};
-use lru::LruCache;
 use std::num::NonZeroUsize;
+use std::sync::{Arc, Mutex};
 use thiserror::Error;
 
 pub struct LogicalReasoningSkill;
@@ -83,7 +83,9 @@ pub struct OptimizedJsonAstEngine {
 impl OptimizedJsonAstEngine {
     pub fn new(cache_capacity: usize) -> Self {
         Self {
-            rule_cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(cache_capacity).unwrap()))),
+            rule_cache: Arc::new(Mutex::new(LruCache::new(
+                NonZeroUsize::new(cache_capacity).unwrap(),
+            ))),
         }
     }
 
@@ -104,11 +106,8 @@ impl OptimizedJsonAstEngine {
 
     fn compile_ast_to_closure(&self, ast: Value) -> Result<CompiledRule, LogicalError> {
         let rule_logic = move |facts: &Value| -> Result<bool, LogicalError> {
-            let ctx = facts
-                .as_object()
-                .ok_or(LogicalError::InvalidInput)?;
-            LogicalReasoningSkill::evaluate_node(&ast, ctx)
-                .map_err(LogicalError::InvalidRule)
+            let ctx = facts.as_object().ok_or(LogicalError::InvalidInput)?;
+            LogicalReasoningSkill::evaluate_node(&ast, ctx).map_err(LogicalError::InvalidRule)
         };
         Ok(Box::new(rule_logic))
     }

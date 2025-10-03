@@ -18,6 +18,8 @@ smallvec = "1.13"
 bytes = "1.10"
 parking_lot = "0.12"
 pandora_error = { path = "../pandora_error" }
+uuid = { version = "1", features = ["serde", "v4"] }
+chrono = { version = "0.4", features = ["serde", "clock"] }
 [dev-dependencies]
 proptest = { workspace = true }
 futures = { workspace = true }

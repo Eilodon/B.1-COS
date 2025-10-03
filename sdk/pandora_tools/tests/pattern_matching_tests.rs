@@ -1,36 +1,85 @@
+use chrono::{Duration, Utc};
 use pandora_tools::skills::pattern_matching_skill::*;
-use chrono::{Utc, Duration};
 
 fn create_test_sequences() -> Vec<Sequence> {
     vec![
         // Chuỗi 1: A -> B -> C
-        Sequence { events: vec![
-            Event { event_type: "A".to_string(), timestamp: Utc::now() },
-            Event { event_type: "B".to_string(), timestamp: Utc::now() + Duration::seconds(1) },
-            Event { event_type: "C".to_string(), timestamp: Utc::now() + Duration::seconds(2) },
-        ]},
+        Sequence {
+            events: vec![
+                Event {
+                    event_type: "A".to_string(),
+                    timestamp: Utc::now(),
+                },
+                Event {
+                    event_type: "B".to_string(),
+                    timestamp: Utc::now() + Duration::seconds(1),
+                },
+                Event {
+                    event_type: "C".to_string(),
+                    timestamp: Utc::now() + Duration::seconds(2),
+                },
+            ],
+        },
         // Chuỗi 2: A -> B -> D
-        Sequence { events: vec![
-            Event { event_type: "A".to_string(), timestamp: Utc::now() },
-            Event { event_type: "B".to_string(), timestamp: Utc::now() + Duration::seconds(1) },
-            Event { event_type: "D".to_string(), timestamp: Utc::now() + Duration::seconds(2) },
-        ]},
+        Sequence {
+            events: vec![
+                Event {
+                    event_type: "A".to_string(),
+                    timestamp: Utc::now(),
+                },
+                Event {
+                    event_type: "B".to_string(),
+                    timestamp: Utc::now() + Duration::seconds(1),
+                },
+                Event {
+                    event_type: "D".to_string(),
+                    timestamp: Utc::now() + Duration::seconds(2),
+                },
+            ],
+        },
         // Chuỗi 3: A -> C
-        Sequence { events: vec![
-            Event { event_type: "A".to_string(), timestamp: Utc::now() },
-            Event { event_type: "C".to_string(), timestamp: Utc::now() + Duration::seconds(1) },
-        ]},
+        Sequence {
+            events: vec![
+                Event {
+                    event_type: "A".to_string(),
+                    timestamp: Utc::now(),
+                },
+                Event {
+                    event_type: "C".to_string(),
+                    timestamp: Utc::now() + Duration::seconds(1),
+                },
+            ],
+        },
         // Chuỗi 4: B -> C
-        Sequence { events: vec![
-            Event { event_type: "B".to_string(), timestamp: Utc::now() },
-            Event { event_type: "C".to_string(), timestamp: Utc::now() + Duration::seconds(1) },
-        ]},
+        Sequence {
+            events: vec![
+                Event {
+                    event_type: "B".to_string(),
+                    timestamp: Utc::now(),
+                },
+                Event {
+                    event_type: "C".to_string(),
+                    timestamp: Utc::now() + Duration::seconds(1),
+                },
+            ],
+        },
         // Chuỗi 5: A -> B -> C (lặp lại)
-         Sequence { events: vec![
-            Event { event_type: "A".to_string(), timestamp: Utc::now() },
-            Event { event_type: "B".to_string(), timestamp: Utc::now() + Duration::seconds(1) },
-            Event { event_type: "C".to_string(), timestamp: Utc::now() + Duration::seconds(2) },
-        ]},
+        Sequence {
+            events: vec![
+                Event {
+                    event_type: "A".to_string(),
+                    timestamp: Utc::now(),
+                },
+                Event {
+                    event_type: "B".to_string(),
+                    timestamp: Utc::now() + Duration::seconds(1),
+                },
+                Event {
+                    event_type: "C".to_string(),
+                    timestamp: Utc::now() + Duration::seconds(2),
+                },
+            ],
+        },
     ]
 }
 
@@ -58,8 +107,14 @@ fn test_predict_next_action() {
     engine.mine_patterns(&sequences).unwrap();
 
     let current_sequence = vec![
-        Event { event_type: "A".to_string(), timestamp: Utc::now() },
-        Event { event_type: "B".to_string(), timestamp: Utc::now() + Duration::seconds(1) },
+        Event {
+            event_type: "A".to_string(),
+            timestamp: Utc::now(),
+        },
+        Event {
+            event_type: "B".to_string(),
+            timestamp: Utc::now() + Duration::seconds(1),
+        },
     ];
 
     let predictions = engine.predict_next_action(&current_sequence).unwrap();
@@ -68,5 +123,3 @@ fn test_predict_next_action() {
     assert_eq!(predictions[0].predicted_action, "C");
     assert_eq!(predictions[0].confidence, 2.0);
 }
-
-

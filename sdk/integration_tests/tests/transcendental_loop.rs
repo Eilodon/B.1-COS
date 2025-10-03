@@ -4,7 +4,8 @@ use pandora_core::skandha_implementations::basic_skandhas::*;
 use pandora_core::world_model::{DualIntrinsicReward, WorldModel};
 use pandora_learning_engine::{LearningEngine, TranscendentalProcessor};
 use pandora_mcg::{ActionTrigger, MetaCognitiveGovernor, MetaRule, RuleEngine};
-use pandora_sie::SelfImprovementEngine;
+use pandora_mcg::MetaCognitiveController;
+use pandora_learning_engine::SelfImprovementEngine;
 use std::sync::Arc;
 
 // --- Giả lập các WorldModel ---
@@ -45,7 +46,8 @@ async fn test_the_transcendental_loop() {
         },
     };
     let rule_engine = RuleEngine::new(vec![rule]);
-    let mcg = MetaCognitiveGovernor::new(rule_engine);
+    let _legacy_mcg = MetaCognitiveGovernor::new(rule_engine);
+    let mcg = MetaCognitiveController::new();
 
     let sie = SelfImprovementEngine::new();
 

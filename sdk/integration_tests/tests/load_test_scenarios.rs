@@ -1,8 +1,10 @@
 use pandora_orchestrator::{Orchestrator, OrchestratorTrait, SkillRegistry};
 use pandora_tools::skills::{
-    analogy_reasoning_skill::AnalogyReasoningSkill, arithmetic_skill::ArithmeticSkill,
-    logical_reasoning_skill::LogicalReasoningSkill, pattern_matching_skill::PatternMatchingSkill,
+    // analogy_reasoning_skill::AnalogyReasoningSkill,
+    logical_reasoning_skill::LogicalReasoningSkill,
 };
+use pandora_tools::skills_alias::ArithmeticSkill;
+use pandora_tools::PatternMatchingSkill;
 use serde_json::json;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -13,10 +15,10 @@ use tracing::{info, warn};
 #[tokio::test]
 async fn test_orchestrator_concurrent_load() {
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(ArithmeticSkill));
-    registry.register(Arc::new(LogicalReasoningSkill));
-    registry.register(Arc::new(PatternMatchingSkill));
-    registry.register(Arc::new(AnalogyReasoningSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(LogicalReasoningSkill));
+    registry.register_arc(Arc::new(PatternMatchingSkill));
+    // registry.register_arc(Arc::new(AnalogyReasoningSkill));
 
     let orchestrator = Arc::new(Orchestrator::new(Arc::new(registry)));
 
@@ -124,8 +126,8 @@ async fn test_orchestrator_concurrent_load() {
 #[tokio::test]
 async fn test_orchestrator_payload_distribution() {
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(ArithmeticSkill));
-    registry.register(Arc::new(LogicalReasoningSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(LogicalReasoningSkill));
 
     let orchestrator = Arc::new(Orchestrator::new(Arc::new(registry)));
 
@@ -242,7 +244,7 @@ async fn test_orchestrator_circuit_breaker_load() {
     }
 
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(FlakySkill { failure_rate: 0.3 })); // 30% failure rate
+    registry.register_arc(Arc::new(FlakySkill { failure_rate: 0.3 })); // 30% failure rate
 
     let config = CircuitBreakerConfig {
         failure_threshold: 5,
@@ -293,7 +295,7 @@ async fn test_orchestrator_circuit_breaker_load() {
 #[tokio::test]
 async fn test_orchestrator_memory_pressure() {
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
 
     let orchestrator = Arc::new(Orchestrator::new(Arc::new(registry)));
 

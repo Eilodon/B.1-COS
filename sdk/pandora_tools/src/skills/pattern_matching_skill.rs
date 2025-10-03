@@ -1,6 +1,6 @@
-use std::collections::{HashMap, BTreeMap};
-use thiserror::Error;
 use chrono::{DateTime, Utc};
+use std::collections::{BTreeMap, HashMap};
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum PatternError {
@@ -67,7 +67,7 @@ impl TemporalPrefixSpanEngine {
             mined_patterns: Vec::new(),
         })
     }
-    
+
     /// Khai phá các mẫu từ một tập hợp các chuỗi sự kiện.
     /// Phương thức này sẽ cập nhật `self.mined_patterns` bên trong.
     pub fn mine_patterns(&mut self, sequences: &[Sequence]) -> Result<(), PatternError> {
@@ -93,14 +93,19 @@ impl TemporalPrefixSpanEngine {
         // Bước 2: Với mỗi item phổ biến, bắt đầu quá trình khai phá đệ quy
         for (item, support) in frequent_items {
             let prefix = vec![item.clone()];
-            frequent_patterns.push(TemporalPattern { items: prefix.clone(), support });
+            frequent_patterns.push(TemporalPattern {
+                items: prefix.clone(),
+                support,
+            });
 
             // Xây dựng projected database cho item ban đầu
             let mut projected_db = Vec::new();
             for seq in sequences {
                 if let Some(pos) = seq.events.iter().position(|e| e.event_type == item) {
                     if pos + 1 < seq.events.len() {
-                        projected_db.push(ProjectedSequence { suffix: &seq.events[pos + 1..] });
+                        projected_db.push(ProjectedSequence {
+                            suffix: &seq.events[pos + 1..],
+                        });
                     }
                 }
             }
@@ -146,14 +151,19 @@ impl TemporalPrefixSpanEngine {
             let mut new_prefix = prefix.clone();
             new_prefix.push(item.clone());
 
-            frequent_patterns.push(TemporalPattern { items: new_prefix.clone(), support });
+            frequent_patterns.push(TemporalPattern {
+                items: new_prefix.clone(),
+                support,
+            });
 
             // Xây dựng projected database tiếp theo
             let mut new_projected_db = Vec::new();
             for p_seq in &projected_db {
                 if let Some(pos) = p_seq.suffix.iter().position(|e| e.event_type == item) {
                     if pos + 1 < p_seq.suffix.len() {
-                        new_projected_db.push(ProjectedSequence { suffix: &p_seq.suffix[pos + 1..] });
+                        new_projected_db.push(ProjectedSequence {
+                            suffix: &p_seq.suffix[pos + 1..],
+                        });
                     }
                 }
             }
@@ -165,17 +175,25 @@ impl TemporalPrefixSpanEngine {
     }
 
     /// Dự đoán hành động tiếp theo dựa trên các mẫu đã học.
-    pub fn predict_next_action(&self, current_sequence: &[Event]) -> Result<Vec<ActionPrediction>, PatternError> {
+    pub fn predict_next_action(
+        &self,
+        current_sequence: &[Event],
+    ) -> Result<Vec<ActionPrediction>, PatternError> {
         if current_sequence.is_empty() {
             return Ok(Vec::new());
         }
 
-        let current_items: Vec<String> = current_sequence.iter().map(|e| e.event_type.clone()).collect();
+        let current_items: Vec<String> = current_sequence
+            .iter()
+            .map(|e| e.event_type.clone())
+            .collect();
         let mut predictions: HashMap<String, usize> = HashMap::new();
 
         // Duyệt qua các mẫu đã học
         for pattern in &self.mined_patterns {
-            if pattern.items.len() > current_items.len() && pattern.items.starts_with(&current_items) {
+            if pattern.items.len() > current_items.len()
+                && pattern.items.starts_with(&current_items)
+            {
                 let next_action = &pattern.items[current_items.len()];
                 *predictions.entry(next_action.clone()).or_insert(0) += pattern.support;
             }
@@ -189,7 +207,11 @@ impl TemporalPrefixSpanEngine {
             })
             .collect();
 
-        sorted_predictions.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+        sorted_predictions.sort_by(|a, b| {
+            b.confidence
+                .partial_cmp(&a.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         Ok(sorted_predictions)
     }
@@ -197,5 +219,12 @@ impl TemporalPrefixSpanEngine {
     /// Truy cập danh sách mẫu đã khai phá (hỗ trợ kiểm thử)
     pub fn patterns(&self) -> &Vec<TemporalPattern> {
         &self.mined_patterns
+    }
+}
+
+pub struct PatternMatchingSkill;
+impl PatternMatchingSkill {
+    pub fn new() -> Self {
+        Self
     }
 }

@@ -136,11 +136,11 @@ impl InterdependentTopoRelationalNN {
 
         #[cfg(feature = "ml")]
         {
-            use ndarray::arr2;
             use crate::gnn::layers::GraphConvLayer;
-            let adj = arr2(&[[0.0, 1.0],[1.0, 0.0]]);
-            let x = arr2(&[[1.0, 0.0],[0.0, 1.0]]);
-            let w = arr2(&[[1.0, 0.0],[0.0, 1.0]]);
+            use ndarray::arr2;
+            let adj = arr2(&[[0.0, 1.0], [1.0, 0.0]]);
+            let x = arr2(&[[1.0, 0.0], [0.0, 1.0]]);
+            let w = arr2(&[[1.0, 0.0], [0.0, 1.0]]);
             let layer = GraphConvLayer::new(w);
             let _y = layer.forward(&adj, &x);
         }

@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use thiserror::Error;
+use dashmap::DashMap;
 use hnsw_rs::prelude::*;
 use lancedb::Connection;
-use dashmap::DashMap;
 use serde_json::Value as CognitiveInput;
+use std::collections::HashMap;
+use thiserror::Error;
 
 #[derive(Debug, Default, Clone)]
 pub struct Confidence {
@@ -51,19 +51,19 @@ pub struct Document {
 pub struct ProgressiveSemanticEngine {
     /// Cache HNSW cực nhanh trong bộ nhớ cho các truy vấn/kết quả phổ biến.
     hnsw_cache: Option<Hnsw<'static, f32, DistCosine>>,
-    
+
     /// Map từ index của HNSW sang Document ID thực tế.
     cache_id_map: HashMap<usize, String>,
 
     /// Lõi lưu trữ chính, hỗ trợ hybrid search.
     lance_db_conn: Connection,
-    
+
     /// Tên bảng trong LanceDB.
     lance_table_name: String,
 
     /// Kho tri thức có cấu trúc, an toàn luồng.
     knowledge_graph: KnowledgeGraph,
-    
+
     /// Kích thước của vector embedding.
     embedding_dim: usize,
 
@@ -73,16 +73,20 @@ pub struct ProgressiveSemanticEngine {
 
 impl ProgressiveSemanticEngine {
     /// Khởi tạo một engine tìm kiếm mới.
-    pub async fn new(lance_db_path: &str, table_name: &str, embedding_dim: usize) -> Result<Self, RetrievalError> {
+    pub async fn new(
+        lance_db_path: &str,
+        table_name: &str,
+        embedding_dim: usize,
+    ) -> Result<Self, RetrievalError> {
         let hnsw_cache = None;
 
         let conn = lancedb::connect(lance_db_path)
             .execute()
             .await
             .map_err(|e| RetrievalError::LanceDBConnection(e.to_string()))?;
-        
+
         // TODO: Logic để tạo bảng LanceDB nếu chưa tồn tại.
-        
+
         Ok(Self {
             hnsw_cache,
             cache_id_map: HashMap::new(),
@@ -93,7 +97,7 @@ impl ProgressiveSemanticEngine {
             inmem_docs: Vec::new(),
         })
     }
-    
+
     /// Thêm một tài liệu mới vào hệ thống.
     pub async fn add_document(&mut self, doc: Document) -> Result<(), RetrievalError> {
         // TODO: ghi vào LanceDB; hiện tại thêm vào in-memory để test
@@ -102,7 +106,11 @@ impl ProgressiveSemanticEngine {
     }
 
     /// Tìm concept theo text (stub, sẽ được hiện thực sau)
-    pub async fn search_by_text(&self, text: &str, top_k: usize) -> Result<Vec<Document>, RetrievalError> {
+    pub async fn search_by_text(
+        &self,
+        text: &str,
+        top_k: usize,
+    ) -> Result<Vec<Document>, RetrievalError> {
         let txt = text.to_lowercase();
         let mut matches: Vec<Document> = self
             .inmem_docs
@@ -115,7 +123,11 @@ impl ProgressiveSemanticEngine {
     }
 
     /// Tìm concept theo vector (stub, sẽ được hiện thực sau)
-    pub async fn search_by_vector(&self, vector: &[f32], top_k: usize) -> Result<Vec<Document>, RetrievalError> {
+    pub async fn search_by_vector(
+        &self,
+        vector: &[f32],
+        top_k: usize,
+    ) -> Result<Vec<Document>, RetrievalError> {
         // Cosine similarity với in-memory docs
         fn cosine(a: &[f32], b: &[f32]) -> f32 {
             let mut dot = 0.0f32;
@@ -127,7 +139,11 @@ impl ProgressiveSemanticEngine {
                 nb += y * y;
             }
             let denom = na.sqrt() * nb.sqrt();
-            if denom > 0.0 { dot / denom } else { 0.0 }
+            if denom > 0.0 {
+                dot / denom
+            } else {
+                0.0
+            }
         }
         let mut scored: Vec<(f32, &Document)> = self
             .inmem_docs
@@ -136,7 +152,11 @@ impl ProgressiveSemanticEngine {
             .map(|d| (cosine(vector, &d.embedding), d))
             .collect();
         scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-        Ok(scored.into_iter().take(top_k).map(|(_, d)| d.clone()).collect())
+        Ok(scored
+            .into_iter()
+            .take(top_k)
+            .map(|(_, d)| d.clone())
+            .collect())
     }
 
     /// Thực hiện tìm kiếm lũy tiến.
@@ -148,11 +168,15 @@ impl ProgressiveSemanticEngine {
         // 4. Tổng hợp, xếp hạng lại kết quả và tính toán điểm tự tin.
         // 5. Cập nhật cache.
         // 6. Trả về CognitiveOutput.
-        
+
         // Đoạn code giả để biên dịch thành công
         Ok(CognitiveOutput {
             content: "Kết quả tìm kiếm giả".to_string(),
-            confidence: Confidence { score: 1.0, epistemic_uncertainty: 0.0, aleatoric_uncertainty: 0.0 },
+            confidence: Confidence {
+                score: 1.0,
+                epistemic_uncertainty: 0.0,
+                aleatoric_uncertainty: 0.0,
+            },
             reasoning_trace: vec!["Đã trả về kết quả giả.".to_string()],
             ..Default::default()
         })

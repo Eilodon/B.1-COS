@@ -1,12 +1,12 @@
 //! Graph Neural Network implementation for causal world modeling
 
-pub mod types;
-pub mod message_passing;
 pub mod layers;
+pub mod message_passing;
+pub mod types;
 
-use types::{CausalGraph, GnnConfig, NodeData, CausalEdge};
 use pandora_error::PandoraError;
 use petgraph::graph::NodeIndex;
+use types::{CausalEdge, CausalGraph, GnnConfig, NodeData};
 
 /// Graph Neural Network for causal reasoning and world modeling.
 pub struct GraphNeuralNetwork {
@@ -29,23 +29,20 @@ impl GraphNeuralNetwork {
     ///
     /// # Examples
     ///
-/// ```rust
-/// use pandora_cwm::gnn::GraphNeuralNetwork;
-/// use pandora_cwm::gnn::types::GnnConfig;
-///
-/// let config = GnnConfig::new(64, 128, 3);
-/// let gnn = GraphNeuralNetwork::new(config)?;
-/// # Ok::<(), Box<dyn std::error::Error>>(())
-/// ```
+    /// ```rust
+    /// use pandora_cwm::gnn::GraphNeuralNetwork;
+    /// use pandora_cwm::gnn::types::GnnConfig;
+    ///
+    /// let config = GnnConfig::new(64, 128, 3);
+    /// let gnn = GraphNeuralNetwork::new(config)?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     pub fn new(config: GnnConfig) -> Result<Self, PandoraError> {
         config.validate()?;
-        
+
         let graph = CausalGraph::new();
-        
-        Ok(Self {
-            graph,
-            config,
-        })
+
+        Ok(Self { graph, config })
     }
 
     /// Adds a new node to the graph with the given features.
@@ -72,11 +69,16 @@ impl GraphNeuralNetwork {
     /// # Returns
     ///
     /// * `Result<petgraph::graph::EdgeIndex, PandoraError>` - Edge index or error
-    pub fn add_edge(&mut self, from: NodeIndex, to: NodeIndex, edge: CausalEdge) -> Result<petgraph::graph::EdgeIndex, PandoraError> {
+    pub fn add_edge(
+        &mut self,
+        from: NodeIndex,
+        to: NodeIndex,
+        edge: CausalEdge,
+    ) -> Result<petgraph::graph::EdgeIndex, PandoraError> {
         if from.index() >= self.graph.node_count() || to.index() >= self.graph.node_count() {
             return Err(PandoraError::config("Node indices must exist in the graph"));
         }
-        
+
         Ok(self.graph.add_edge(from, to, edge))
     }
 
@@ -112,16 +114,19 @@ impl GraphNeuralNetwork {
     /// # Returns
     ///
     /// * `Result<Vec<f32>, PandoraError>` - The contextual embedding
-    pub fn get_contextual_embedding(&self, flow: &pandora_core::ontology::EpistemologicalFlow) -> Result<Vec<f32>, PandoraError> {
+    pub fn get_contextual_embedding(
+        &self,
+        flow: &pandora_core::ontology::EpistemologicalFlow,
+    ) -> Result<Vec<f32>, PandoraError> {
         // Simplified implementation: create a basic embedding from flow features
         // In a full implementation, this would use the GNN to process the flow
-        
+
         let mut embedding = vec![0.0; self.config.hidden_dims];
-        
+
         // Extract basic features from the flow
         // This is a placeholder - in reality, we'd use the GNN layers
         // to process the flow's state and create a meaningful embedding
-        
+
         // Simple feature extraction based on flow content
         if let Some(ref sankhara) = flow.sankhara {
             let intent_str = sankhara.as_ref();
@@ -134,20 +139,17 @@ impl GraphNeuralNetwork {
             let normalized = (hash as f32) / (u32::MAX as f32) * 2.0 - 1.0;
             embedding[0] = normalized;
         }
-        
+
         // Add some random noise to simulate more complex features
         use rand::Rng;
         let mut rng = rand::thread_rng();
         for val in embedding.iter_mut().skip(1) {
             *val = rng.gen_range(-0.5..0.5);
         }
-        
+
         Ok(embedding)
     }
 }
 
 #[cfg(test)]
 mod tests;
-
-
-

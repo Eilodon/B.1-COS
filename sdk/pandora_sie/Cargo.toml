@@ -14,6 +14,7 @@ thiserror = { workspace = true }
 async-trait = { workspace = true }
 fnv = { workspace = true }
 metrics = { workspace = true }
+pandora_tools = { path = "../pandora_tools" }
 
 [features]
 default = []

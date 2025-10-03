@@ -8,11 +8,20 @@ pub trait ValueEstimator {
 /// Trait for Q-value estimation, extending ValueEstimator with action-specific values
 pub trait QValueEstimator: ValueEstimator {
     /// Get Q-values for all possible actions given a flow state
-    fn get_q_values(&self, flow: &EpistemologicalFlow) -> Result<Vec<(&'static str, f64)>, Box<dyn std::error::Error>>;
-    
+    fn get_q_values(
+        &self,
+        flow: &EpistemologicalFlow,
+    ) -> Result<Vec<(&'static str, f64)>, Box<dyn std::error::Error>>;
+
     /// Update Q-value for a specific state-action pair
-    fn update_q_value(&mut self, flow: &EpistemologicalFlow, action: &str, reward: f64, next_flow: &EpistemologicalFlow);
-    
+    fn update_q_value(
+        &mut self,
+        flow: &EpistemologicalFlow,
+        action: &str,
+        reward: f64,
+        next_flow: &EpistemologicalFlow,
+    );
+
     /// Get visit count for a state-action pair (for UCB1 exploration)
     fn get_visit_count(&self, flow: &EpistemologicalFlow, action: &str) -> u32;
 }
@@ -33,7 +42,12 @@ pub struct ExponentialMovingAverageEstimator {
 }
 
 impl ExponentialMovingAverageEstimator {
-    pub fn new(alpha: f64) -> Self { Self { alpha, state: std::collections::HashMap::new() } }
+    pub fn new(alpha: f64) -> Self {
+        Self {
+            alpha,
+            state: std::collections::HashMap::new(),
+        }
+    }
 
     fn key(flow: &EpistemologicalFlow) -> u64 {
         use std::hash::{Hash, Hasher};
@@ -81,10 +95,16 @@ impl NeuralQValueEstimator {
             visit_counts: HashMap::new(),
             learning_rate,
             discount_factor,
-            actions: vec!["unlock_door", "pick_up_key", "move_forward", "explore", "noop"],
+            actions: vec![
+                "unlock_door",
+                "pick_up_key",
+                "move_forward",
+                "explore",
+                "noop",
+            ],
         }
     }
-    
+
     /// Creates a state-action key for hashing
     fn state_action_key(flow: &EpistemologicalFlow, action: &str) -> String {
         use std::hash::{Hash, Hasher};
@@ -92,15 +112,15 @@ impl NeuralQValueEstimator {
         format!("{:?}_{}", flow, action).hash(&mut hasher);
         hasher.finish().to_string()
     }
-    
+
     /// Simple neural network forward pass (placeholder for actual NN)
     fn forward_pass(&self, flow: &EpistemologicalFlow, action: &str) -> f64 {
         // This is a simplified implementation
         // In a real system, this would use a trained neural network
-        
+
         // Extract features from the flow
         let mut features = Vec::new();
-        
+
         // Add intent-based features
         if let Some(ref sankhara) = flow.sankhara {
             let intent_str = sankhara.as_ref();
@@ -108,33 +128,33 @@ impl NeuralQValueEstimator {
         } else {
             features.push(0.0);
         }
-        
+
         // Add sanna-based features
         if let Some(ref sanna) = flow.sanna {
             features.push(sanna.active_indices.len() as f64 / 32.0);
         } else {
             features.push(0.0);
         }
-        
+
         // Add related_eidos features
         if let Some(ref related) = flow.related_eidos {
             features.push(related.len() as f64 / 4.0);
         } else {
             features.push(0.0);
         }
-        
+
         // Simple weighted sum (placeholder for neural network)
         let weights = vec![0.4, 0.3, 0.3];
         let mut q_value = 0.0;
         for (feature, weight) in features.iter().zip(weights.iter()) {
             q_value += feature * weight;
         }
-        
+
         // Add some noise to simulate neural network behavior
         use rand::Rng;
         let mut rng = rand::thread_rng();
         q_value += rng.gen_range(-0.1..0.1);
-        
+
         q_value
     }
 }
@@ -142,7 +162,8 @@ impl NeuralQValueEstimator {
 impl ValueEstimator for NeuralQValueEstimator {
     fn estimate(&self, flow: &EpistemologicalFlow) -> f64 {
         // Return the maximum Q-value across all actions
-        self.actions.iter()
+        self.actions
+            .iter()
             .map(|action| {
                 let key = Self::state_action_key(flow, action);
                 self.q_values.get(&key).copied().unwrap_or_else(|| {
@@ -155,9 +176,12 @@ impl ValueEstimator for NeuralQValueEstimator {
 }
 
 impl QValueEstimator for NeuralQValueEstimator {
-    fn get_q_values(&self, flow: &EpistemologicalFlow) -> Result<Vec<(&'static str, f64)>, Box<dyn std::error::Error>> {
+    fn get_q_values(
+        &self,
+        flow: &EpistemologicalFlow,
+    ) -> Result<Vec<(&'static str, f64)>, Box<dyn std::error::Error>> {
         let mut q_values = Vec::new();
-        
+
         for action in &self.actions {
             let key = Self::state_action_key(flow, action);
             let q_value = self.q_values.get(&key).copied().unwrap_or_else(|| {
@@ -166,32 +190,40 @@ impl QValueEstimator for NeuralQValueEstimator {
             });
             q_values.push((*action, q_value));
         }
-        
+
         Ok(q_values)
     }
-    
-    fn update_q_value(&mut self, flow: &EpistemologicalFlow, action: &str, reward: f64, next_flow: &EpistemologicalFlow) {
+
+    fn update_q_value(
+        &mut self,
+        flow: &EpistemologicalFlow,
+        action: &str,
+        reward: f64,
+        next_flow: &EpistemologicalFlow,
+    ) {
         let key = Self::state_action_key(flow, action);
-        
+
         // Get current Q-value
-        let current_q = self.q_values.get(&key).copied().unwrap_or_else(|| {
-            self.forward_pass(flow, action)
-        });
-        
+        let current_q = self
+            .q_values
+            .get(&key)
+            .copied()
+            .unwrap_or_else(|| self.forward_pass(flow, action));
+
         // Get maximum Q-value for next state
         let max_next_q = self.estimate(next_flow);
-        
+
         // Q-learning update: Q(s,a) = Q(s,a) + α[r + γ*max_a'Q(s',a') - Q(s,a)]
         let target = reward + self.discount_factor * max_next_q;
         let new_q = current_q + self.learning_rate * (target - current_q);
-        
+
         self.q_values.insert(key.clone(), new_q);
-        
+
         // Update visit count
         let count = self.visit_counts.get(&key).copied().unwrap_or(0);
         self.visit_counts.insert(key, count + 1);
     }
-    
+
     fn get_visit_count(&self, flow: &EpistemologicalFlow, action: &str) -> u32 {
         let key = Self::state_action_key(flow, action);
         self.visit_counts.get(&key).copied().unwrap_or(0)
@@ -222,5 +254,3 @@ mod tests {
         assert!(v2 >= 0.0);
     }
 }
-
-

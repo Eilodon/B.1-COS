@@ -1,5 +1,5 @@
 use pandora_orchestrator::{Orchestrator, OrchestratorTrait, SkillRegistry};
-use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
+use pandora_tools::skills_alias::ArithmeticSkill;
 use serde_json::json;
 use std::sync::Arc;
 use tokio::time::Duration;
@@ -7,7 +7,7 @@ use tokio::time::Duration;
 #[tokio::test]
 async fn test_concurrent_skill_execution() {
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
     let orchestrator = Arc::new(Orchestrator::new(Arc::new(registry)));
 
     // 100 request song song
@@ -17,7 +17,7 @@ async fn test_concurrent_skill_execution() {
         let orch = orchestrator.clone();
         let handle = tokio::spawn(async move {
             let input = json!({"expression": format!("{} + {}", i, i)});
-            orch.process_request("arithmetic", input).await
+            orch.process_request("arithmetic", input)
         });
         handles.push(handle);
     }
@@ -78,8 +78,8 @@ async fn test_concurrent_circuit_breaker_isolation() {
     }
 
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(WorkingSkill));
-    registry.register(Arc::new(FailingSkill));
+    registry.register_arc(Arc::new(WorkingSkill));
+    registry.register_arc(Arc::new(FailingSkill));
 
     let config = CircuitBreakerConfig {
         failure_threshold: 3,
@@ -93,14 +93,14 @@ async fn test_concurrent_circuit_breaker_isolation() {
     for _ in 0..3 {
         let orch = orchestrator.clone();
         handles.push(tokio::spawn(async move {
-            orch.process_request("failing", json!({})).await
+            orch.process_request("failing", json!({}))
         }));
     }
 
     for _ in 0..10 {
         let orch = orchestrator.clone();
         handles.push(tokio::spawn(async move {
-            orch.process_request("working", json!({})).await
+            orch.process_request("working", json!({}))
         }));
     }
 
@@ -108,10 +108,10 @@ async fn test_concurrent_circuit_breaker_isolation() {
         let _ = handle.await;
     }
 
-    let result = orchestrator.process_request("working", json!({})).await;
+    let result = orchestrator.process_request("working", json!({}));
     assert!(result.is_ok());
 
-    let result = orchestrator.process_request("failing", json!({})).await;
+    let result = orchestrator.process_request("failing", json!({}));
     assert!(result.is_err());
 }
 
@@ -120,7 +120,7 @@ async fn test_concurrent_cleanup_task() {
     use pandora_orchestrator::CircuitBreakerConfig;
 
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
 
     let config = CircuitBreakerConfig {
         state_ttl_secs: 1,
@@ -133,7 +133,7 @@ async fn test_concurrent_cleanup_task() {
 
     for i in 0..10 {
         let skill_name = format!("skill_{}", i);
-        let _ = orchestrator.process_request(&skill_name, json!({})).await;
+        let _ = orchestrator.process_request(&skill_name, json!({}));
     }
 
     let stats_before = orchestrator.circuit_stats();
@@ -148,7 +148,7 @@ async fn test_concurrent_cleanup_task() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test_high_concurrency_stress() {
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
     let orchestrator = Arc::new(Orchestrator::new(Arc::new(registry)));
 
     let mut handles = vec![];
@@ -157,7 +157,7 @@ async fn test_high_concurrency_stress() {
         let orch = orchestrator.clone();
         let handle = tokio::spawn(async move {
             let input = json!({"expression": format!("{} * 2", i)});
-            orch.process_request("arithmetic", input).await
+            orch.process_request("arithmetic", input)
         });
         handles.push(handle);
     }

@@ -1,7 +1,7 @@
 //! Types and structures for causal graph neural networks
 
-use petgraph::graph::DiGraph;
 use pandora_error::PandoraError;
+use petgraph::graph::DiGraph;
 
 /// Represents different types of causal relationships between nodes in the graph.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -143,7 +143,9 @@ impl GnnConfig {
             return Err(PandoraError::config("num_layers must be greater than 0"));
         }
         if self.learning_rate <= 0.0 || self.learning_rate > 1.0 {
-            return Err(PandoraError::config("learning_rate must be between 0 and 1"));
+            return Err(PandoraError::config(
+                "learning_rate must be between 0 and 1",
+            ));
         }
         if self.dropout_rate < 0.0 || self.dropout_rate >= 1.0 {
             return Err(PandoraError::config("dropout_rate must be between 0 and 1"));
@@ -180,7 +182,10 @@ mod tests {
             0.8,
             "test metadata".to_string(),
         );
-        assert_eq!(edge_with_metadata.metadata, Some("test metadata".to_string()));
+        assert_eq!(
+            edge_with_metadata.metadata,
+            Some("test metadata".to_string())
+        );
     }
 
     #[test]

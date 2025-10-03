@@ -4,6 +4,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::{debug, info, warn};
 
+// Import the new algorithm implementations
+mod algorithms {
+    pub mod notears;
+    pub mod deci;
+}
+
 /// Represents a potential causal link discovered from data.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CausalHypothesis {
@@ -36,6 +42,14 @@ pub enum CausalAlgorithm {
     DirectLiNGAM,
     PC,
     GES,
+    /// NOTEARS: Neural structure learning without acyclicity constraints
+    NOTEARS,
+    /// DECI: Deep End-to-End Causal Inference with VAE + GNN
+    DECI,
+    /// NOTEARS-MLP: NOTEARS with multi-layer perceptron for nonlinear relationships
+    NOTEARSMLP,
+    /// DAGMA: Fast DAG learning with continuous optimization
+    DAGMA,
 }
 
 impl Default for CausalDiscoveryConfig {
@@ -71,6 +85,17 @@ pub fn discover_causal_links(
             CausalAlgorithm::DirectLiNGAM => discover_with_lingam(py, data_matrix, config),
             CausalAlgorithm::PC => discover_with_pc(py, data_matrix, config),
             CausalAlgorithm::GES => discover_with_ges(py, data_matrix, config),
+            CausalAlgorithm::NOTEARS => algorithms::notears::discover_with_notears(py, data_matrix, config),
+            CausalAlgorithm::DECI => algorithms::deci::discover_with_deci(py, data_matrix, config),
+            CausalAlgorithm::NOTEARSMLP => {
+                info!("Using NOTEARS-MLP variant");
+                // For now, delegate to NOTEARS with MLP flag
+                algorithms::notears::discover_with_notears(py, data_matrix, config)
+            },
+            CausalAlgorithm::DAGMA => {
+                warn!("DAGMA not yet implemented, falling back to NOTEARS");
+                algorithms::notears::discover_with_notears(py, data_matrix, config)
+            },
         }
     })
 }

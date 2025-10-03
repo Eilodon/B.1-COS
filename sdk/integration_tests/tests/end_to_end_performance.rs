@@ -9,9 +9,7 @@ async fn test_end_to_end_latency_requirements() {
 
     // Warm up
     for _ in 0..10 {
-        let _ = orchestrator
-            .process_request("arithmetic", json!({"expression": "2 + 2"}))
-            .await;
+        let _ = orchestrator.process_request("arithmetic", json!({"expression": "2 + 2"}));
     }
 
     // Measure 1000 requests
@@ -22,7 +20,6 @@ async fn test_end_to_end_latency_requirements() {
                 "arithmetic",
                 json!({"expression": format!("{} + {}", i, i)}),
             )
-            .await
             .unwrap();
 
         assert!(result["result"].is_number());
@@ -51,7 +48,6 @@ async fn test_concurrent_throughput_requirements() {
         let orch = Arc::clone(&orchestrator);
         let handle = tokio::spawn(async move {
             orch.process_request("arithmetic", json!({"expression": format!("{} * 2", i)}))
-                .await
         });
         handles.push(handle);
     }
@@ -92,7 +88,6 @@ async fn test_memory_usage_under_load() {
                 "arithmetic",
                 json!({"expression": format!("{} + {}", i, i * 2)}),
             )
-            .await
         });
         handles.push(handle);
     }
@@ -124,13 +119,10 @@ async fn test_circuit_breaker_under_load() {
         let handle = tokio::spawn(async move {
             if i % 10 == 0 {
                 // Every 10th request is invalid to test circuit breaker
-                let _ = orch
-                    .process_request("arithmetic", json!({"expression": "invalid syntax"}))
-                    .await;
+                let _ = orch.process_request("arithmetic", json!({"expression": "invalid syntax"}));
             } else {
-                let _ = orch
-                    .process_request("arithmetic", json!({"expression": format!("{} + 1", i)}))
-                    .await;
+                let _ =
+                    orch.process_request("arithmetic", json!({"expression": format!("{} + 1", i)}));
             }
         });
         handles.push(handle);
@@ -174,25 +166,25 @@ async fn test_skill_switching_performance() {
                     orch.process_request(
                         "arithmetic",
                         json!({"expression": format!("{} + {}", i, i)})
-                    ).await
+                    )
                 },
                 "logical_reasoning" => {
                     orch.process_request(
                         "logical_reasoning",
                         json!({"premises": [format!("A{}", i), format!("B{}", i)], "conclusion": format!("C{}", i)})
-                    ).await
+                    )
                 },
                 "pattern_matching" => {
                     orch.process_request(
                         "pattern_matching",
                         json!({"text": format!("pattern_{}", i), "pattern": "pattern_*"})
-                    ).await
+                    )
                 },
                 "analogy_reasoning" => {
                     orch.process_request(
                         "analogy_reasoning",
                         json!({"source": format!("source_{}", i), "target": format!("target_{}", i), "candidates": [format!("candidate_{}", i)]})
-                    ).await
+                    )
                 },
                 _ => unreachable!(),
             }

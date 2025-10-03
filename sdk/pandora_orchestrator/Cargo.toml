@@ -32,6 +32,11 @@ metrics-exporter-prometheus = { workspace = true, optional = true }
 prometheus = { version = "0.13", optional = true }
 bytes = { workspace = true }
 lazy_static = "1.4"
+pandora_rm = { path = "../pandora_rm" }
+pandora_monitoring = { path = "../pandora_monitoring" }
+axum = { version = "0.7" }
+uuid = { version = "1", features = ["serde", "v4"] }
+chrono = { version = "0.4", features = ["serde", "clock"] }
 
 [dev-dependencies]
 proptest = { workspace = true }

@@ -1,8 +1,10 @@
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use thiserror::Error;
+use crate::skills::information_retrieval_skill::{
+    CognitiveOutput, Confidence, Document, ProgressiveSemanticEngine, RetrievalError,
+};
 use nalgebra::DVector;
-use crate::skills::information_retrieval_skill::{ProgressiveSemanticEngine, Document, RetrievalError, CognitiveOutput, Confidence};
+use std::sync::Arc;
+use thiserror::Error;
+use tokio::sync::RwLock;
 
 #[derive(Debug, Error)]
 pub enum AnalogyError {
@@ -20,7 +22,7 @@ pub enum AnalogyError {
 #[allow(dead_code)]
 pub struct AnalogyEngine {
     /// Tham chiếu đến bộ nhớ ngữ nghĩa để thực hiện tìm kiếm vector và lấy thông tin concept
-    retrieval_engine: Arc<RwLock<ProgressiveSemanticEngine>>, 
+    retrieval_engine: Arc<RwLock<ProgressiveSemanticEngine>>,
 }
 
 impl AnalogyEngine {
@@ -78,13 +80,21 @@ impl AnalogyEngine {
                     aleatoric_uncertainty: 0.0,
                 },
                 reasoning_trace: vec![
-                    format!("A:B :: C:? với A='{}', B='{}', C='{}'", a_query, b_query, c_query),
-                    format!("Ứng viên tốt nhất: '{}' với confidence {:.3}", winner.id, score),
+                    format!(
+                        "A:B :: C:? với A='{}', B='{}', C='{}'",
+                        a_query, b_query, c_query
+                    ),
+                    format!(
+                        "Ứng viên tốt nhất: '{}' với confidence {:.3}",
+                        winner.id, score
+                    ),
                 ],
                 documents: vec![winner],
             })
         } else {
-            Err(AnalogyError::ConceptNotFound("Không tìm thấy kết quả tương tự phù hợp.".to_string()))
+            Err(AnalogyError::ConceptNotFound(
+                "Không tìm thấy kết quả tương tự phù hợp.".to_string(),
+            ))
         }
     }
 
@@ -96,7 +106,9 @@ impl AnalogyEngine {
             .await
             .search_by_text(query, 1)
             .await?;
-        docs.into_iter().next().ok_or_else(|| AnalogyError::ConceptNotFound(query.to_string()))
+        docs.into_iter()
+            .next()
+            .ok_or_else(|| AnalogyError::ConceptNotFound(query.to_string()))
     }
 
     /// Tính toán điểm tin cậy đa yếu tố cho một ứng viên D
@@ -119,7 +131,9 @@ impl AnalogyEngine {
         let dist_cd = (v_c - v_d).norm();
         let score_dist = if dist_ab > 0.0 && dist_cd > 0.0 {
             (dist_ab / dist_cd).min(dist_cd / dist_ab)
-        } else { 0.0 };
+        } else {
+            0.0
+        };
 
         let score_semantic = (cosine_similarity(v_a, v_c) + cosine_similarity(v_b, v_d)) / 2.0;
 
@@ -131,6 +145,8 @@ impl AnalogyEngine {
 
 fn cosine_similarity(a: &DVector<f32>, b: &DVector<f32>) -> f32 {
     let denom = a.norm() * b.norm();
-    if denom <= 0.0 { return 0.0; }
+    if denom <= 0.0 {
+        return 0.0;
+    }
     a.dot(b) / denom
 }

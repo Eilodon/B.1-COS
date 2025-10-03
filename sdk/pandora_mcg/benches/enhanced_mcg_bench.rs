@@ -8,7 +8,11 @@ fn bench_monitor(c: &mut Criterion) {
         compression_reward: 0.75,
         novelty_score: 0.62,
         performance: 0.5,
-        resource_usage: ResourceMetrics { cpu_usage: 0.4, memory_usage: 0.5, latency_ms: 12.0 },
+        resource_usage: ResourceMetrics {
+            cpu_usage: 0.4,
+            memory_usage: 0.5,
+            latency_ms: 12.0,
+        },
     };
     c.bench_function("enhanced_mcg_monitor", |b| {
         b.iter(|| {
@@ -19,5 +23,3 @@ fn bench_monitor(c: &mut Criterion) {
 
 criterion_group!(benches, bench_monitor);
 criterion_main!(benches);
-
-

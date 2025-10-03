@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use pandora_orchestrator::{CircuitBreakerConfig, Orchestrator, OrchestratorTrait, SkillRegistry};
-use pandora_tools::skills::arithmetic_skill::ArithmeticSkill;
+use pandora_tools::skills_alias::ArithmeticSkill;
 use serde_json::json;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
@@ -9,7 +9,7 @@ fn benchmark_single_skill_execution(c: &mut Criterion) {
     let mut group = c.benchmark_group("single_skill");
 
     let mut registry = SkillRegistry::new();
-    registry.register(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
     let orchestrator = Orchestrator::new(Arc::new(registry));
 
     let rt = Runtime::new().unwrap();
@@ -18,7 +18,6 @@ fn benchmark_single_skill_execution(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             orchestrator
                 .process_request("arithmetic", json!({"expression": "2 + 2"}))
-                .await
                 .unwrap()
         });
     });
@@ -87,21 +86,20 @@ fn benchmark_circuit_breaker_overhead(c: &mut Criterion) {
 
     // Without circuit breaker (baseline)
     let mut registry_no_cb = SkillRegistry::new();
-    registry_no_cb.register(Arc::new(ArithmeticSkill));
+    registry_no_cb.register_arc(Arc::new(ArithmeticSkill));
     let orch_no_cb = Orchestrator::new(Arc::new(registry_no_cb));
 
     group.bench_function("without_circuit_breaker", |b| {
         b.to_async(&rt).iter(|| async {
             orch_no_cb
                 .process_request("arithmetic", json!({"expression": "2 + 2"}))
-                .await
                 .unwrap()
         });
     });
 
     // With circuit breaker
     let mut registry_with_cb = SkillRegistry::new();
-    registry_with_cb.register(Arc::new(ArithmeticSkill));
+    registry_with_cb.register_arc(Arc::new(ArithmeticSkill));
     let orch_with_cb =
         Orchestrator::with_config(Arc::new(registry_with_cb), CircuitBreakerConfig::default());
 
@@ -109,7 +107,6 @@ fn benchmark_circuit_breaker_overhead(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             orch_with_cb
                 .process_request("arithmetic", json!({"expression": "2 + 2"}))
-                .await
                 .unwrap()
         });
     });

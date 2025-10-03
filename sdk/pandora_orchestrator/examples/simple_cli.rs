@@ -1,12 +1,11 @@
 use pandora_orchestrator::{Orchestrator, OrchestratorTrait, SkillRegistry};
 use pandora_tools::skills::{
-    analogy_reasoning_skill::AnalogyReasoningSkill,
     // Temporarily disabled due to dependency conflicts
     // information_retrieval_skill::InformationRetrievalSkill,
-    arithmetic_skill::ArithmeticSkill,
     logical_reasoning_skill::LogicalReasoningSkill,
-    pattern_matching_skill::PatternMatchingSkill,
 };
+use pandora_tools::skills_alias::ArithmeticSkill;
+use pandora_tools::PatternMatchingSkill;
 use std::io::{self, Write};
 use std::sync::Arc;
 use tracing::{error, info, warn};
@@ -38,10 +37,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut registry = SkillRegistry::new();
 
     // Đăng ký các skills
-    registry.register(Arc::new(ArithmeticSkill));
-    registry.register(Arc::new(LogicalReasoningSkill));
-    registry.register(Arc::new(PatternMatchingSkill));
-    registry.register(Arc::new(AnalogyReasoningSkill));
+    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(LogicalReasoningSkill));
+    registry.register_arc(Arc::new(PatternMatchingSkill));
+    // registry.register_arc(Arc::new(AnalogyReasoningSkill));
     // Temporarily disabled due to dependency conflicts
     // registry.register(Arc::new(InformationRetrievalSkill));
 
@@ -51,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("- arithmetic: Perform arithmetic calculations");
     info!("- logical_reasoning: Evaluate logical expressions");
     info!("- pattern_matching: Match patterns in strings");
-    info!("- analogy_reasoning: Solve analogy problems");
+    // info!("- analogy_reasoning: Solve analogy problems");
     // Temporarily disabled due to dependency conflicts
     // info!("- information_retrieval: Search in text documents");
     info!("\nType 'help' for examples, 'quit' to exit.\n");
@@ -99,7 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         // Execute skill
-        match orchestrator.process_request(skill_name, input_value).await {
+        match orchestrator.process_request(skill_name, input_value) {
             Ok(result) => {
                 info!("✅ Result: {}", serde_json::to_string_pretty(&result)?);
             }

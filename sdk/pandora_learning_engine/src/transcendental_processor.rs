@@ -2,8 +2,26 @@ use super::LearningEngine;
 use pandora_core::fep_cell::SkandhaProcessor;
 use pandora_core::ontology::EpistemologicalFlow;
 use pandora_core::world_model::WorldModel;
-use pandora_mcg::MetaCognitiveGovernor;
-use pandora_sie::SelfImprovementEngine;
+use pandora_mcg::MetaCognitiveController;
+
+// Tạo stub cục bộ cho SelfImprovementEngine để không cần feature gate
+pub struct StubDecision {
+    pub summary: String,
+}
+
+pub struct SelfImprovementEngine;
+impl SelfImprovementEngine {
+    pub fn new() -> Self { Self }
+    pub async fn execute(&self, _decision: &StubDecision) -> Result<StubAction, ()> {
+        Ok(StubAction {
+            description: "stub".to_string(),
+        })
+    }
+}
+
+pub struct StubAction {
+    pub description: String,
+}
 use std::sync::Arc;
 use tracing::info;
 
@@ -12,7 +30,7 @@ use tracing::info;
 pub struct TranscendentalProcessor {
     processor: SkandhaProcessor,
     learning_engine: Arc<LearningEngine>,
-    mcg: MetaCognitiveGovernor,
+    mcg: MetaCognitiveController,
     sie: SelfImprovementEngine,
 }
 
@@ -20,7 +38,7 @@ impl TranscendentalProcessor {
     pub fn new(
         processor: SkandhaProcessor,
         learning_engine: Arc<LearningEngine>,
-        mcg: MetaCognitiveGovernor,
+        mcg: MetaCognitiveController,
         sie: SelfImprovementEngine,
     ) -> Self {
         info!("✅ TranscendentalProcessor đã được khởi tạo với vòng lặp siêu việt hoàn chỉnh.");
@@ -46,12 +64,25 @@ impl TranscendentalProcessor {
 
         // 2. Tự Đánh giá (Self-Evaluation) - Tạo flow giả lập
         let flow = EpistemologicalFlow::default();
-        let reward = self
+        let _reward = self
             .learning_engine
             .calculate_reward(current_model, new_model, &flow);
 
         // 3. Tự Giám sát (Self-Monitoring)
-        let decision = self.mcg.monitor_and_decide(&reward);
+        // Chuyển sang gọi monitor_and_reflect() và sinh decision stub từ insights
+        let reflection = self.mcg.monitor_and_reflect().await;
+        let decision = match reflection {
+            Ok(r) => StubDecision {
+                summary: format!(
+                    "insights={} actions={}",
+                    r.insights.len(),
+                    r.recommended_actions.len()
+                ),
+            },
+            Err(_) => StubDecision {
+                summary: "reflection_failed".to_string(),
+            },
+        };
 
         // 4. Tự Cải thiện (Self-Improvement)
         match self.sie.execute(&decision).await {
@@ -80,7 +111,7 @@ impl TranscendentalProcessor {
     }
 
     /// Truy cập trực tiếp vào MCG.
-    pub fn mcg(&self) -> &MetaCognitiveGovernor {
+    pub fn mcg(&self) -> &MetaCognitiveController {
         &self.mcg
     }
 

@@ -1,5 +1,5 @@
 #[cfg(feature = "ml")]
-use ndarray::{Array2};
+use ndarray::Array2;
 
 /// Performs mean aggregation for message passing in Graph Neural Networks.
 ///
@@ -40,19 +40,25 @@ pub fn aggregate_mean(adj: &Array2<f32>, features: &Array2<f32>) -> Array2<f32> 
         for (j, w) in row.iter().enumerate() {
             if *w > 0.0 {
                 let fj = features.row(j);
-                for c in 0..sum.len() { sum[c] += fj[c]; }
+                for c in 0..sum.len() {
+                    sum[c] += fj[c];
+                }
                 count += 1.0;
             }
         }
         if count > 0.0 {
-            for c in 0..sum.len() { sum[c] /= count; }
-            for c in 0..sum.len() { out[[i, c]] = sum[c]; }
+            for val in sum.iter_mut() {
+                *val /= count;
+            }
+            for (c, &val) in sum.iter().enumerate() {
+                out[[i, c]] = val;
+            }
         } else {
             let fi = features.row(i);
-            for c in 0..sum.len() { out[[i, c]] = fi[c]; }
+            for c in 0..sum.len() {
+                out[[i, c]] = fi[c];
+            }
         }
     }
     out
 }
-
-

@@ -44,6 +44,7 @@ statrs = { workspace = true, optional = true }
 # Graph structures and ML dependencies
 petgraph = { version = "0.6", features = ["serde-1"] }
 rand = "0.8"
+smallvec = "1.13"
 
 [dev-dependencies]
 proptest = { workspace = true }

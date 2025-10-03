@@ -39,6 +39,61 @@ sequenceDiagram
   SIE-->>Orchestrator: ImprovementAction
 ```
 
+## Complete Cognitive Architecture
+
+```mermaid
+graph TB
+    subgraph "Outer Scientist Loop"
+        A[AutomaticScientistOrchestrator] --> B[MCG: Propose Hypothesis]
+        B --> C[CWM: Test Hypothesis]
+        C --> D[Learning Engine: Update Knowledge]
+        D --> E[MCG: Evaluate Results]
+        E --> F{Discovery Complete?}
+        F -->|No| B
+        F -->|Yes| G[Knowledge Crystallization]
+    end
+    
+    subgraph "Inner Planning Loop"
+        H[ActiveInferenceSankharaSkandha] --> I[Form Intent]
+        I --> J[CWM: Predict Next State]
+        J --> K[Value-Driven Policy: Select Action]
+        K --> L[Execute Action]
+        L --> M[Update Q-Values]
+        M --> N{Goal Achieved?}
+        N -->|No| I
+        N -->|Yes| O[Report Success]
+    end
+    
+    subgraph "Core Components"
+        P[EpistemologicalFlow] --> Q[Skandha Pipeline]
+        Q --> R[Rupa: Raw Data]
+        R --> S[Vedana: Feelings/Rewards]
+        S --> T[Sanna: Perceptions/Concepts]
+        T --> U[Sankhara: Intent Formation]
+        U --> V[Vinnana: Synthesis]
+    end
+    
+    A --> H
+    H --> P
+    O --> A
+```
+
+## Active Inference Planning Engine
+
+The system now includes a complete Active Inference Planning Engine with:
+
+1. **CWM Decoder**: Translates predicted state embeddings back into meaningful changes
+2. **Value-Driven Policy**: Uses Q-learning with UCB1 exploration
+3. **Multi-step Planning**: Handles complex scenarios with non-obvious solutions
+4. **Non-attachment Learning**: Adapts to environment changes
+
+### Key Features
+
+- **Neural Q-Value Estimator**: Predicts future rewards for all actions
+- **UCB1 Exploration**: Balances exploitation and exploration intelligently
+- **Sequential Discovery**: Can discover complex causal relationships (A→B→C)
+- **Environment Adaptation**: Learns to abandon old strategies when environment changes
+
 ## Observability
 
 - Tracing spans on critical paths (SIE/MCG)

@@ -9,6 +9,7 @@ use pandora_core::world_model::WorldModel;
 use pandora_error::PandoraError;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
+use smallvec::SmallVec;
 
 /// Represents a causal hypothesis discovered through data analysis.
 /// This is a simplified version for the CWM module.
@@ -243,48 +244,227 @@ impl InterdependentCausalModel {
     /// # Returns
     ///
     /// * `Result<(), PandoraError>` - Success or error
-    fn decode_and_update_flow(&self, flow: &mut EpistemologicalFlow, _embedding: &[f32]) -> Result<(), PandoraError> {
-        // TODO: Implement the logic to translate an embedding back into changes in the flow.
-        // This is the inverse of `get_contextual_embedding`.
-        // 
-        // For now, we'll implement a simplified version that:
-        // 1. Extracts key features from the embedding
-        // 2. Updates the flow's state based on these features
-        // 3. Handles the intent-specific state transitions
+    fn decode_and_update_flow(&self, flow: &mut EpistemologicalFlow, embedding: &[f32]) -> Result<(), PandoraError> {
+        // Get the current contextual embedding for comparison
+        let current_embedding = self.gnn.get_contextual_embedding(flow)?;
         
-        // Simplified implementation: update flow based on embedding magnitude
-        // In a full implementation, this would use learned decoders
+        // Ensure embeddings have the same dimensions
+        if current_embedding.len() != embedding.len() {
+            return Err(PandoraError::config("Embedding dimension mismatch"));
+        }
         
-        if let Some(ref intent) = flow.sankhara {
-            let intent_str = intent.as_ref();
-            
-            // Simple state transitions based on intent
-            match intent_str {
-                "unlock_door" => {
-                    // Simulate door unlocking by updating flow state
-                    // This is a placeholder - in reality, we'd decode the embedding
-                    // to determine specific state changes
-                    debug!("Predicted: Door will be unlocked");
-                }
-                "pick_up_key" => {
-                    // Simulate key pickup
-                    debug!("Predicted: Key will be picked up");
-                }
-                "move_forward" => {
-                    // Simulate movement
-                    debug!("Predicted: Agent will move forward");
-                }
-                _ => {
-                    debug!("Predicted: Generic state change for intent '{}'", intent_str);
-                }
+        // Calculate the difference between current and predicted embeddings
+        let mut differences = Vec::with_capacity(embedding.len());
+        for (current, predicted) in current_embedding.iter().zip(embedding.iter()) {
+            differences.push(predicted - current);
+        }
+        
+        // Find the most significant differences (threshold-based)
+        let threshold = 0.1; // Configurable threshold for significant changes
+        let mut significant_changes = Vec::new();
+        
+        for (i, diff) in differences.iter().enumerate() {
+            if diff.abs() > threshold {
+                significant_changes.push((i, *diff));
             }
         }
         
-        // Update flow based on embedding features
-        // This is where we would decode the embedding vector into specific
-        // changes to the flow's state variables
+        // Sort by magnitude of change (descending)
+        significant_changes.sort_by(|a, b| b.1.abs().partial_cmp(&a.1.abs()).unwrap());
+        
+        // Update the flow based on the most significant changes
+        // This is where we map embedding dimensions back to specific concepts
+        
+        // Handle intent-specific state transitions
+        if let Some(ref intent) = flow.sankhara {
+            let intent_str = intent.as_ref();
+            
+            // Process significant changes based on intent
+            match intent_str {
+                "unlock_door" => {
+                    // Look for changes that might indicate door state changes
+                    for (dim, change) in &significant_changes[..significant_changes.len().min(3)] {
+                        if *dim < 10 { // First 10 dimensions represent door-related concepts
+                            if *change > 0.0 {
+                                // Positive change might indicate door becoming unlocked
+                                debug!("Predicted: Door unlocking detected in dimension {}", dim);
+                                // Update sanna to reflect door state change
+                                self.update_sanna_for_door_state(flow, false); // false = unlocked
+                            } else {
+                                // Negative change might indicate door becoming locked
+                                debug!("Predicted: Door locking detected in dimension {}", dim);
+                                self.update_sanna_for_door_state(flow, true); // true = locked
+                            }
+                        }
+                    }
+                }
+                "pick_up_key" => {
+                    // Look for changes that might indicate key pickup
+                    for (dim, change) in &significant_changes[..significant_changes.len().min(3)] {
+                        if *dim >= 10 && *dim < 20 { // Dimensions 10-19 represent key-related concepts
+                            if *change > 0.0 {
+                                debug!("Predicted: Key pickup detected in dimension {}", dim);
+                                self.update_sanna_for_key_state(flow, true); // true = has key
+                            }
+                        }
+                    }
+                }
+                "move_forward" => {
+                    // Look for changes that might indicate movement
+                    for (dim, change) in &significant_changes[..significant_changes.len().min(3)] {
+                        if *dim >= 20 && *dim < 30 { // Dimensions 20-29 represent position concepts
+                            if *change > 0.0 {
+                                debug!("Predicted: Forward movement detected in dimension {}", dim);
+                                self.update_sanna_for_position(flow, 1); // 1 = forward
+                            } else {
+                                debug!("Predicted: Backward movement detected in dimension {}", dim);
+                                self.update_sanna_for_position(flow, -1); // -1 = backward
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    // Generic state change handling
+                    debug!("Predicted: Generic state change for intent '{}'", intent_str);
+                    self.update_sanna_generic(flow, &significant_changes);
+                }
+            }
+        } else {
+            // No specific intent, process changes generically
+            self.update_sanna_generic(flow, &significant_changes);
+        }
+        
+        // Update related_eidos based on significant changes
+        self.update_related_eidos(flow, &significant_changes);
         
         Ok(())
+    }
+    
+    /// Updates the sanna field to reflect door state changes
+    fn update_sanna_for_door_state(&self, flow: &mut EpistemologicalFlow, is_locked: bool) {
+        if let Some(ref mut sanna) = flow.sanna {
+            if is_locked {
+                // Add door_locked concept
+                sanna.active_indices.insert(1); // Index 1 represents "door_locked"
+                sanna.active_indices.remove(&2); // Remove "door_unlocked" if present
+            } else {
+                // Add door_unlocked concept
+                sanna.active_indices.insert(2); // Index 2 represents "door_unlocked"
+                sanna.active_indices.remove(&1); // Remove "door_locked" if present
+            }
+        } else {
+            // Create new sanna if it doesn't exist
+            let mut new_sanna = pandora_core::ontology::DataEidos {
+                active_indices: fnv::FnvHashSet::default(),
+                dimensionality: 32,
+            };
+            if is_locked {
+                new_sanna.active_indices.insert(1);
+            } else {
+                new_sanna.active_indices.insert(2);
+            }
+            flow.sanna = Some(new_sanna);
+        }
+    }
+    
+    /// Updates the sanna field to reflect key state changes
+    fn update_sanna_for_key_state(&self, flow: &mut EpistemologicalFlow, has_key: bool) {
+        if let Some(ref mut sanna) = flow.sanna {
+            if has_key {
+                sanna.active_indices.insert(3); // Index 3 represents "has_key"
+            } else {
+                sanna.active_indices.remove(&3);
+            }
+        } else if has_key {
+            let mut new_sanna = pandora_core::ontology::DataEidos {
+                active_indices: fnv::FnvHashSet::default(),
+                dimensionality: 32,
+            };
+            new_sanna.active_indices.insert(3);
+            flow.sanna = Some(new_sanna);
+        }
+    }
+    
+    /// Updates the sanna field to reflect position changes
+    fn update_sanna_for_position(&self, flow: &mut EpistemologicalFlow, direction: i32) {
+        if let Some(ref mut sanna) = flow.sanna {
+            // Remove old position indicators
+            sanna.active_indices.remove(&4); // Index 4 represents "position_forward"
+            sanna.active_indices.remove(&5); // Index 5 represents "position_backward"
+            
+            if direction > 0 {
+                sanna.active_indices.insert(4);
+            } else if direction < 0 {
+                sanna.active_indices.insert(5);
+            }
+        } else if direction != 0 {
+            let mut new_sanna = pandora_core::ontology::DataEidos {
+                active_indices: fnv::FnvHashSet::default(),
+                dimensionality: 32,
+            };
+            if direction > 0 {
+                new_sanna.active_indices.insert(4);
+            } else {
+                new_sanna.active_indices.insert(5);
+            }
+            flow.sanna = Some(new_sanna);
+        }
+    }
+    
+    /// Updates the sanna field generically based on significant changes
+    fn update_sanna_generic(&self, flow: &mut EpistemologicalFlow, significant_changes: &[(usize, f32)]) {
+        if significant_changes.is_empty() {
+            return;
+        }
+        
+        if let Some(ref mut sanna) = flow.sanna {
+            // Add indices for significant changes
+            for (dim, _) in significant_changes.iter().take(5) { // Limit to top 5 changes
+                sanna.active_indices.insert(*dim as u32);
+            }
+        } else {
+            let mut new_sanna = pandora_core::ontology::DataEidos {
+                active_indices: fnv::FnvHashSet::default(),
+                dimensionality: 32,
+            };
+            for (dim, _) in significant_changes.iter().take(5) {
+                new_sanna.active_indices.insert(*dim as u32);
+            }
+            flow.sanna = Some(new_sanna);
+        }
+    }
+    
+    /// Updates the related_eidos field based on significant changes
+    fn update_related_eidos(&self, flow: &mut EpistemologicalFlow, significant_changes: &[(usize, f32)]) {
+        if significant_changes.is_empty() {
+            return;
+        }
+        
+        // Create related eidos for significant changes
+        let mut related_eidos = SmallVec::new();
+        
+        for (dim, change) in significant_changes.iter().take(3) { // Limit to top 3 changes
+            let mut eidos = pandora_core::ontology::DataEidos {
+                active_indices: fnv::FnvHashSet::default(),
+                dimensionality: 32,
+            };
+            
+            // Add the dimension as an active index
+            eidos.active_indices.insert(*dim as u32);
+            
+            // Add related dimensions based on change magnitude
+            if change.abs() > 0.5 {
+                // High magnitude change - add neighboring dimensions
+                eidos.active_indices.insert((*dim as u32).saturating_sub(1));
+                eidos.active_indices.insert((*dim as u32).saturating_add(1));
+            }
+            
+            related_eidos.push(eidos);
+        }
+        
+        if !related_eidos.is_empty() {
+            flow.related_eidos = Some(related_eidos);
+        }
     }
 
     /// Gets embeddings for all nodes in the CWM graph.

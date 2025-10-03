@@ -57,6 +57,8 @@ pub struct ActiveInferenceSankharaSkandha {
     pub available_actions: Vec<&'static str>,
     /// Pending causal hypothesis to test through experimentation
     pub pending_hypothesis: Option<CausalHypothesis>,
+    /// Mapping from concepts (nodes) to actions that can influence them
+    pub concept_action_mapping: std::collections::HashMap<usize, Vec<&'static str>>,
     /// Discount factor for future rewards (gamma)
     pub gamma: f64,
     /// Policy for action selection during simulation
@@ -109,15 +111,47 @@ impl ActiveInferenceSankharaSkandha {
         policy_epsilon: f64,
     ) -> Self {
         let policy = Policy::new(policy_epsilon, available_actions.clone());
+        let concept_action_mapping = Self::create_default_concept_action_mapping();
         Self {
             cwm,
             learning_engine,
             planning_horizon,
             available_actions,
             pending_hypothesis: None,
+            concept_action_mapping,
             gamma,
             policy,
         }
+    }
+    
+    /// Creates a default mapping from concepts to actions that can influence them
+    fn create_default_concept_action_mapping() -> std::collections::HashMap<usize, Vec<&'static str>> {
+        let mut mapping = std::collections::HashMap::new();
+        
+        // Door-related concepts (nodes 0-9)
+        mapping.insert(0, vec!["unlock_door", "lock_door", "check_door_status"]);
+        mapping.insert(1, vec!["unlock_door", "lock_door", "check_door_status"]);
+        mapping.insert(2, vec!["unlock_door", "lock_door", "check_door_status"]);
+        
+        // Key-related concepts (nodes 10-19)
+        mapping.insert(10, vec!["pick_up_key", "drop_key", "check_key_status"]);
+        mapping.insert(11, vec!["pick_up_key", "drop_key", "check_key_status"]);
+        mapping.insert(12, vec!["pick_up_key", "drop_key", "check_key_status"]);
+        
+        // Position-related concepts (nodes 20-29)
+        mapping.insert(20, vec!["move_forward", "move_backward", "check_position"]);
+        mapping.insert(21, vec!["move_forward", "move_backward", "check_position"]);
+        mapping.insert(22, vec!["move_forward", "move_backward", "check_position"]);
+        
+        // Switch-related concepts (nodes 30-39)
+        mapping.insert(30, vec!["turn_on_switch", "turn_off_switch", "check_switch_status"]);
+        mapping.insert(31, vec!["turn_on_switch", "turn_off_switch", "check_switch_status"]);
+        
+        // Light-related concepts (nodes 40-49)
+        mapping.insert(40, vec!["turn_on_light", "turn_off_light", "check_light_status"]);
+        mapping.insert(41, vec!["turn_on_light", "turn_off_light", "check_light_status"]);
+        
+        mapping
     }
 
     /// Set a pending causal hypothesis to test through experimentation.
@@ -280,78 +314,139 @@ impl ActiveInferenceSankharaSkandha {
     /// Proposes candidate actions based on current context
     ///
     /// This method analyzes the current flow and generates relevant actions.
-    /// In a full implementation, this would use more sophisticated reasoning
-    /// based on the current state and available actions.
+    /// In experiment mode, it focuses exclusively on actions that can test the hypothesis.
     fn propose_candidate_actions(&self, flow: &EpistemologicalFlow) -> Vec<&'static str> {
         let mut candidates = Vec::new();
         
-        // If we have a pending hypothesis, prioritize experimental actions
+        // **EXPERIMENT MODE**: If we have a pending hypothesis, focus exclusively on testing it
         if let Some(ref hypothesis) = self.pending_hypothesis {
             info!("ActiveInference: Entering experiment mode for hypothesis: {:?}", hypothesis);
             
-            // **EXPERIMENT MODE**: Generate actions specifically designed to test the hypothesis
-            // The goal is to manipulate the 'from' node to observe the effect on the 'to' node
+            // **CORE EXPERIMENTAL LOGIC**: Generate actions that manipulate the 'from' node
+            // to observe the effect on the 'to' node
             
-            // 1. Actions to manipulate the cause variable (from_node)
-            candidates.push("MANIPULATE_CAUSE_VARIABLE");
-            candidates.push("ACTIVATE_CAUSE_NODE");
-            candidates.push("DEACTIVATE_CAUSE_NODE");
-            candidates.push("MODIFY_CAUSE_INTENSITY");
+            // 1. Get actions that can influence the cause variable (from_node)
+            if let Some(actions) = self.concept_action_mapping.get(&hypothesis.from_node_index) {
+                info!("ActiveInference: Found {} actions for cause node {}: {:?}", 
+                      actions.len(), hypothesis.from_node_index, actions);
+                candidates.extend(actions.iter().cloned());
+            } else {
+                // Fallback: generate generic manipulation actions
+                candidates.push("MANIPULATE_CAUSE_VARIABLE");
+                candidates.push("ACTIVATE_CAUSE_NODE");
+                candidates.push("DEACTIVATE_CAUSE_NODE");
+                info!("ActiveInference: No specific actions found for cause node {}, using fallbacks", 
+                      hypothesis.from_node_index);
+            }
             
-            // 2. Actions to observe the effect variable (to_node)
-            candidates.push("OBSERVE_EFFECT_VARIABLE");
-            candidates.push("MEASURE_EFFECT_MAGNITUDE");
-            candidates.push("MONITOR_EFFECT_TIMING");
+            // 2. Add observation actions for the effect variable (to_node)
+            if let Some(actions) = self.concept_action_mapping.get(&hypothesis.to_node_index) {
+                // Filter for observation/measurement actions
+                let observation_actions: Vec<&'static str> = actions.iter()
+                    .filter(|action| action.contains("check") || action.contains("observe") || action.contains("measure"))
+                    .cloned()
+                    .collect();
+                if !observation_actions.is_empty() {
+                    candidates.extend(observation_actions);
+                }
+            }
             
-            // 3. Actions based on the specific edge type
+            // 3. Add specific experimental actions based on edge type
             match hypothesis.edge_type {
                 CausalEdgeType::Direct => {
                     candidates.push("TEST_DIRECT_CAUSALITY");
                     candidates.push("ISOLATE_DIRECT_EFFECT");
+                    // For direct causality, we want to test immediate cause-effect relationship
+                    if let Some(actions) = self.concept_action_mapping.get(&hypothesis.from_node_index) {
+                        // Add both positive and negative manipulation actions
+                        for action in actions {
+                            if action.contains("on") || action.contains("activate") {
+                                candidates.push(action);
+                            }
+                        }
+                    }
                 }
                 CausalEdgeType::Indirect => {
                     candidates.push("TEST_INDIRECT_CAUSALITY");
                     candidates.push("EXPLORE_MEDIATING_FACTORS");
                     candidates.push("TRACE_CAUSAL_CHAIN");
+                    // For indirect causality, we need to test the mediating path
+                    candidates.push("IDENTIFY_MEDIATORS");
+                    candidates.push("TEST_MEDIATION_PATH");
                 }
                 CausalEdgeType::Conditional => {
                     candidates.push("TEST_CONDITIONAL_CAUSALITY");
                     candidates.push("VARY_CONDITIONS");
                     candidates.push("TEST_UNDER_DIFFERENT_CONDITIONS");
+                    // For conditional causality, we need to test under different conditions
+                    candidates.push("ESTABLISH_CONDITIONS");
+                    candidates.push("VARY_CONTEXT");
                 }
                 CausalEdgeType::Inhibitory => {
                     candidates.push("TEST_INHIBITORY_CAUSALITY");
                     candidates.push("BLOCK_INHIBITOR");
                     candidates.push("REMOVE_INHIBITION");
+                    // For inhibitory causality, we test by removing the inhibitor
+                    if let Some(actions) = self.concept_action_mapping.get(&hypothesis.from_node_index) {
+                        for action in actions {
+                            if action.contains("off") || action.contains("deactivate") || action.contains("remove") {
+                                candidates.push(action);
+                            }
+                        }
+                    }
                 }
             }
             
-            // 4. Actions based on hypothesis strength and confidence
-            if hypothesis.confidence > 0.7 {
-                candidates.push("CONDUCT_DEFINITIVE_EXPERIMENT");
-                candidates.push("REPLICATE_HIGH_CONFIDENCE_RESULT");
-            } else if hypothesis.confidence > 0.4 {
-                candidates.push("CONDUCT_EXPLORATORY_EXPERIMENT");
-                candidates.push("GATHER_MORE_EVIDENCE");
-            } else {
-                candidates.push("CONDUCT_PRELIMINARY_TEST");
-                candidates.push("COLLECT_BASELINE_DATA");
-            }
-            
-            // 5. Control actions to ensure clean experiments
+            // 4. Add control actions to ensure clean experiments
             candidates.push("ESTABLISH_BASELINE");
             candidates.push("CONTROL_FOR_CONFOUNDING_VARIABLES");
             candidates.push("MEASURE_BEFORE_AND_AFTER");
+            candidates.push("RECORD_EXPERIMENTAL_CONTEXT");
             
-            // 6. Specific experimental protocols
-            if hypothesis.strength.abs() > 0.5 {
-                candidates.push("CONDUCT_HIGH_IMPACT_EXPERIMENT");
+            // 5. Add actions based on hypothesis confidence and strength
+            if hypothesis.confidence > 0.7 {
+                candidates.push("CONDUCT_DEFINITIVE_EXPERIMENT");
+                candidates.push("REPLICATE_HIGH_CONFIDENCE_RESULT");
+                // High confidence: be more aggressive in testing
+                if let Some(actions) = self.concept_action_mapping.get(&hypothesis.from_node_index) {
+                    candidates.extend(actions.iter().cloned());
+                }
+            } else if hypothesis.confidence > 0.4 {
+                candidates.push("CONDUCT_EXPLORATORY_EXPERIMENT");
+                candidates.push("GATHER_MORE_EVIDENCE");
+                candidates.push("INCREMENTAL_TESTING");
             } else {
-                candidates.push("CONDUCT_SENSITIVE_EXPERIMENT");
+                candidates.push("CONDUCT_PRELIMINARY_TEST");
+                candidates.push("COLLECT_BASELINE_DATA");
+                candidates.push("GENTLE_MANIPULATION");
             }
             
-            info!("ActiveInference: Generated {} experimental actions", candidates.len());
+            // 6. Add strength-based experimental protocols
+            if hypothesis.strength.abs() > 0.5 {
+                candidates.push("CONDUCT_HIGH_IMPACT_EXPERIMENT");
+                candidates.push("MAXIMUM_MANIPULATION");
+            } else {
+                candidates.push("CONDUCT_SENSITIVE_EXPERIMENT");
+                candidates.push("GRADUAL_MANIPULATION");
+            }
+            
+            // 7. Add verification actions
+            candidates.push("VERIFY_HYPOTHESIS");
+            candidates.push("MEASURE_EFFECT_MAGNITUDE");
+            candidates.push("MONITOR_EFFECT_TIMING");
+            candidates.push("ASSESS_CAUSAL_STRENGTH");
+            
+            info!("ActiveInference: Generated {} experimental actions for hypothesis testing", candidates.len());
+            
+            // **CRITICAL**: In experiment mode, we ONLY return experimental actions
+            // Remove duplicates and return only experiment-focused actions
+            candidates.sort();
+            candidates.dedup();
+            return candidates;
         }
+        
+        // **NORMAL MODE**: If no hypothesis pending, proceed with normal goal-oriented action proposal
+        info!("ActiveInference: Normal mode - proposing goal-oriented actions");
         
         // Add all available actions as candidates
         candidates.extend(self.available_actions.iter().cloned());

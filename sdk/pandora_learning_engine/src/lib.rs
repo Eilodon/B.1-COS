@@ -9,12 +9,17 @@ pub mod experience_buffer;
 pub mod value_estimator;
 pub mod policy;
 pub mod active_inference_skandha;
+pub mod integration_test;
+#[cfg(test)]
+mod active_inference_planning_test;
+#[cfg(test)]
+mod non_attachment_learning_test;
 
 pub use skandha_integration::SkandhaProcessorWithLearning;
 pub use transcendental_processor::TranscendentalProcessor;
 pub use experience_buffer::{ExperienceBuffer, ExperienceSample, PriorityExperienceBuffer};
-pub use value_estimator::{ExponentialMovingAverageEstimator, MeanRewardEstimator, ValueEstimator};
-pub use policy::{EpsilonGreedyPolicy, Policy, Action};
+pub use value_estimator::{ExponentialMovingAverageEstimator, MeanRewardEstimator, ValueEstimator, QValueEstimator, NeuralQValueEstimator};
+pub use policy::{EpsilonGreedyPolicy, Policy, Action, ValueDrivenPolicy};
 pub use active_inference_skandha::ActiveInferenceSankharaSkandha;
 
 /// Learning Engine responsible for calculating rewards and guiding the learning process.

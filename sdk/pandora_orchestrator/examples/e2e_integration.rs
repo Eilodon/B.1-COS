@@ -1,202 +1,229 @@
-use pandora_core::fep_cell::SkandhaProcessor;
-use pandora_core::skandha_implementations::basic_skandhas::*;
-use pandora_learning_engine::{LearningEngine, ExponentialMovingAverageEstimator, ExperienceBuffer, Policy, EpsilonGreedyPolicy};
-use pandora_learning_engine::world_models::SimpleWorldModel;
-use pandora_mcg::enhanced_mcg::{EnhancedMetaCognitiveGovernor, SystemMetrics, ResourceMetrics, ActionTrigger as EnhancedTrigger};
-use pandora_mcg::ActionTrigger as RootTrigger;
-use pandora_sie::SelfImprovementEngine;
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
+//! 🚀 Pandora Genesis SDK - End-to-End Integration Example
+//!
+//! This example demonstrates the complete cognitive system in action.
 
-#[cfg(feature = "ml")]
-use pandora_cwm::ml::predictor::WorldModelPredictor;
-#[cfg(feature = "ml")]
-use pandora_cwm::nn::uq_models::ProbabilisticOutput;
-#[cfg(feature = "ml")]
-use ndarray::Array2;
-#[cfg(any(feature = "ml", feature = "prometheus_export"))]
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use bytes::Bytes;
 
-#[cfg(feature = "prometheus_export")]
-use metrics::{counter, histogram};
+#[cfg(feature = "ml")]
+use pandora_core::ontology::EpistemologicalFlow;
+#[cfg(feature = "ml")]
+use pandora_cwm::model::InterdependentCausalModel;
+#[cfg(feature = "ml")]
+use pandora_cwm::gnn::types::GnnConfig;
+#[cfg(feature = "ml")]
+use pandora_learning_engine::{LearningEngine, ActiveInferenceSankharaSkandha};
+#[cfg(feature = "ml")]
+use pandora_mcg::EnhancedMetaCognitiveGovernor;
+#[cfg(feature = "ml")]
+use pandora_orchestrator::AutomaticScientistOrchestrator;
+#[cfg(feature = "ml")]
+use pandora_core::interfaces::skandhas::SankharaSkandha;
 
-// Note: Using direct metrics macros instead of lazy_static for simplicity
-
-#[tokio::main(flavor = "multi_thread")] 
-async fn main() {
-    let subscriber = FmtSubscriber::builder().with_max_level(Level::INFO).finish();
-    let _ = tracing::subscriber::set_global_default(subscriber);
-
-    info!("E2E: Wiring Skandha → LearningEngine → MCG → SIE");
-
-    // 1) Core pipeline
-    let processor = SkandhaProcessor::new(
-        Box::new(BasicRupaSkandha),
-        Box::new(BasicVedanaSkandha),
-        Box::new(BasicSannaSkandha),
-        Box::new(BasicSankharaSkandha),
-        Box::new(BasicVinnanaSkandha),
-    );
-
-    // 2) Learning engine
-    let le = LearningEngine::new(0.7, 0.3);
-    let current_model = SimpleWorldModel::new("baseline".into(), 5.0, 0.8);
-    let new_model = current_model.evolve(3.5, 0.85);
-    let mut ema = ExponentialMovingAverageEstimator::new(0.5);
-    let mut buffer = ExperienceBuffer::with_capacity(32);
-    let mut policy = EpsilonGreedyPolicy::default();
-
-    // 3) Meta-cognitive governor + SIE
-    let mut mcg = EnhancedMetaCognitiveGovernor::new();
-    let sie = SelfImprovementEngine::new();
-
-    // Simulate one end-to-end cycle
-    #[cfg(feature = "prometheus_export")]
-    let cycle_start = Instant::now();
+/// Main integration example
+#[cfg(feature = "ml")]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("🚀 Pandora Genesis SDK - End-to-End Integration Example");
+    println!("========================================================");
     
-    let flow_event = b"error: service latency spike".to_vec();
-    let flow = processor.run_epistemological_cycle(flow_event).expect("reborn event");
-    let flow = pandora_core::ontology::EpistemologicalFlow::from_bytes(bytes::Bytes::from(flow));
-
-    // Learning step
-    let (reward, advantage) = le.learn_single_step(&current_model, &new_model, &flow, &mut ema, &mut buffer);
-    info!(?reward, %advantage, "LE: reward + advantage");
+    // Initialize system
+    let system = initialize_system().await?;
     
-    #[cfg(feature = "prometheus_export")]
-    {
-        let total_reward = le.get_total_weighted_reward(&reward);
-        histogram!("learning_rewards").record(total_reward);
-    }
-
-    // MCG monitoring (mocked system metrics)
-    let metrics = SystemMetrics {
-        uncertainty: 0.8,
-        compression_reward: reward.compression_reward,
-        novelty_score: 0.65,
-        performance: 0.55,
-        resource_usage: ResourceMetrics { cpu_usage: 0.45, memory_usage: 0.50, latency_ms: 12.0 },
-    };
-    let decision = mcg.monitor_comprehensive(&metrics);
-    info!(?decision, "MCG: decision");
+    // Run demonstrations
+    run_automatic_scientist_demo(&system).await?;
+    run_active_inference_demo(&system).await?;
+    run_performance_analysis(&system).await?;
     
-    #[cfg(feature = "prometheus_export")]
-    {
-        let decision_type = match &decision.decision {
-            EnhancedTrigger::TriggerSelfImprovementLevel1 { .. } => "level1",
-            EnhancedTrigger::TriggerSelfImprovementLevel2 { .. } => "level2", 
-            EnhancedTrigger::TriggerSelfImprovementLevel3 { .. } => "level3",
-            EnhancedTrigger::RequestMoreInformation { .. } => "request_info",
-            EnhancedTrigger::OptimizeResources { .. } => "optimize",
-            EnhancedTrigger::NoAction => "no_action",
-        };
-        counter!("mcg_decisions_total", "decision_type" => decision_type).increment(1);
-    }
-
-    // Route decision to SIE
-    let root_trigger: Option<RootTrigger> = match &decision.decision {
-        EnhancedTrigger::TriggerSelfImprovementLevel1 { reason, target_component, .. } =>
-            Some(RootTrigger::TriggerSelfImprovementLevel1 { reason: reason.clone(), target_component: target_component.clone() }),
-        EnhancedTrigger::TriggerSelfImprovementLevel2 { reason, target_component, .. } =>
-            Some(RootTrigger::TriggerSelfImprovementLevel2 { reason: reason.clone(), target_component: target_component.clone() }),
-        EnhancedTrigger::TriggerSelfImprovementLevel3 { reason, target_component, .. } =>
-            Some(RootTrigger::TriggerSelfImprovementLevel3 { reason: reason.clone(), target_component: target_component.clone() }),
-        EnhancedTrigger::RequestMoreInformation { .. }
-        | EnhancedTrigger::OptimizeResources { .. }
-        | EnhancedTrigger::ProposeCausalHypothesis { .. }
-        | EnhancedTrigger::NoAction => None,
-    };
-
-    if let Some(rt) = root_trigger {
-        let action = sie.execute(&rt).await.expect("sie action");
-        info!(%action.description, "SIE: executed");
-        
-        #[cfg(feature = "prometheus_export")]
-        {
-            let strategy = match rt {
-                RootTrigger::TriggerSelfImprovementLevel1 { .. } => "refinement",
-                RootTrigger::TriggerSelfImprovementLevel2 { .. } => "architecture_search",
-                RootTrigger::TriggerSelfImprovementLevel3 { .. } => "code_generation",
-                RootTrigger::TriggerSelfImprovementLevel4 { .. } => "meta_learning",
-                _ => "unknown",
-            };
-            counter!("sie_actions_total", "strategy" => strategy).increment(1);
-        }
-    }
-
-    // Policy update (no-op)
-    policy.update(&flow, advantage);
-
-    // GNN ITR-NN Integration Demo
-    #[cfg(feature = "ml")]
-    {
-        info!("--- GNN ITR-NN Integration Demo ---");
-        let gnn_start = Instant::now();
-        
-        // Mock graph data: 3 nodes, 2 features each
-        let node_features = Array2::from_shape_vec((3, 2), vec![1.0, 0.5, 0.8, 0.3, 0.2, 0.9]).unwrap();
-        let edge_indices = vec![(0, 1), (1, 2), (2, 0)]; // Triangle graph
-        
-        info!("GNN: Processing graph with {} nodes, {} edges", node_features.nrows(), edge_indices.len());
-        
-        // Simulate GNN processing (message passing)
-        let mut aggregated_features = vec![0.0; node_features.ncols()];
-        for (i, j) in edge_indices {
-            for k in 0..node_features.ncols() {
-                aggregated_features[k] += (node_features[[i, k]] + node_features[[j, k]]) / 2.0;
-            }
-        }
-        
-        let _gnn_duration = gnn_start.elapsed().as_secs_f64();
-        info!("GNN: Aggregated features: {:?}", aggregated_features);
-        
-        #[cfg(feature = "prometheus_export")]
-        histogram!("gnn_processing_duration_seconds").record(_gnn_duration);
-    }
-
-    // UQ Predictor Demo
-    #[cfg(feature = "ml")]
-    {
-        info!("--- UQ Predictor Demo ---");
-        
-        // Create mock training data
-        let x_train = Array2::from_shape_vec((10, 2), (0..20).map(|i| (i as f64) * 0.1).collect()).unwrap();
-        let y_train: Vec<i32> = (0..10).map(|i| if i % 2 == 0 { 1 } else { 0 }).collect();
-        
-        // Convert to flat vectors for predictor API
-        let x_flat: Vec<f64> = x_train.iter().cloned().collect();
-        let mut predictor = WorldModelPredictor::new(2); // 2 features
-        predictor.train(x_flat, 10, 2, y_train).expect("Training failed");
-        
-        // Make prediction with uncertainty
-        let x_test = Array2::from_shape_vec((1, 2), vec![0.5, 0.7]).unwrap();
-        let x_test_flat: Vec<f64> = x_test.iter().cloned().collect();
-        let prediction = predictor.predict(x_test_flat, 1, 2).expect("Prediction failed");
-        
-        info!("UQ Predictor: Prediction = {:?}", prediction);
-        
-        // Create probabilistic output with uncertainty
-        let uq_output = ProbabilisticOutput::new(0.15); // High epistemic uncertainty
-        
-        let variance_scalar: f32 = uq_output.variance.to_scalar().unwrap_or(0.0);
-        let confidence_level = if variance_scalar < 0.1 { "high" } 
-                              else if variance_scalar < 0.3 { "medium" } 
-                              else { "low" };
-        
-        info!("UQ Output: Variance = {:.3}, Confidence = {}", 
-              variance_scalar, confidence_level);
-        
-        #[cfg(feature = "prometheus_export")]
-        counter!("uq_predictions_total", "confidence_level" => confidence_level).increment(1);
-    }
-
-    #[cfg(feature = "prometheus_export")]
-    {
-        let cycle_duration = cycle_start.elapsed().as_secs_f64();
-        histogram!("e2e_cycle_duration_seconds").record(cycle_duration);
-        counter!("e2e_cycles_total").increment(1);
-    }
-
-    info!("E2E: Completed one integrated cycle with GNN + UQ.");
+    println!("\n🎉 Integration example completed successfully!");
+    Ok(())
 }
 
+/// Initialize the cognitive system
+#[cfg(feature = "ml")]
+async fn initialize_system() -> Result<CognitiveSystem, Box<dyn std::error::Error>> {
+    println!("\n🔧 Initializing cognitive system...");
+    
+    let config = GnnConfig::new(128, 256, 5);
+    let cwm = Arc::new(Mutex::new(InterdependentCausalModel::new(config)?));
+    
+    let learning_engine = Arc::new(LearningEngine::new(0.8, 0.2));
+    
+    let available_actions = vec![
+        "explore", "exploit", "unlock_door", "pick_up_key", "move_forward",
+        "turn_on_switch", "turn_off_switch", "observe", "plan", "wait"
+    ];
+    
+    let sankhara = Arc::new(Mutex::new(ActiveInferenceSankharaSkandha::new(
+        cwm.clone(),
+        learning_engine.clone(),
+        5,
+        available_actions,
+        0.9,
+        0.15,
+    )));
+    
+    let mcg = Arc::new(Mutex::new(EnhancedMetaCognitiveGovernor::new()));
+    
+    let orchestrator = AutomaticScientistOrchestrator::new(
+        cwm.clone(),
+        learning_engine.clone(),
+        sankhara.clone(),
+        mcg.clone(),
+    );
+    
+    println!("   ✅ All components initialized");
+    
+    Ok(CognitiveSystem {
+        cwm,
+        learning_engine,
+        sankhara,
+        mcg,
+        orchestrator,
+    })
+}
 
+/// Run Automatic Scientist demonstration
+#[cfg(feature = "ml")]
+async fn run_automatic_scientist_demo(system: &CognitiveSystem) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n🔬 Running Automatic Scientist Demo");
+    println!("===================================");
+    
+    let mut flow = EpistemologicalFlow::from_bytes(Bytes::from_static(b"demo"));
+    flow.set_static_intent("discover_causal_relationships");
+    
+    println!("🎯 Scenario: Discover hidden causal relationships");
+    
+    for cycle in 1..=10 {
+        println!("🔄 Discovery Cycle {}: Testing relationships", cycle);
+        
+        let experimental_condition = cycle % 4;
+        match experimental_condition {
+            0 => flow.set_static_intent("activate_system_a"),
+            1 => flow.set_static_intent("deactivate_system_a"),
+            2 => flow.set_static_intent("enable_system_b"),
+            _ => flow.set_static_intent("disable_system_b"),
+        }
+        
+        system.orchestrator.run_cycle(&mut flow).await?;
+        
+        if cycle % 5 == 0 {
+            println!("   📊 Progress check: Analyzing patterns...");
+        }
+    }
+    
+    println!("✅ Automatic Scientist demo completed");
+    Ok(())
+}
+
+/// Run Active Inference demonstration
+#[cfg(feature = "ml")]
+async fn run_active_inference_demo(system: &CognitiveSystem) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n🧠 Running Active Inference Planning Demo");
+    println!("=========================================");
+    
+    let mut flow = EpistemologicalFlow::from_bytes(Bytes::from_static(b"planning_demo"));
+    
+    println!("🎯 Scenario: Multi-step planning");
+    println!("   - Get key from room A to open box in room C");
+    println!("   - Ignore distraction in room B");
+    
+    let mut current_room = "start";
+    let mut has_key = false;
+    let mut box_opened = false;
+    
+    for step in 1..=10 {
+        println!("🔄 Step {}: Room = {}, Has key = {}, Box opened = {}", 
+                 step, current_room, has_key, box_opened);
+        
+        system.sankhara.lock().unwrap().form_intent(&mut flow);
+        
+        let planned_action = flow.sankhara.as_ref()
+            .map(|s| s.as_ref())
+            .unwrap_or("wait");
+        
+        println!("   Planned action: {}", planned_action);
+        
+        // Simulate action execution
+        match planned_action {
+            "move_to_room_a" => {
+                current_room = "room_a";
+                println!("   ✅ Moved to room A");
+            }
+            "pick_up_key" => {
+                if current_room == "room_a" {
+                    has_key = true;
+                    println!("   ✅ Picked up key");
+                }
+            }
+            "move_to_room_c" => {
+                current_room = "room_c";
+                println!("   ✅ Moved to room C");
+            }
+            "open_box" => {
+                if current_room == "room_c" && has_key {
+                    box_opened = true;
+                    println!("   🎉 Opened box!");
+                }
+            }
+            _ => println!("   ⏸️  Action: {}", planned_action),
+        }
+        
+        if box_opened {
+            println!("   🎯 GOAL ACHIEVED!");
+            break;
+        }
+    }
+    
+    println!("✅ Active Inference demo completed");
+    Ok(())
+}
+
+/// Run Performance Analysis
+#[cfg(feature = "ml")]
+async fn run_performance_analysis(system: &CognitiveSystem) -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n⚡ Running Performance Analysis");
+    println!("===============================");
+    
+    let mut flow = EpistemologicalFlow::from_bytes(Bytes::from_static(b"perf_test"));
+    
+    let start_time = Instant::now();
+    
+    for i in 1..=1000 {
+        system.sankhara.lock().unwrap().form_intent(&mut flow);
+        
+        if i % 200 == 0 {
+            let elapsed = start_time.elapsed();
+            let avg_time = elapsed / i;
+            println!("   Processed {} cycles, average: {:?}", i, avg_time);
+        }
+    }
+    
+    let total_time = start_time.elapsed();
+    let avg_time_per_cycle = total_time / 1000;
+    
+    println!("✅ Performance results:");
+    println!("   Total time: {:?}", total_time);
+    println!("   Average per cycle: {:?}", avg_time_per_cycle);
+    println!("   Cycles per second: {:.2}", 1000.0 / total_time.as_secs_f64());
+    
+    Ok(())
+}
+
+/// Cognitive system structure
+#[cfg(feature = "ml")]
+struct CognitiveSystem {
+    cwm: Arc<Mutex<InterdependentCausalModel>>,
+    learning_engine: Arc<LearningEngine>,
+    sankhara: Arc<Mutex<ActiveInferenceSankharaSkandha>>,
+    mcg: Arc<Mutex<EnhancedMetaCognitiveGovernor>>,
+    orchestrator: AutomaticScientistOrchestrator,
+}
+
+/// Fallback for when ML features are not enabled
+#[cfg(not(feature = "ml"))]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("❌ ML features not enabled. Please run with --features ml");
+    println!("Example: cargo run --example e2e_integration --features ml");
+    Ok(())
+}

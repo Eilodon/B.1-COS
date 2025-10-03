@@ -11,7 +11,9 @@ pub mod simple_api;
 pub mod static_skills;
 pub mod automatic_scientist_orchestrator;
 #[cfg(feature = "ml")]
-pub use automatic_scientist_orchestrator::{AutomaticScientistOrchestrator, ExperimentState, ExperimentResult};
+pub use automatic_scientist_orchestrator::{AutomaticScientistOrchestrator, ExperimentState, ExperimentResult, ScientistState};
+#[cfg(feature = "ml")]
+mod automatic_scientist_test;
 #[cfg(feature = "prometheus_export")]
 use once_cell::sync::Lazy;
 #[cfg(feature = "prometheus_export")]

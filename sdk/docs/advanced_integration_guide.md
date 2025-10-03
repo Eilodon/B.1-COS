@@ -11,6 +11,8 @@ This guide demonstrates advanced integration patterns in the Pandora Genesis SDK
 - **Learning Engine**: Dual intrinsic reward calculation and experience management
 - **Meta-Cognitive Governor**: System monitoring and decision making
 - **Self-Improvement Engine**: Automated system enhancement strategies
+- **Active Inference Planning**: Multi-step planning with value-driven policies
+- **Automatic Scientist**: Autonomous causal discovery and knowledge crystallization
 
 ### 2. **Machine Learning Integration**
 - **GNN Processing**: Graph Neural Network with message passing

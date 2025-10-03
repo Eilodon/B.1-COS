@@ -6,6 +6,7 @@ license = "Apache-2.0"
 
 [lib]
 crate-type = ["cdylib"]
+name = "pandora_uniffi"
 
 [dependencies]
 pandora_core = { path = "../pandora_core" }

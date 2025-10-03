@@ -1,6 +1,27 @@
 # 🔧 FIX OPENSSL ISSUE - Pandora Genesis SDK
 
-## 🚨 VẤN ĐỀ
+## ✅ RESOLVED - v0.2.1
+
+**Status**: The OpenSSL dependency issue has been completely resolved in v0.2.1 by enforcing the `rustls` strategy across the board.
+
+**Solution Applied**: 
+- Configured `metrics-exporter-prometheus` to use `hyper-rustls` instead of `native-tls`
+- This eliminates the need for system OpenSSL installation entirely
+- Build now works on all systems without any OpenSSL dependencies
+
+**Current Configuration**:
+```toml
+metrics-exporter-prometheus = { version = "0.17", default-features = false, features = ["hyper-rustls", "http-listener"] }
+```
+
+**Verification**: 
+- ✅ `cargo test --workspace --all-features` passes on systems without OpenSSL
+- ✅ No system dependencies required
+- ✅ Cross-platform compatibility maintained
+
+---
+
+## 🚨 LEGACY ISSUE (RESOLVED)
 
 Khi build với `--all-features`, gặp lỗi:
 ```

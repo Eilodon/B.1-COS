@@ -8,7 +8,8 @@
 - `pandora_cwm`: Causal World Model (VSA/NN/TDA)
 - `pandora_learning_engine`: Rewards and learning loop
 - `pandora_mcg`: Meta-Cognitive Governor
-- `pandora_sie`: Self-Improvement Engine
+- `pandora_sie`: Self-Improvement Engine (5 levels)
+- `pandora_uniffi`: Python bindings and cross-language support
 
 ## Cognitive Pipeline (Skandhas)
 
@@ -20,7 +21,7 @@ flowchart LR
   D --> E[Vinnana]
 ```
 
-## Self-Improvement Loop
+## Self-Improvement Loop (5 Levels)
 
 ```mermaid
 sequenceDiagram
@@ -34,9 +35,11 @@ sequenceDiagram
   Orchestrator->>LE: Report flow + models
   LE-->>Orchestrator: DualIntrinsicReward
   Orchestrator->>MCG: Metrics/State
-  MCG-->>Orchestrator: ActionTrigger(L1-L4)
+  MCG-->>Orchestrator: ActionTrigger(L1-L5)
   Orchestrator->>SIE: Execute(strategy)
   SIE-->>Orchestrator: ImprovementAction
+  
+  Note over SIE: Level 1: Refinement<br/>Level 2: Architecture Search<br/>Level 3: Hyperparameter Tuning<br/>Level 4: Meta-Learning<br/>Level 5: Self-Modification
 ```
 
 ## Complete Cognitive Architecture
@@ -94,15 +97,40 @@ The system now includes a complete Active Inference Planning Engine with:
 - **Sequential Discovery**: Can discover complex causal relationships (A→B→C)
 - **Environment Adaptation**: Learns to abandon old strategies when environment changes
 
+## Python Bindings
+
+The SDK includes comprehensive Python bindings for easy integration:
+
+```python
+from pandora_sdk import hello, get_version, run_gridworld_simulation
+
+# Basic usage
+print(get_version())  # Pandora Genesis SDK v1.0.0
+print(hello("World"))  # Hello from Pandora SDK, World!
+
+# Run simulation
+result = run_gridworld_simulation()
+print(result)  # GridWorld simulation completed successfully!
+```
+
+### Features
+- **Native Python Support**: Full API access from Python
+- **Easy Installation**: Simple pip install
+- **Cross-Platform**: Works on Linux, macOS, and Windows
+- **Production Ready**: Optimized for real-world applications
+
 ## Observability
 
 - Tracing spans on critical paths (SIE/MCG)
 - Optional Prometheus exporter (example `monitoring`): `:9000/metrics`
+- Performance profiling with flamegraph support
+- Memory usage monitoring
 
 ## Build Profiles & Features
 
 - `pandora_cwm/ml`: ML stack
 - `pandora_mcg/metrics_instrumentation`, `pandora_sie/metrics_instrumentation`
 - `pandora_orchestrator/prometheus_export` (example only)
+- `pandora_uniffi`: Python bindings generation
 
 

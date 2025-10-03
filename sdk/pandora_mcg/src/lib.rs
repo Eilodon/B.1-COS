@@ -9,6 +9,9 @@ use metrics::{counter, histogram};
 pub mod enhanced_mcg;
 pub mod causal_discovery;
 
+#[cfg(test)]
+mod advanced_scenarios_tests;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ActionTrigger {
     TriggerSelfImprovementLevel1 {

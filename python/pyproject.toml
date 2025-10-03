@@ -1,0 +1,40 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "pandora-sdk"
+version = "1.0.0"
+description = "Pandora Genesis SDK - Advanced AI Cognitive Architecture"
+authors = [
+    {name = "Pandora Team", email = "team@pandora.ai"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/pandora-ai/pandora-genesis-sdk"
+Documentation = "https://pandora-ai.github.io/pandora-genesis-sdk"
+Repository = "https://github.com/pandora-ai/pandora-genesis-sdk.git"
+Issues = "https://github.com/pandora-ai/pandora-genesis-sdk/issues"
+
+[dependencies]
+
+[tool.maturin]
+python-source = "pandora_sdk"
+module-name = "pandora_sdk"
+manifest-path = "../sdk/pandora_uniffi/Cargo.toml"

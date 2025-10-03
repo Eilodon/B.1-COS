@@ -10,3 +10,11 @@ Cargo.lock
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Local Python venv and build artifacts
+python/venv/
+profiles/
+**/target/
+**/.maturin/
+**/__pycache__/
+*.pyc

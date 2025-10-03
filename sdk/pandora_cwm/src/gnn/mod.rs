@@ -147,61 +147,7 @@ impl GraphNeuralNetwork {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use types::CausalEdgeKind;
+mod tests;
 
-    #[test]
-    fn test_gnn_creation() {
-        let config = GnnConfig::new(64, 128, 3);
-        let gnn = GraphNeuralNetwork::new(config);
-        assert!(gnn.is_ok());
-        
-        let gnn = gnn.unwrap();
-        assert_eq!(gnn.node_count(), 0);
-        assert_eq!(gnn.edge_count(), 0);
-    }
-
-    #[test]
-    fn test_add_node() {
-        let config = GnnConfig::new(64, 128, 3);
-        let mut gnn = GraphNeuralNetwork::new(config).unwrap();
-        
-        let features = vec![1.0, 2.0, 3.0];
-        let node_idx = gnn.add_node(features);
-        
-        assert_eq!(gnn.node_count(), 1);
-        assert_eq!(gnn.graph[node_idx], vec![1.0, 2.0, 3.0]);
-    }
-
-    #[test]
-    fn test_add_edge() {
-        let config = GnnConfig::new(64, 128, 3);
-        let mut gnn = GraphNeuralNetwork::new(config).unwrap();
-        
-        let node1 = gnn.add_node(vec![1.0, 2.0]);
-        let node2 = gnn.add_node(vec![3.0, 4.0]);
-        
-        let edge = CausalEdge::new(CausalEdgeKind::Cause, 0.9);
-        let edge_idx = gnn.add_edge(node1, node2, edge);
-        
-        assert!(edge_idx.is_ok());
-        assert_eq!(gnn.edge_count(), 1);
-    }
-
-    #[test]
-    fn test_add_edge_invalid_nodes() {
-        let config = GnnConfig::new(64, 128, 3);
-        let mut gnn = GraphNeuralNetwork::new(config).unwrap();
-        
-        let node1 = gnn.add_node(vec![1.0, 2.0]);
-        let invalid_node = NodeIndex::new(999); // Non-existent node
-        
-        let edge = CausalEdge::new(CausalEdgeKind::Cause, 0.9);
-        let result = gnn.add_edge(node1, invalid_node, edge);
-        
-        assert!(result.is_err());
-    }
-}
 
 

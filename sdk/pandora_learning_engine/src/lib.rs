@@ -8,12 +8,14 @@ pub mod world_models;
 pub mod experience_buffer;
 pub mod value_estimator;
 pub mod policy;
+pub mod active_inference_skandha;
 
 pub use skandha_integration::SkandhaProcessorWithLearning;
 pub use transcendental_processor::TranscendentalProcessor;
 pub use experience_buffer::{ExperienceBuffer, ExperienceSample, PriorityExperienceBuffer};
 pub use value_estimator::{ExponentialMovingAverageEstimator, MeanRewardEstimator, ValueEstimator};
 pub use policy::{EpsilonGreedyPolicy, Policy, Action};
+pub use active_inference_skandha::ActiveInferenceSankharaSkandha;
 
 /// Learning Engine responsible for calculating rewards and guiding the learning process.
 ///

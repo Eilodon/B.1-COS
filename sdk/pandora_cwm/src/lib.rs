@@ -8,6 +8,7 @@ pub mod interdependent_repr;
 pub mod nn;
 pub mod vsa;
 pub mod gnn;
+pub mod model;
 
 #[cfg(feature = "ml")]
 pub mod ml;

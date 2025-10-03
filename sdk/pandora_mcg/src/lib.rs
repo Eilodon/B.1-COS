@@ -7,8 +7,9 @@ use tracing::{info, instrument};
 use metrics::{counter, histogram};
 
 pub mod enhanced_mcg;
+pub mod causal_discovery;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ActionTrigger {
     TriggerSelfImprovementLevel1 {
         reason: String,
@@ -28,6 +29,9 @@ pub enum ActionTrigger {
     },
     RequestMoreInformation {
         reason: String,
+    },
+    ProposeCausalHypothesis {
+        hypothesis: causal_discovery::CausalHypothesis,
     },
     NoAction,
 }

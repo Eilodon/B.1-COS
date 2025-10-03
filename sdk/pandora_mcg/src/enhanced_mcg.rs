@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
-use tracing::{info, warn};
+use tracing::{info, warn, debug};
+use crate::causal_discovery::{discover_causal_links, CausalHypothesis, CausalDiscoveryConfig};
+use pandora_core::world_model::DualIntrinsicReward;
 
 /// System metrics collected by the Meta-Cognitive Governor for monitoring.
 ///
@@ -71,6 +73,9 @@ pub enum ActionTrigger {
     OptimizeResources {
         reason: String,
         target: String,
+    },
+    ProposeCausalHypothesis {
+        hypothesis: CausalHypothesis,
     },
     NoAction,
 }
@@ -172,6 +177,56 @@ impl ConfidenceTracker {
     }
 }
 
+/// Buffer to store recent observations for causal discovery.
+#[derive(Debug, Clone)]
+pub struct ObservationBuffer {
+    /// A matrix where each row is a snapshot of node embeddings from the CWM
+    data: Vec<Vec<f32>>,
+    capacity: usize,
+    min_samples_for_discovery: usize,
+}
+
+impl ObservationBuffer {
+    pub fn new(capacity: usize, min_samples: usize) -> Self {
+        Self {
+            data: Vec::with_capacity(capacity),
+            capacity,
+            min_samples_for_discovery: min_samples,
+        }
+    }
+
+    pub fn add(&mut self, node_embeddings: Vec<f32>) {
+        if self.data.len() >= self.capacity {
+            self.data.remove(0); // Remove oldest observation
+        }
+        self.data.push(node_embeddings);
+        debug!("ObservationBuffer: Added observation, buffer size: {}", self.data.len());
+    }
+
+    pub fn is_ready_for_discovery(&self) -> bool {
+        self.data.len() >= self.min_samples_for_discovery
+    }
+
+    pub fn get_data_and_clear(&mut self) -> Vec<Vec<f32>> {
+        let data = self.data.clone();
+        self.data.clear();
+        info!("ObservationBuffer: Cleared buffer, returning {} observations", data.len());
+        data
+    }
+
+    pub fn get_data(&self) -> &[Vec<f32>] {
+        &self.data
+    }
+
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+}
+
 /// Enhanced Meta-Cognitive Governor with adaptive thresholds and anomaly detection.
 ///
 /// This governor monitors system metrics and makes intelligent decisions about
@@ -210,6 +265,9 @@ pub struct EnhancedMetaCognitiveGovernor {
     state_history: VecDeque<SystemState>,
     max_history: usize,
     min_samples_for_adaptation: usize,
+    observation_buffer: ObservationBuffer,
+    discovery_config: CausalDiscoveryConfig,
+    pending_hypothesis: Option<CausalHypothesis>,
 }
 
 impl EnhancedMetaCognitiveGovernor {
@@ -225,6 +283,27 @@ impl EnhancedMetaCognitiveGovernor {
             state_history: VecDeque::with_capacity(1000),
             max_history: 1000,
             min_samples_for_adaptation: 20,
+            observation_buffer: ObservationBuffer::new(1000, 50),
+            discovery_config: CausalDiscoveryConfig::default(),
+            pending_hypothesis: None,
+        }
+    }
+
+    pub fn new_with_discovery_config(config: CausalDiscoveryConfig) -> Self {
+        Self {
+            uncertainty_threshold: AdaptiveThreshold::new(0.5, 0.2, 0.8, 0.05),
+            compression_threshold: AdaptiveThreshold::new(0.7, 0.3, 0.9, 0.05),
+            novelty_threshold: AdaptiveThreshold::new(0.6, 0.3, 0.9, 0.05),
+            uncertainty_detector: AnomalyDetector::new(50, 2.5),
+            compression_detector: AnomalyDetector::new(50, 2.5),
+            novelty_detector: AnomalyDetector::new(50, 2.5),
+            confidence_tracker: ConfidenceTracker::new(100),
+            state_history: VecDeque::with_capacity(1000),
+            max_history: 1000,
+            min_samples_for_adaptation: 20,
+            observation_buffer: ObservationBuffer::new(1000, 50),
+            discovery_config: config,
+            pending_hypothesis: None,
         }
     }
 
@@ -302,6 +381,86 @@ impl EnhancedMetaCognitiveGovernor {
         if self.state_history.len() >= self.min_samples_for_adaptation { self.adapt_thresholds(); }
         info!("=== Meta-Cognitive Governor - Decision Complete ===\n");
         DecisionWithConfidence { decision, confidence }
+    }
+
+    /// Enhanced monitoring method that includes causal discovery capabilities.
+    pub fn monitor_and_decide_with_discovery(
+        &mut self,
+        reward: &DualIntrinsicReward,
+        cwm_node_embeddings: Vec<f32>,
+    ) -> ActionTrigger {
+        info!("\n--- Enhanced MCG with Causal Discovery ---");
+        
+        // Add current observation to buffer
+        self.observation_buffer.add(cwm_node_embeddings);
+        
+        // Check if we have a pending hypothesis to test
+        if let Some(ref hypothesis) = self.pending_hypothesis {
+            info!("MCG: Testing pending hypothesis: {:?}", hypothesis);
+            // For now, we'll assume the hypothesis is valid and clear it
+            // In a real implementation, this would involve more sophisticated verification
+            self.pending_hypothesis = None;
+            return ActionTrigger::NoAction;
+        }
+        
+        // Trigger discovery if buffer is ready
+        if self.observation_buffer.is_ready_for_discovery() {
+            info!("MCG: Buffer ready for causal discovery, running analysis...");
+            let data = self.observation_buffer.get_data_and_clear();
+            
+            match discover_causal_links(data, &self.discovery_config) {
+                Ok(hypotheses) => {
+                    if !hypotheses.is_empty() {
+                        info!("MCG: Found {} causal hypotheses", hypotheses.len());
+                        // Take the strongest hypothesis
+                        if let Some(best_hypothesis) = hypotheses.into_iter()
+                            .max_by(|a, b| a.strength.abs().partial_cmp(&b.strength.abs()).unwrap()) {
+                            info!("MCG: Proposing strongest hypothesis: {:?}", best_hypothesis);
+                            self.pending_hypothesis = Some(best_hypothesis.clone());
+                            return ActionTrigger::ProposeCausalHypothesis {
+                                hypothesis: best_hypothesis,
+                            };
+                        }
+                    } else {
+                        info!("MCG: No significant causal relationships found");
+                    }
+                }
+                Err(e) => {
+                    warn!("MCG: Causal discovery failed: {:?}", e);
+                }
+            }
+        }
+        
+        // Fall back to regular monitoring
+        let metrics = SystemMetrics {
+            uncertainty: 0.5, // Placeholder - would be calculated from actual data
+            compression_reward: reward.compression_reward,
+            novelty_score: 0.3, // Placeholder
+            performance: 0.8, // Placeholder
+            resource_usage: ResourceMetrics {
+                cpu_usage: 0.5,
+                memory_usage: 0.6,
+                latency_ms: 10.0,
+            },
+        };
+        
+        let decision_with_confidence = self.monitor_comprehensive(&metrics);
+        decision_with_confidence.decision
+    }
+
+    /// Get the current observation buffer status.
+    pub fn get_buffer_status(&self) -> (usize, bool) {
+        (self.observation_buffer.len(), self.observation_buffer.is_ready_for_discovery())
+    }
+
+    /// Set a pending hypothesis for testing.
+    pub fn set_pending_hypothesis(&mut self, hypothesis: Option<CausalHypothesis>) {
+        self.pending_hypothesis = hypothesis;
+    }
+
+    /// Get the current pending hypothesis.
+    pub fn get_pending_hypothesis(&self) -> &Option<CausalHypothesis> {
+        &self.pending_hypothesis
     }
 
     fn add_state(&mut self, state: SystemState) {

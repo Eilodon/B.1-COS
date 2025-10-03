@@ -13,6 +13,7 @@ pub mod automatic_scientist_orchestrator;
 #[cfg(feature = "ml")]
 pub use automatic_scientist_orchestrator::{AutomaticScientistOrchestrator, ExperimentState, ExperimentResult, ScientistState};
 #[cfg(feature = "ml")]
+#[cfg(test)]
 mod automatic_scientist_test;
 #[cfg(feature = "prometheus_export")]
 use once_cell::sync::Lazy;

@@ -25,8 +25,6 @@ use pandora_learning_engine::active_inference_skandha::CausalHypothesis as Learn
 use pandora_mcg::enhanced_mcg::{EnhancedMetaCognitiveGovernor, ActionTrigger};
 #[cfg(feature = "ml")]
 use pandora_error::PandoraError;
-#[cfg(feature = "ml")]
-use std::time::Instant;
 
 /// Enum representing the different states of the Automatic Scientist
 #[derive(Debug, Clone, PartialEq)]

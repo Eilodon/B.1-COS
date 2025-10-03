@@ -15,7 +15,7 @@ use pandora_cwm::gnn::types::GnnConfig;
 #[cfg(feature = "ml")]
 use pandora_learning_engine::{LearningEngine, ActiveInferenceSankharaSkandha};
 #[cfg(feature = "ml")]
-use pandora_mcg::EnhancedMetaCognitiveGovernor;
+use pandora_mcg::enhanced_mcg::EnhancedMetaCognitiveGovernor;
 #[cfg(feature = "ml")]
 use pandora_orchestrator::AutomaticScientistOrchestrator;
 #[cfg(feature = "ml")]
@@ -23,17 +23,17 @@ use pandora_core::interfaces::skandhas::SankharaSkandha;
 
 /// Main integration example
 #[cfg(feature = "ml")]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 Pandora Genesis SDK - End-to-End Integration Example");
     println!("========================================================");
     
     // Initialize system
-    let system = initialize_system().await?;
+    let system = tokio::runtime::Runtime::new()?.block_on(initialize_system())?;
     
     // Run demonstrations
-    run_automatic_scientist_demo(&system).await?;
-    run_active_inference_demo(&system).await?;
-    run_performance_analysis(&system).await?;
+    tokio::runtime::Runtime::new()?.block_on(run_automatic_scientist_demo(&system))?;
+    tokio::runtime::Runtime::new()?.block_on(run_active_inference_demo(&system))?;
+    tokio::runtime::Runtime::new()?.block_on(run_performance_analysis(&system))?;
     
     println!("\n🎉 Integration example completed successfully!");
     Ok(())
@@ -212,6 +212,7 @@ async fn run_performance_analysis(system: &CognitiveSystem) -> Result<(), Box<dy
 
 /// Cognitive system structure
 #[cfg(feature = "ml")]
+#[allow(dead_code)]
 struct CognitiveSystem {
     cwm: Arc<Mutex<InterdependentCausalModel>>,
     learning_engine: Arc<LearningEngine>,

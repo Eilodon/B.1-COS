@@ -320,7 +320,7 @@ async fn test_complex_sequential_discovery() {
     // 2. When A is active, B can cause C
     // 3. When A is inactive, B has no effect on C
     
-    let mut discovered_relationships = Vec::new();
+    let _discovered_relationships: Vec<String> = Vec::new();
     let mut flow = EpistemologicalFlow::from_bytes(Bytes::from_static(b"complex_discovery"));
     
     // Run discovery cycles

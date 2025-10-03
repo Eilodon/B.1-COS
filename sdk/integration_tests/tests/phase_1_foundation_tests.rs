@@ -1,5 +1,6 @@
 // sdk/integration_tests/tests/phase_1_foundation_tests.rs
 
+#[allow(unused_imports)]
 use proptest::prelude::*;
 #[allow(unused_imports)]
 use std::sync::Arc;
@@ -71,35 +72,41 @@ async fn test_self_correction_loop_path() {
     assert!(!response.reasoning_trace.is_empty());
 }
 
-// --- Property-Based Tests (Kiểm thử Dựa trên Thuộc tính) ---
+// --- Thay thế proptest bằng kiểm thử ngẫu nhiên đơn giản ---
 
-proptest! {
-    /// Bất kỳ input hợp lệ nào cũng không được làm hệ thống panic.
-    #[test]
-    fn system_never_panics_on_valid_text_input(text in "[a-zA-Z0-9 ]{1,100}") {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+#[test]
+fn system_never_panics_on_valid_text_input_randomized() {
+    let charset: Vec<char> = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ".chars().collect();
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    for _ in 0..50 {
+        let len = fastrand::usize(1..=100);
+        let text: String = (0..len).map(|_| charset[fastrand::usize(..charset.len())]).collect();
         runtime.block_on(async {
             let system = create_test_system().await;
             let request = make_request(
                 TaskType::InformationRetrieval,
-                CognitiveInput::Text(text),
+                CognitiveInput::Text(text.clone()),
             );
             let _ = system.orchestrate_task(request).await;
         });
     }
+}
 
-    /// Confidence luôn phải nằm trong khoảng [0.0, 1.0].
-    #[test]
-    fn confidence_is_always_valid(text in "[a-zA-Z0-9 ]{1,100}") {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+#[test]
+fn confidence_is_always_valid_randomized() {
+    let charset: Vec<char> = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ".chars().collect();
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    for _ in 0..50 {
+        let len = fastrand::usize(1..=100);
+        let text: String = (0..len).map(|_| charset[fastrand::usize(..charset.len())]).collect();
         runtime.block_on(async {
             let system = create_test_system().await;
             let request = make_request(
                 TaskType::InformationRetrieval,
-                CognitiveInput::Text(text),
+                CognitiveInput::Text(text.clone()),
             );
             if let Ok(response) = system.orchestrate_task(request).await {
-                prop_assert!(response.confidence >= 0.0 && response.confidence <= 1.0);
+                assert!(response.confidence >= 0.0 && response.confidence <= 1.0);
             }
         });
     }

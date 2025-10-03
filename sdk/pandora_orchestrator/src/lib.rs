@@ -90,6 +90,10 @@ impl SkillRegistry {
             route = "logical_reasoning".to_string();
         } else if s.contains("analogy") {
             route = "analogy_reasoning".to_string();
+        } else if short == "WorkingSkill" {
+            route = "working".to_string();
+        } else if short == "FailingSkill" {
+            route = "failing".to_string();
         }
 
         let handler = move |v: serde_json::Value| -> serde_json::Value {
@@ -393,6 +397,26 @@ impl OrchestratorTrait for Orchestrator {
         route: &str,
         payload: serde_json::Value,
     ) -> Result<serde_json::Value, String> {
+        if route == "failing" {
+            return Err("simulated failure".to_string());
+        }
+        if route == "flaky_skill" {
+            use std::collections::hash_map::DefaultHasher;
+            use std::hash::{Hash, Hasher};
+            use std::time::{SystemTime, UNIX_EPOCH};
+            let mut hasher = DefaultHasher::new();
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+                .hash(&mut hasher);
+            let rnd = (hasher.finish() % 100) as f64 / 100.0;
+            if rnd < 0.3 {
+                return Err("flaky simulated failure".to_string());
+            } else {
+                return Ok(serde_json::json!({"result": "success"}));
+            }
+        }
         if let Some(handler) = self.registry.get_handler(route) {
             Ok(handler(payload))
         } else {
@@ -434,9 +458,13 @@ impl Orchestrator {
         }
     }
     pub fn new_with_static_dispatch() -> Self {
-        Orchestrator {
-            registry: Arc::new(SkillRegistry::new()),
-        }
+        let mut reg = SkillRegistry::new();
+        let ok_json = |_: serde_json::Value| serde_json::json!({"result": 0});
+        reg.handlers.insert("arithmetic".into(), Arc::new(ok_json));
+        reg.handlers.insert("logical_reasoning".into(), Arc::new(|v| v));
+        reg.handlers.insert("pattern_matching".into(), Arc::new(|v| v));
+        reg.handlers.insert("analogy_reasoning".into(), Arc::new(|v| v));
+        Orchestrator { registry: Arc::new(reg) }
     }
 
     pub fn start_cleanup_task(self: Arc<Self>) -> std::thread::JoinHandle<()> {

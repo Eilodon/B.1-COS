@@ -240,7 +240,11 @@ impl ActiveInferenceSankharaSkandha {
             .map_err(|_| PandoraError::config("Failed to acquire CWM lock"))?;
 
         // 1. Propose candidate actions
-        let candidate_actions = self.propose_candidate_actions(current_flow);
+        let mut candidate_actions = self.propose_candidate_actions(current_flow);
+        // Randomize order to avoid deterministic tie-breaking when scores are equal
+        use rand::seq::SliceRandom;
+        let mut rng = rand::thread_rng();
+        candidate_actions.shuffle(&mut rng);
         info!(
             "[{}] Đề xuất {} hành động: {:?}",
             self.name(),

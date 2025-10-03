@@ -153,21 +153,26 @@ pub mod enhanced_mcg {
             Self
         }
     }
-    #[derive(Clone, Default)]
-    pub struct ObservationBuffer;
+    #[derive(Clone)]
+    pub struct ObservationBuffer {
+        capacity: usize,
+        min_for_ready: usize,
+        data: Vec<Vec<f32>>,
+    }
     impl ObservationBuffer {
-        pub fn new(_cap: usize, _min: usize) -> Self {
-            Self
+        pub fn new(capacity: usize, min_for_ready: usize) -> Self {
+            Self { capacity, min_for_ready, data: Vec::new() }
         }
-        pub fn len(&self) -> usize {
-            0
+        pub fn len(&self) -> usize { self.data.len() }
+        pub fn is_ready_for_discovery(&self) -> bool { self.data.len() >= self.min_for_ready }
+        pub fn add(&mut self, v: Vec<f32>) {
+            if self.data.len() == self.capacity { self.data.remove(0); }
+            self.data.push(v);
         }
-        pub fn is_ready_for_discovery(&self) -> bool {
-            false
-        }
-        pub fn add(&mut self, _v: Vec<f32>) {}
         pub fn get_data_and_clear(&mut self) -> Vec<Vec<f32>> {
-            vec![]
+            let out = self.data.clone();
+            self.data.clear();
+            out
         }
     }
 }
@@ -213,7 +218,10 @@ pub mod causal_discovery {
             CausalAlgorithm::Greedy
         }
     }
-    pub fn validate_hypothesis(_h: &CausalHypothesis, _data: &Vec<Vec<f32>>) -> bool { true }
+    pub fn validate_hypothesis(h: &CausalHypothesis, data: &Vec<Vec<f32>>) -> bool {
+        if data.len() < 3 { return false; }
+        (h.strength >= 0.1) && (h.confidence >= 0.2)
+    }
     pub fn discover_causal_links<T>(_data: T, _cfg: &DiscoveryConfig) -> Result<Vec<CausalHypothesis>, String> { Ok(vec![]) }
 }
 

@@ -53,7 +53,7 @@ async fn test_orchestrator_concurrent_load() {
                 let input = generate_test_input(skill_name, user_id, req_id);
                 let request_start = Instant::now();
 
-                match orch.process_request(skill_name, input).await {
+                match orch.process_request(skill_name, input) {
                     Ok(_) => {
                         user_stats.successes += 1;
                         user_stats.total_latency += request_start.elapsed();
@@ -154,7 +154,7 @@ async fn test_orchestrator_payload_distribution() {
                 });
 
                 let start = Instant::now();
-                let result = orch.process_request("arithmetic", input).await;
+                let result = orch.process_request("arithmetic", input);
                 let latency = start.elapsed();
 
                 (result.is_ok(), latency)
@@ -263,7 +263,7 @@ async fn test_orchestrator_circuit_breaker_load() {
         let handle = tokio::spawn(async move {
             let input = json!({"test": i});
             let start = Instant::now();
-            let result = orch.process_request("flaky_skill", input).await;
+            let result = orch.process_request("flaky_skill", input);
             let latency = start.elapsed();
 
             (result.is_ok(), latency)
@@ -318,7 +318,7 @@ async fn test_orchestrator_memory_pressure() {
             });
 
             let start = Instant::now();
-            let result = orch.process_request("arithmetic", input).await;
+            let result = orch.process_request("arithmetic", input);
             let latency = start.elapsed();
 
             (result.is_ok(), latency)

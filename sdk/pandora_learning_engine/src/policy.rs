@@ -63,6 +63,23 @@ pub struct ValueDrivenPolicy {
     q_estimator: NeuralQValueEstimator,
     pub total_visits: u32,
     exploration_constant: f64,
+    base_exploration_constant: f64,
+    recent_rewards: Vec<f64>,
+    max_recent: usize,
+    temp_explore_boost_steps: u32,
+    // Reward normalization (EMA)
+    running_mean: f64,
+    running_var: f64,
+    ema_alpha: f64,
+    // Phase detection
+    phase_shift_mode: bool,
+    phase_steps_remaining: u32,
+    // Masking of recently harmful action
+    masked_action: Option<String>,
+    mask_steps_remaining: u32,
+    // Track consecutive negative rewards and recent positive action
+    neg_reward_streak: u32,
+    last_positive_action: Option<String>,
 }
 
 impl ValueDrivenPolicy {
@@ -72,6 +89,19 @@ impl ValueDrivenPolicy {
             q_estimator: NeuralQValueEstimator::new(learning_rate, discount_factor),
             total_visits: 0,
             exploration_constant,
+            base_exploration_constant: exploration_constant,
+            recent_rewards: Vec::new(),
+            max_recent: 20,
+            temp_explore_boost_steps: 0,
+            running_mean: 0.0,
+            running_var: 1e-6,
+            ema_alpha: 0.05,
+            phase_shift_mode: false,
+            phase_steps_remaining: 0,
+            masked_action: None,
+            mask_steps_remaining: 0,
+            neg_reward_streak: 0,
+            last_positive_action: None,
         }
     }
 
@@ -94,8 +124,9 @@ impl ValueDrivenPolicy {
             f64::INFINITY
         } else {
             // UCB1 formula: Q(s,a) + c * sqrt(ln(N) / n(s,a))
+            let total = (self.total_visits.max(1)) as f64;
             let exploration_bonus =
-                self.exploration_constant * (self.total_visits as f64).ln() / visit_count as f64;
+                self.exploration_constant * ((total.ln() / visit_count as f64).sqrt());
             q_value + exploration_bonus
         }
     }
@@ -108,9 +139,96 @@ impl ValueDrivenPolicy {
         reward: f64,
         next_flow: &EpistemologicalFlow,
     ) {
+        // Reward normalization via EMA (z-score like)
+        let delta = reward - self.running_mean;
+        self.running_mean += self.ema_alpha * delta;
+        self.running_var = (1.0 - self.ema_alpha) * (self.running_var + self.ema_alpha * delta * delta);
+        let norm_reward = if self.running_var > 1e-8 {
+            (reward - self.running_mean) / self.running_var.sqrt()
+        } else { reward };
+
         self.q_estimator
-            .update_q_value(flow, action.as_str(), reward, next_flow);
+            .update_q_value(flow, action.as_str(), norm_reward, next_flow);
         self.total_visits += 1;
+
+        // Maintain rolling reward window
+        self.recent_rewards.push(reward);
+        if self.recent_rewards.len() > self.max_recent {
+            let _ = self.recent_rewards.remove(0);
+        }
+        let avg_recent = if self.recent_rewards.is_empty() {
+            0.0
+        } else {
+            self.recent_rewards.iter().copied().sum::<f64>() / (self.recent_rewards.len() as f64)
+        };
+
+        // Track neg/pos streaks and last good action
+        if reward < 0.0 {
+            self.neg_reward_streak = self.neg_reward_streak.saturating_add(1);
+        } else {
+            self.neg_reward_streak = 0;
+        }
+        if reward > 0.6 {
+            self.last_positive_action = Some(action.as_str().to_string());
+        }
+
+        // Phase detection & dynamic exploration adjustment
+        if avg_recent < 0.4 {
+            // Trigger phase-shift mode and stronger exploration
+            self.phase_shift_mode = true;
+            self.phase_steps_remaining = self.phase_steps_remaining.max(50);
+            self.temp_explore_boost_steps = self.temp_explore_boost_steps.max(20);
+            self.exploration_constant = (self.base_exploration_constant * 3.0).min(10.0);
+
+            // Negative-reward penalty: depress Q of current action to break habits
+            if reward < 0.0 {
+                // Apply an extra update with stronger negative bonus to push away from harmful action
+                self.q_estimator.update_q_value(flow, action.as_str(), reward * 3.0, next_flow);
+                // Mask this action for several steps to force exploration
+                self.masked_action = Some(action.as_str().to_string());
+                // If repeated negatives, extend mask and exploration
+                if self.neg_reward_streak >= 2 {
+                    self.mask_steps_remaining = self.mask_steps_remaining.max(40);
+                    self.exploration_constant = (self.base_exploration_constant * 5.0).min(12.0);
+                } else {
+                    self.mask_steps_remaining = self.mask_steps_remaining.max(20);
+                }
+            }
+        } else if avg_recent > 0.8 {
+            // Favor exploitation a bit when things are going well
+            self.exploration_constant = (self.base_exploration_constant * 0.75).max(0.01);
+            if self.temp_explore_boost_steps > 0 {
+                self.temp_explore_boost_steps -= 1;
+            }
+        } else {
+            // Gradually decay boost
+            if self.temp_explore_boost_steps > 0 {
+                self.temp_explore_boost_steps -= 1;
+                if self.temp_explore_boost_steps == 0 {
+                    self.exploration_constant = self.base_exploration_constant;
+                }
+            } else {
+                self.exploration_constant = self.base_exploration_constant;
+            }
+        }
+
+        if self.phase_shift_mode {
+            if self.phase_steps_remaining > 0 {
+                self.phase_steps_remaining -= 1;
+            } else {
+                self.phase_shift_mode = false;
+                self.exploration_constant = self.base_exploration_constant;
+            }
+        }
+
+        // Decay mask
+        if let Some(_) = self.masked_action {
+            if self.mask_steps_remaining > 0 {
+                self.mask_steps_remaining -= 1;
+            } else {
+                self.masked_action = None;
+            }
+        }
     }
 }
 
@@ -133,13 +251,35 @@ impl Policy for ValueDrivenPolicy {
                 })
                 .unwrap_or(Action::Explore)
         } else {
-            // Exploitation: select action with highest Q-value
-            self.q_estimator
-                .get_q_values(flow)
-                .unwrap_or_default()
-                .into_iter()
-                .max_by(|(_, q1), (_, q2)| q1.partial_cmp(q2).unwrap_or(std::cmp::Ordering::Equal))
-                .map(|(action_str, _)| match action_str {
+            // Exploitation with Thompson-like sampling: add small noise inversely to visits
+            let qmap = self.q_estimator.get_q_values(flow).unwrap_or_default();
+            let mut best: Option<(String, f64)> = None;
+            for (a, q) in qmap.into_iter() {
+                if let (Some(mask), true) = (&self.masked_action, self.mask_steps_remaining > 0) {
+                    if &a == mask { continue; }
+                }
+                let n = (self.q_estimator.get_visit_count(flow, &a) as f64).max(1.0);
+                // Simple Gaussian-like noise using Box-Muller without external crates
+                let u1: f64 = (rng.gen::<f64>()).clamp(1e-9, 1.0);
+                let u2: f64 = rng.gen::<f64>();
+                let z = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos();
+                let sigma = (1.0 / n).sqrt();
+                let noise = z * sigma;
+                // Bias towards recently good action during phase shift
+                let mut score = q + noise;
+                if self.phase_shift_mode {
+                    if let Some(ref good) = self.last_positive_action {
+                        if &a == good {
+                            score += 0.2;
+                        }
+                    }
+                }
+                if best.as_ref().map(|(_, bq)| score > *bq).unwrap_or(true) {
+                    best = Some((a.to_string(), score));
+                }
+            }
+            if let Some((action_str, _)) = best {
+                match action_str.as_str() {
                     "noop" => Action::Noop,
                     "explore" => Action::Explore,
                     "exploit" => Action::Exploit,
@@ -147,8 +287,10 @@ impl Policy for ValueDrivenPolicy {
                     "pick_up_key" => Action::PickUpKey,
                     "move_forward" => Action::MoveForward,
                     _ => Action::Noop,
-                })
-                .unwrap_or(Action::Noop)
+                }
+            } else {
+                Action::Noop
+            }
         }
     }
 

@@ -59,7 +59,7 @@ ndarray-stats = "0.5"
 smartcore = { version = "0.3", features = ["serde"] }
 linfa = "0.7"
 linfa-nn = "0.7"
-dfdx = { version = "0.13", features = ["cpu"] }
+dfdx = { version = "0.13", features = ["safetensors"] }  # Auto differentiation
 argmin = "0.9"
 argmin-math = "0.4"
 statrs = "0.16"
@@ -67,8 +67,8 @@ metrics = "0.23"
 metrics-exporter-prometheus = { version = "0.17", default-features = false, features = ["hyper-rustls", "http-listener"] }
 
 # Edge Optimization Dependencies
-# burn = { version = "0.13", features = ["wgpu", "tch", "ndarray"] }  # Disabled due to bincode compatibility
-# wasmedge-sdk = "0.13"  # Disabled for now - requires WasmEdge installation
+candle-core = { version = "0.9" }  # Minimalist ML framework
+# wasmedge-sdk = "0.13"  # WebAssembly runtime - disabled due to version compatibility
 libloading = "0.8"
 
 # Optional: ML dependencies (currently disabled due to MSRV conflicts)

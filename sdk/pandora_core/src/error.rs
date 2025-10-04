@@ -22,6 +22,9 @@ pub enum PandoraError {
 
     #[error("Skill verification failed: {0}")]
     SkillVerificationFailed(String),
+
+    #[error("Encoding error: {0}")]
+    EncodingError(String),
 }
 
 pub type PResult<T> = Result<T, PandoraError>;

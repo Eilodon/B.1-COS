@@ -4,6 +4,12 @@ use tracing::info;
 
 #[cfg(test)]
 mod active_inference_planning_test;
+// Lightweight implementations with ndarray
+// pub mod active_inference_full;  // Disabled due to dfdx API issues
+pub mod active_inference_lightweight;
+pub mod skill_forge_lightweight;
+
+// Simplified implementations (fallback)
 // pub mod active_inference_efe;  // Disabled due to burn dependency
 pub mod active_inference_simplified;
 pub mod active_inference_skandha;
@@ -19,11 +25,24 @@ pub mod transcendental_processor;
 pub mod value_estimator;
 pub mod world_models;
 
+// Export lightweight implementations (preferred)
+pub use active_inference_lightweight::{
+    ActiveInferenceSankhara, EFECalculator, HierarchicalWorldModel, PerformanceMetrics,
+    Intent, Vedana, Sanna, SankharaSkandha, WorldState, Action, RewardFunction,
+    WorldModelLevel, EmotionalState, MemoryTrace, Observation
+};
+pub use skill_forge_lightweight::{
+    SkillForge, QueSTEncoder, VectorQuantizer, CodeGenerator, LLMCodeGenerator,
+    GeneratedSkill, SkillPerformanceMetrics, ResourceRequirements, SkillContext,
+    PerformanceTracker, PerformanceThresholds
+};
+
+// Export simplified implementations as fallback
 // pub use active_inference_efe::{ActiveInferenceSankhara, EFECalculator, HierarchicalWorldModel, PerformanceMetrics};  // Disabled
 pub use active_inference_simplified::{ActiveInferenceSankhara as SimplifiedActiveInferenceSankhara, EFECalculator as SimplifiedEFECalculator, HierarchicalWorldModel as SimplifiedHierarchicalWorldModel, PerformanceMetrics as SimplifiedPerformanceMetrics};
 pub use active_inference_skandha::ActiveInferenceSankharaSkandha;
 pub use experience_buffer::{ExperienceBuffer, ExperienceSample, PriorityExperienceBuffer};
-pub use policy::{Action, EpsilonGreedyPolicy, Policy, ValueDrivenPolicy};
+pub use policy::{EpsilonGreedyPolicy, Policy, ValueDrivenPolicy};
 // pub use skill_forge::{SkillForge, QueSTEncoder, VectorQuantizer, CodeGenerator, LLMCodeGenerator, SkillForgeMetrics};  // Disabled
 pub use skill_forge_simplified::{SkillForge as SimplifiedSkillForge, QueSTEncoder as SimplifiedQueSTEncoder, CodeGenerator as SimplifiedCodeGenerator, LLMCodeGenerator as SimplifiedLLMCodeGenerator, SkillForgeMetrics as SimplifiedSkillForgeMetrics};
 pub use skandha_integration::SkandhaProcessorWithLearning;

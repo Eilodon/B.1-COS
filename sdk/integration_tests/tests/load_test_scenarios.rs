@@ -3,7 +3,7 @@ use pandora_tools::skills::{
     // analogy_reasoning_skill::AnalogyReasoningSkill,
     logical_reasoning_skill::LogicalReasoningSkill,
 };
-use pandora_tools::skills_alias::ArithmeticSkill;
+use pandora_tools::skills::arithmetic_skill::AdaptiveArithmeticEngine;
 use pandora_tools::PatternMatchingSkill;
 use serde_json::json;
 use std::sync::Arc;
@@ -15,7 +15,7 @@ use tracing::{info, warn};
 #[tokio::test]
 async fn test_orchestrator_concurrent_load() {
     let mut registry = SkillRegistry::new();
-    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(AdaptiveArithmeticEngine::new()));
     registry.register_arc(Arc::new(LogicalReasoningSkill));
     registry.register_arc(Arc::new(PatternMatchingSkill));
     // registry.register_arc(Arc::new(AnalogyReasoningSkill));
@@ -126,7 +126,7 @@ async fn test_orchestrator_concurrent_load() {
 #[tokio::test]
 async fn test_orchestrator_payload_distribution() {
     let mut registry = SkillRegistry::new();
-    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(AdaptiveArithmeticEngine::new()));
     registry.register_arc(Arc::new(LogicalReasoningSkill));
 
     let orchestrator = Arc::new(Orchestrator::new(Arc::new(registry)));
@@ -295,7 +295,7 @@ async fn test_orchestrator_circuit_breaker_load() {
 #[tokio::test]
 async fn test_orchestrator_memory_pressure() {
     let mut registry = SkillRegistry::new();
-    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(AdaptiveArithmeticEngine::new()));
 
     let orchestrator = Arc::new(Orchestrator::new(Arc::new(registry)));
 

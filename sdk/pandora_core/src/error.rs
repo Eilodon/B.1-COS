@@ -16,6 +16,12 @@ pub enum PandoraError {
 
     #[error("Invalid state: {0}")]
     State(String),
+
+    #[error("Prediction failed: {0}")]
+    PredictionFailed(String),
+
+    #[error("Skill verification failed: {0}")]
+    SkillVerificationFailed(String),
 }
 
 pub type PResult<T> = Result<T, PandoraError>;

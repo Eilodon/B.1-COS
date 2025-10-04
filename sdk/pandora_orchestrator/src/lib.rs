@@ -10,11 +10,25 @@ use pandora_mcg::{MetaCognitiveController, SelfModel};
 use pandora_monitoring::{gather_metrics, register_metrics};
 use pandora_rm::AdaptiveResourceManager;
 use pandora_sie::{EvolutionEngine, EvolutionParameters};
+use pandora_learning_engine::{
+    SimplifiedSkillForge, SimplifiedActiveInferenceSankhara, SimplifiedEFECalculator, SimplifiedHierarchicalWorldModel,
+    SimplifiedCodeGenerator, SimplifiedLLMCodeGenerator, SimplifiedPerformanceMetrics as EFEPerformanceMetrics,
+};
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
 use tokio::sync::RwLock;
 use uuid::Uuid;
+
+// Import modules
+pub mod stream_composer;
+pub mod decision_tree;
+pub mod security_manager;
+pub mod edge_optimization;
+use stream_composer::*;
+use decision_tree::*;
+use security_manager::*;
+use edge_optimization::*;
 
 // ===== Lỗi & Các Kiểu Dữ liệu Phụ trợ =====
 
@@ -161,23 +175,11 @@ pub struct PipelineTemplate {
     // ... các trường khác
 }
 
-pub struct StreamComposer {
-    pipeline_templates: HashMap<TaskType, PipelineTemplate>,
-    skill_registry: Arc<SkillRegistry>,
-    execution_planner: Arc<ExecutionPlanner>,
-    resource_estimator: Arc<ResourceEstimator>,
-}
+// StreamComposer is now implemented in stream_composer.rs module
+// This is just a re-export for backward compatibility
+pub use stream_composer::StreamComposer;
 
-impl Default for StreamComposer {
-    fn default() -> Self {
-        Self {
-            pipeline_templates: HashMap::new(),
-            skill_registry: Arc::new(SkillRegistry::default()),
-            execution_planner: Arc::new(ExecutionPlanner::default()),
-            resource_estimator: Arc::new(ResourceEstimator::default()),
-        }
-    }
-}
+// StreamComposer implementation moved to stream_composer.rs module
 
 // --- 2.2 Decision Tree Engine ---
 
@@ -190,16 +192,9 @@ pub enum Action {
     EscalateToHuman,
 }
 
-pub struct DecisionTree {
-    root: DecisionNode,
-    // ... các trường khác
-}
-
-impl Default for DecisionTree {
-    fn default() -> Self {
-        Self { root: DecisionNode }
-    }
-}
+// DecisionTree is now implemented in decision_tree.rs module
+// This is just a re-export for backward compatibility
+pub use decision_tree::DecisionTree;
 
 // --- 2.3 Rule Engine ---
 

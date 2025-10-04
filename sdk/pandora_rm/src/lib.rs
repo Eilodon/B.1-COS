@@ -9,6 +9,10 @@ use sysinfo::{System, SystemExt};
 use thiserror::Error;
 use tokio::sync::RwLock;
 
+// Import enhanced resource manager
+pub mod enhanced_resource_manager;
+pub use enhanced_resource_manager::*;
+
 #[derive(Debug, Error)]
 pub enum ResourceManagerError {
     #[error("Tài nguyên không đủ: {0}")]

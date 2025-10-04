@@ -2,7 +2,7 @@
 
 use pandora_orchestrator::{CircuitBreakerConfig, Orchestrator, OrchestratorTrait, SkillRegistry};
 use pandora_tools::skills::logical_reasoning_skill::LogicalReasoningSkill;
-use pandora_tools::skills_alias::ArithmeticSkill;
+use pandora_tools::skills::arithmetic_skill::AdaptiveArithmeticEngine;
 use pandora_tools::PatternMatchingSkill;
 use serde_json::json;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -17,7 +17,7 @@ use tokio::time::{sleep, Duration, Instant};
 #[ignore] // Run with: cargo test --test load_scenarios -- --ignored
 async fn test_realistic_web_service_load() {
     let mut registry = SkillRegistry::new();
-    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(AdaptiveArithmeticEngine::new()));
     registry.register_arc(Arc::new(PatternMatchingSkill));
     registry.register_arc(Arc::new(LogicalReasoningSkill));
 
@@ -130,7 +130,7 @@ async fn test_realistic_web_service_load() {
 #[ignore]
 async fn test_burst_traffic_scenario() {
     let mut registry = SkillRegistry::new();
-    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(AdaptiveArithmeticEngine::new()));
 
     let config = CircuitBreakerConfig {
         failure_threshold: 10,

@@ -4,7 +4,7 @@ use pandora_tools::skills::{
     // information_retrieval_skill::InformationRetrievalSkill,
     logical_reasoning_skill::LogicalReasoningSkill,
 };
-use pandora_tools::skills_alias::ArithmeticSkill;
+use pandora_tools::skills::arithmetic_skill::AdaptiveArithmeticEngine;
 use pandora_tools::PatternMatchingSkill;
 use std::io::{self, Write};
 use std::sync::Arc;
@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut registry = SkillRegistry::new();
 
     // Đăng ký các skills
-    registry.register_arc(Arc::new(ArithmeticSkill));
+    registry.register_arc(Arc::new(AdaptiveArithmeticEngine::new()));
     registry.register_arc(Arc::new(LogicalReasoningSkill));
     registry.register_arc(Arc::new(PatternMatchingSkill));
     // registry.register_arc(Arc::new(AnalogyReasoningSkill));

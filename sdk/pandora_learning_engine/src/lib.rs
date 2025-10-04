@@ -4,20 +4,28 @@ use tracing::info;
 
 #[cfg(test)]
 mod active_inference_planning_test;
+// pub mod active_inference_efe;  // Disabled due to burn dependency
+pub mod active_inference_simplified;
 pub mod active_inference_skandha;
 pub mod experience_buffer;
 pub mod integration_test;
 #[cfg(test)]
 mod non_attachment_learning_test;
 pub mod policy;
+// pub mod skill_forge;  // Disabled due to burn dependency
+pub mod skill_forge_simplified;
 pub mod skandha_integration;
 pub mod transcendental_processor;
 pub mod value_estimator;
 pub mod world_models;
 
+// pub use active_inference_efe::{ActiveInferenceSankhara, EFECalculator, HierarchicalWorldModel, PerformanceMetrics};  // Disabled
+pub use active_inference_simplified::{ActiveInferenceSankhara as SimplifiedActiveInferenceSankhara, EFECalculator as SimplifiedEFECalculator, HierarchicalWorldModel as SimplifiedHierarchicalWorldModel, PerformanceMetrics as SimplifiedPerformanceMetrics};
 pub use active_inference_skandha::ActiveInferenceSankharaSkandha;
 pub use experience_buffer::{ExperienceBuffer, ExperienceSample, PriorityExperienceBuffer};
 pub use policy::{Action, EpsilonGreedyPolicy, Policy, ValueDrivenPolicy};
+// pub use skill_forge::{SkillForge, QueSTEncoder, VectorQuantizer, CodeGenerator, LLMCodeGenerator, SkillForgeMetrics};  // Disabled
+pub use skill_forge_simplified::{SkillForge as SimplifiedSkillForge, QueSTEncoder as SimplifiedQueSTEncoder, CodeGenerator as SimplifiedCodeGenerator, LLMCodeGenerator as SimplifiedLLMCodeGenerator, SkillForgeMetrics as SimplifiedSkillForgeMetrics};
 pub use skandha_integration::SkandhaProcessorWithLearning;
 pub use transcendental_processor::TranscendentalProcessor;
 pub use value_estimator::{

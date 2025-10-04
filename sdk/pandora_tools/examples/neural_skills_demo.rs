@@ -3,19 +3,19 @@
 
 use pandora_tools::skills::arithmetic_skill::AdaptiveArithmeticEngine;
 use pandora_tools::skills::information_retrieval_skill::{
-    ProgressiveSemanticEngine, Document, Confidence
+    ProgressiveSemanticEngine, Document
 };
 use serde_json::json;
-use std::time::Duration;
+// use std::time::Duration; // Commented out as not used
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 NEURAL SKILLS DEMO - Neural Skills Specifications Implementation");
-    println!("=" .repeat(80));
+    println!("{}", "=".repeat(80));
     
     // ===== DEMO 1: ARITHMETIC SKILL =====
     println!("\n📊 DEMO 1: ADAPTIVE ARITHMETIC SKILL");
-    println!("-" .repeat(50));
+    println!("{}", "-".repeat(50));
     
     let arithmetic_engine = AdaptiveArithmeticEngine::new();
     
@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // ===== DEMO 2: INFORMATION RETRIEVAL SKILL =====
     println!("\n🔍 DEMO 2: PROGRESSIVE SEMANTIC ENGINE");
-    println!("-" .repeat(50));
+    println!("{}", "-".repeat(50));
     
     // Initialize the engine
     let mut retrieval_engine = ProgressiveSemanticEngine::new(
@@ -126,7 +126,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // ===== DEMO 3: PERFORMANCE COMPARISON =====
     println!("\n⚡ DEMO 3: PERFORMANCE COMPARISON");
-    println!("-" .repeat(50));
+    println!("{}", "-".repeat(50));
     
     // Test arithmetic performance
     let start = std::time::Instant::now();
@@ -150,7 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // ===== DEMO 4: ADAPTIVE INTELLIGENCE =====
     println!("\n🧠 DEMO 4: ADAPTIVE INTELLIGENCE FEATURES");
-    println!("-" .repeat(50));
+    println!("{}", "-".repeat(50));
     
     // Show complexity classification
     println!("   📊 Complexity Classification:");
@@ -173,7 +173,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // ===== SUMMARY =====
     println!("\n🎯 SUMMARY OF NEURAL SKILLS UPGRADES");
-    println!("=" .repeat(80));
+    println!("{}", "=".repeat(80));
     println!("✅ ArithmeticSkill:");
     println!("   • Multiple backends (CustomParser, FastEval, SymbolicEngine)");
     println!("   • Complexity classification and adaptive selection");

@@ -16,3 +16,9 @@ thiserror = { workspace = true }
 bytes = { workspace = true }
 serde = { workspace = true }
 rand = "0.8"
+async-trait = { workspace = true }
+tokio = { workspace = true }
+uuid = { version = "1", features = ["serde", "v4"] }
+# burn = { workspace = true }  # Disabled due to bincode compatibility
+# wasmedge-sdk = { workspace = true }  # Disabled for now
+libloading = { workspace = true }
